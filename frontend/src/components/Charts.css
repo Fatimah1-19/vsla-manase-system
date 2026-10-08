@@ -1,0 +1,35 @@
+.chart { margin: 0; }
+.chart__svg { width: 100%; height: auto; display: block; }
+.chart__grid { stroke: var(--rule); stroke-width: 1; }
+.chart__tick { fill: var(--slate); font-size: 11px; font-family: var(--body); }
+.chart__bar--c1 { fill: var(--leaf); background: var(--leaf); }
+.chart__bar--c2 { fill: var(--maize); background: var(--maize); }
+.chart__bar--c3 { fill: var(--sky); background: var(--sky); }
+.chart__bar--c4 { fill: var(--flame); background: var(--flame); }
+.chart__line { fill: none; stroke: var(--leaf); stroke-width: 2.5; stroke-linejoin: round; }
+.chart__point { fill: var(--card); stroke: var(--leaf); stroke-width: 2; }
+.chart__legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.4rem; font-size: 0.85rem; color: var(--ink-soft); }
+.chart__key { display: inline-flex; align-items: center; gap: 0.35rem; }
+.chart__dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+.hbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.hbars__row { display: grid; grid-template-columns: minmax(80px, 34%) 1fr auto; gap: 0.6rem; align-items: center; font-size: 0.92rem; }
+.hbars__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbars__track { height: 12px; background: #E8EDE6; border-radius: 99px; overflow: hidden; }
+.hbars__fill { display: block; height: 100%; border-radius: 99px; }
+.hbars__fill--leaf { background: var(--leaf); }
+.hbars__fill--maize { background: var(--maize); }
+.hbars__fill--sky { background: var(--sky); }
+.hbars__fill--flame { background: var(--flame); }
+.hbars__value { font-size: 0.88rem; }
+
+.ring { display: grid; justify-items: center; gap: 0.3rem; text-align: center; }
+.ring__svg { width: 96px; height: 96px; }
+.ring__track { fill: none; stroke: #E8EDE6; stroke-width: 3.6; }
+.ring__fill { fill: none; stroke-width: 3.6; stroke-linecap: round; }
+.ring__fill--leaf { stroke: var(--leaf); }
+.ring__fill--maize { stroke: var(--maize); }
+.ring__fill--sky { stroke: var(--sky); }
+.ring__fill--flame { stroke: var(--flame); }
+.ring__num { font-family: var(--head); font-weight: 800; font-size: 8px; fill: var(--ink); }
+.ring__label { font-size: 0.82rem; color: var(--slate); max-width: 14ch; line-height: 1.25; }

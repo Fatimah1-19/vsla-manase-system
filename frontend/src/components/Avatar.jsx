@@ -1,0 +1,31 @@
+import { initials } from '../utils/format.js';
+import Icon from './Icon.jsx';
+import './Avatar.css';
+
+// Soft background / strong text pairs, taken from the app's own colours.
+const COLOURS = [
+  ['var(--leaf-wash)', 'var(--leaf-dark)'],
+  ['var(--maize-wash)', 'var(--maize-deep)'],
+  ['var(--sky-wash)', 'var(--sky)'],
+  ['var(--flame-wash)', 'var(--flame)'],
+];
+
+const pick = (name) => {
+  let sum = 0;
+  for (const ch of String(name || '')) sum += ch.charCodeAt(0);
+  return COLOURS[sum % COLOURS.length];
+};
+
+/** A round badge with the person's initials. With no name it shows a person icon. */
+export default function Avatar({ name, size = 38, className = '' }) {
+  const [bg, fg] = pick(name);
+  return (
+    <span
+      className={className ? `avatar ${className}` : 'avatar'}
+      style={{ width: size, height: size, background: bg, color: fg, fontSize: Math.round(size * 0.38) }}
+      aria-hidden="true"
+    >
+      {name ? initials(name) : <Icon name="profile" size={Math.round(size * 0.55)} />}
+    </span>
+  );
+}

@@ -1,0 +1,54 @@
+/* Top of the log-in page: back button, language toggle, logo. */
+.login__top { margin-bottom: 0.6rem; }
+
+.login__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--tap);
+  padding: 0 0.7rem 0 0.4rem;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.login__back:hover { background: var(--leaf-wash); }
+
+.login__identity { display: grid; justify-items: center; gap: 0.35rem; margin-bottom: 0.8rem; }
+.login__logo {
+  width: auto;
+  height: 96px;                 /* small on a phone so the form stays in view */
+  max-width: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;     /* lets the logo's white background blend into the card */
+}
+.login__name {
+  margin: 0;
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 1.02rem;
+  text-align: center;
+}
+
+/* On a computer: a wide box. Logo on the left, the form on the right. */
+@media (min-width: 760px) {
+  .login__panel {
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    column-gap: 2.5rem;
+    align-items: start;
+    padding: 1.5rem 2rem 1.75rem;
+  }
+  .login__panel > * { grid-column: 2; }
+  .login__panel > .login__identity {
+    grid-column: 1;
+    grid-row: 1 / span 12;
+    align-self: center;
+    margin: 0;
+    padding: 1rem 1.5rem 1rem 0;
+    border-right: 1px solid var(--rule);
+  }
+  .login__logo { height: 230px; }
+}

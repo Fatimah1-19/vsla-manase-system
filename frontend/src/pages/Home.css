@@ -1,0 +1,283 @@
+.home { min-height: 100vh; background: var(--paper); }
+
+/* ---- top bar ---- */
+.home__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1rem;
+  padding-top: calc(0.7rem + env(safe-area-inset-top, 0px));
+  background: var(--ink);
+}
+
+.home__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff;
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.home__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: var(--maize);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.home__baractions { display: flex; align-items: center; gap: 0.6rem; }
+
+/* ---- hero ---- */
+.home__hero {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 2.25rem 1.1rem 1.75rem;
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+.home__title {
+  font-size: clamp(2rem, 7vw, 3.1rem);
+  line-height: 1.04;
+  margin: 0 0 0.7rem;
+  max-width: 16ch;
+}
+
+.home__lead {
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 54ch;
+  margin-bottom: 1.4rem;
+}
+
+.home__cta { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+/* The cycle clock: 52 marks, filling up as the year goes on. */
+.home__clock {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--maize);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.home__weeks {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 5px;
+  margin-bottom: 0.8rem;
+}
+
+.home__week {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--rule);
+}
+
+.home__week.is-filled { background: var(--leaf); }
+
+.home__clockLabel { margin: 0; font-size: 0.92rem; color: var(--slate); }
+.home__clockLabel strong {
+  font-family: var(--head);
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin-right: 0.15rem;
+}
+
+/* ---- stats ---- */
+.home__stats {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 1.1rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.85rem;
+}
+
+.home__stat {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+
+.home__statNum {
+  display: block;
+  font-family: var(--head);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--leaf-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.home__statLabel { display: block; font-size: 0.86rem; color: var(--slate); margin-top: 0.2rem; }
+
+/* ---- how it works ---- */
+.home__how {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 1.5rem 1.1rem 2.5rem;
+}
+
+.home__h2 { font-size: 1.6rem; margin-bottom: 1.1rem; }
+
+.home__steps {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.home__steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 3.1rem;
+}
+
+.home__steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--maize);
+  font-family: var(--head);
+  font-weight: 800;
+}
+
+.home__steps h3 { margin: 0.2rem 0 0.3rem; font-size: 1.1rem; }
+.home__steps p { margin: 0; color: var(--ink-soft); }
+
+/* ---- join form ---- */
+.home__join { background: var(--ink); padding: 2.25rem 1.1rem; }
+
+.home__joinInner {
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.35rem;
+}
+
+.home__joinLead { color: var(--slate); font-size: 0.94rem; margin-bottom: 1.1rem; }
+.home__field { margin-bottom: 0.9rem; }
+
+
+@media (min-width: 880px) {
+  .home__hero { grid-template-columns: 1.05fr 0.95fr; padding-top: 3.5rem; padding-bottom: 2.5rem; }
+  .home__steps { grid-template-columns: repeat(3, 1fr); gap: 1.6rem; }
+}
+
+/* ---- navigation ---- */
+html { scroll-behavior: smooth; }
+.home__bar { position: sticky; top: 0; z-index: 50; }
+.home__brand { text-decoration: none; }
+.home__logo { border-radius: 7px; object-fit: cover; }
+.home__nav { display: none; gap: 1.25rem; }
+.home__nav a { color: #D6E2DA; text-decoration: none; font-size: 0.92rem; font-weight: 500; }
+.home__nav a:hover { color: #fff; text-decoration: underline; }
+@media (min-width: 900px) { .home__nav { display: flex; } }
+section[id] { scroll-margin-top: 4.5rem; }
+
+/* ---- hero ---- */
+.home__eyebrow {
+  margin: 0 0 0.6rem; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--maize-deep);
+}
+.home__heroSide { display: grid; gap: 0.9rem; }
+.home__photo {
+  width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover;
+  border-radius: var(--radius); box-shadow: var(--shadow-lift); border: 1px solid var(--rule);
+}
+
+/* ---- generic sections ---- */
+.home__section { padding: 2.75rem 1.1rem; }
+.home__section > * { max-width: var(--shell-max); margin-left: auto; margin-right: auto; }
+.home__section--tint { background: #E9F0E6; }
+.home__sub { color: var(--slate); margin: -0.5rem auto 1.4rem; }
+.home__para { color: var(--ink-soft); font-size: 1.02rem; max-width: 62ch; }
+
+.home__aboutGrid { display: grid; gap: 1.5rem; }
+.home__values { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.home__values li {
+  display: grid; gap: 0.1rem; padding: 0.85rem 1rem; background: var(--card);
+  border: 1px solid var(--rule); border-left: 5px solid var(--leaf); border-radius: var(--radius-sm);
+}
+.home__values span { color: var(--ink-soft); font-size: 0.93rem; }
+
+.home__cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.home__cards--small { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.home__card {
+  background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 1.1rem 1.15rem; box-shadow: var(--shadow);
+}
+.home__card h3 { font-size: 1.05rem; margin-bottom: 0.35rem; }
+.home__card p { margin: 0; color: var(--ink-soft); font-size: 0.94rem; }
+.home__card--rule { border-top: 5px solid var(--maize); }
+.home__cardBig {
+  display: block; font-family: var(--head); font-weight: 800; font-size: 2.1rem; line-height: 1;
+  color: var(--leaf-dark); margin-bottom: 0.4rem; font-variant-numeric: tabular-nums;
+}
+
+.home__agenda {
+  list-style: none; counter-reset: agenda; margin: 0 auto; padding: 0;
+  display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.home__agenda li {
+  counter-increment: agenda; position: relative; display: grid; gap: 0.15rem;
+  padding: 0.85rem 1rem 0.85rem 3.3rem; background: var(--card);
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+}
+.home__agenda li::before {
+  content: counter(agenda); position: absolute; left: 0.85rem; top: 0.8rem;
+  width: 1.8rem; height: 1.8rem; display: grid; place-items: center; border-radius: 50%;
+  background: var(--leaf); color: #fff; font-family: var(--head); font-weight: 800; font-size: 0.9rem;
+}
+.home__agenda span { color: var(--ink-soft); font-size: 0.93rem; }
+
+/* ---- FAQ ---- */
+.home__faq { max-width: 860px !important; display: grid; gap: 0.6rem; }
+.home__qa { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius-sm); }
+.home__qa summary {
+  cursor: pointer; padding: 0.9rem 2.6rem 0.9rem 1rem; font-weight: 600; list-style: none;
+  position: relative; min-height: var(--tap);
+}
+.home__qa summary::-webkit-details-marker { display: none; }
+.home__qa summary::after {
+  content: '+'; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+  font-size: 1.4rem; color: var(--leaf); font-weight: 700;
+}
+.home__qa[open] summary::after { content: '\2212'; }
+.home__qa[open] summary { border-bottom: 1px solid var(--rule); }
+.home__qa p { margin: 0; padding: 0.85rem 1rem 1rem; color: var(--ink-soft); max-width: none; }
+
+/* ---- join ---- */
+.home__joinWrap { max-width: var(--shell-max); margin: 0 auto; display: grid; gap: 1.25rem; align-items: stretch; }
+.home__joinPhoto { display: none; width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+.home__joinInner { width: 100%; max-width: 520px; margin: 0 auto; }
+@media (min-width: 900px) {
+  .home__aboutGrid { grid-template-columns: 1.2fr 1fr; align-items: start; }
+  .home__joinWrap { grid-template-columns: 1fr 1fr; }
+  .home__joinPhoto { display: block; }
+  .home__join { padding: 3rem 1.25rem; }
+}
