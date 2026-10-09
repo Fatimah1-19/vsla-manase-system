@@ -60,16 +60,16 @@ export default function Login() {
     <main className="login">
       <div className="login__panel">
         <div className="login__top">
-          <Link to="/" className="login__back">
-            <Icon name="back" size={20} />
-            {t('login.backHome')}
-          </Link>
           <LanguageToggle compact />
         </div>
 
         <div className="login__identity">
           <img className="login__logo" src="/images/logo.jpg" alt="" width="108" height="162" />
           <p className="login__name">{t('app.name')}</p>
+          <Link to="/" className="login__back">
+            <Icon name="back" size={18} />
+            {t('login.backHome')}
+          </Link>
         </div>
 
         <h1 className="login__title">{t('login.title')}</h1>
