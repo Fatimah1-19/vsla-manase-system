@@ -31,6 +31,21 @@
 }
 
 @media (min-width: 900px) {
+  /* Pin the app shell to the viewport: the sidebar and topbar stay
+     still and only the page content scrolls in the middle column. */
+  .shell {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .shell__main {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
   .shell__content { padding: 1.5rem; padding-bottom: 2.5rem; }
   .shell__scrim { display: none; }
 }

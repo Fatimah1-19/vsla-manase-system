@@ -2,7 +2,7 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Analytics', wrappers: 'Monthly wrappers' },
+  nav: { analytics: 'Analytics', reports: 'Attendance report', wrappers: 'Monthly wrappers' },
 
   idle: { loggedOut: 'You were logged out because the phone was idle.' },
 
@@ -28,6 +28,30 @@ export default {
     lockedNote: (n) => `${n} account(s) are locked after wrong passwords. You can unlock them.`,
     commonJobs: 'Common jobs',
     waitingNote: (n) => `${n} ${n === 1 ? 'person is' : 'people are'} waiting for the group to decide.`,
+    noCycle: 'No saving cycle is running yet. The chairperson needs to start one.',
+    savingsTrend: 'My savings, month by month',
+    recentEntries: 'My latest savings',
+    noSavingsYet: 'No savings yet',
+    todayCollected: 'Taken in today',
+    todayRepaid: 'Repaid today',
+    todayFines: 'Fines paid today',
+    moneyFlow: 'Cash moving over the last six months',
+    welfareInOut: 'Welfare fund',
+    welfareIn: 'Paid in',
+    welfareOut: 'Given out',
+    received: 'Savings received',
+    repaid: 'Repaid',
+    attendanceTrend: 'Who is coming to meetings',
+    present: 'Present',
+    marked: 'Marked',
+    cycleEnded: 'Ended',
+    timeToShareOut: 'This cycle is over. Time to count the box and share out.',
+    shareValueLine: (n) => `One share is worth ${n}`,
+    analytics: 'My analytics',
+    whereMoney: 'Where my money is',
+    sharesHeld: 'Shares I hold',
+    worthToday: 'Worth at share-out',
+    repaymentProgress: 'Loan paid back',
   },
 
   savings: {
@@ -68,9 +92,21 @@ export default {
     passShort: 'The new password needs at least 6 characters.', passChanged: 'Password changed.',
     chooseFile: 'Choose a file first.', fileBig: 'That file is too big. The limit is 2 MB.',
     stillOwe: 'I still owe',
-    tab_details: 'My details', tab_savings: 'My savings', tab_loans: 'My loans', tab_fines: 'My fines',
+    tab_details: 'My details', tab_report: 'My report', tab_savings: 'My savings', tab_loans: 'My loans', tab_fines: 'My fines',
     tab_documents: 'Documents', tab_account: 'Password & language',
+    reportReload: 'Reload',
+    reportPrint: 'Print to PDF',
+    addPhoto: 'Add a photo', changePhoto: 'Change photo', removePhoto: 'Remove photo',
+    photoHint: 'JPG, PNG or WEBP, up to 2 MB. It will show next to your name.',
+    photoType: 'Choose a JPG, PNG or WEBP picture.',
     personal: 'About me', phoneHint: 'Texts about your money go to this number.',
+    shareholdingTitle: 'Shareholding summary',
+    cycle: 'Cycle', totalSavings: 'Saved this cycle', shareValue: 'Value of one share',
+    estPayout: 'Payout if shared out today',
+    shareoutTitle: 'Share-out history', noShareouts: 'No share-out has been done for you yet.',
+    handedOut: 'Handed out', notDistributed: 'Being worked out', dateHandedOut: 'Handed out on',
+    payout: 'My payout',
+    welfareType: 'Paid in / given out', welfareTitle: 'Welfare fund', wrappersTitle: 'Monthly wrappers',
     loanRule: (m) => `You may borrow up to ${m} times your savings. One loan at a time.`,
     docsNote: 'Keep a copy of your ID and membership form here. Only you and the committee can open them.',
     docType: 'What is it?', docFile: 'File', docLimit: 'PDF, JPG or PNG, up to 2 MB.', upload: 'Upload',
@@ -95,6 +131,8 @@ export default {
 
   settings: {
     monthlyLevy: 'Monthly contribution for wrappers (MWK per member)',
+    absenceFine: 'Fine for missing a meeting without a reason (MWK)',
+    absenceFineNote: 'Set this to 0 to switch the automatic absence fine off. An excused absence is never fined.',
     adminOnly: 'Only the chairperson can change these.',
   },
 
@@ -134,6 +172,20 @@ export default {
     finesWelfare: 'Fines and welfare', keptNote: 'Neither is shared out at the end of the cycle.',
     welfareIn: 'Welfare paid in', welfareOut: 'Welfare given out', welfareFlow: 'Welfare fund, month by month',
     ifEnded: 'If the cycle ended today',
+  },
+
+  reports: {
+    title: 'Attendance report',
+    subtitle: 'Who is missing meetings, and who told us in advance.',
+    tab_list: 'By meeting',
+    tab_register: 'By member',
+    from: 'From', to: 'To', clear: 'Clear dates',
+    total: 'Times missed', last30: 'Last 30 days', last: 'Most recent',
+    unpaidFine: 'Unpaid fine',
+    note: 'Only meetings where attendance was marked are counted. An unexcused absence can carry a fine; an excused one does not.',
+    empty: 'No absences were recorded for these dates.',
+    emptyRegister: 'Nobody missed a meeting for these dates.',
+    print: 'Print this report',
   },
 
   home: {

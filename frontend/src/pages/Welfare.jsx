@@ -9,6 +9,8 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
+import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import './Welfare.css';
 
 const blankPayout = {
@@ -81,7 +83,15 @@ export default function Welfare() {
   if (!rows || !balance) return <Spinner />;
 
   const columns = [
-    { key: 'full_name', label: t('common.name'), render: (r) => r.full_name || <span className="muted">Whole group</span> },
+    { key: 'full_name', label: t('common.name'),
+      render: (r) => (r.member_id
+        ? (
+          <span className="vcell">
+            <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+            <span className="vcell__name">{r.full_name}</span>
+          </span>
+        )
+        : <span className="muted">Whole group</span>) },
     { key: 'type', label: t('common.status'),
       render: (r) => (
         <span className={r.type === 'contribution' ? 'tag tag--green' : 'tag tag--gold'}>
@@ -106,10 +116,10 @@ export default function Welfare() {
         subtitle="Money the group keeps aside for sickness, funerals and emergencies."
         action={isRecorder && (
           <>
-            <button type="button" className="btn btn--ghost" onClick={() => setMode('contribution')}>
+            <button type="button" className="btn" onClick={() => setMode('contribution')}>
               {t('welfare.contribute')}
             </button>
-            <button type="button" className="btn" onClick={() => setMode('payout')}>
+            <button type="button" className="btn btn--gold" onClick={() => setMode('payout')}>
               {t('welfare.help')}
             </button>
           </>

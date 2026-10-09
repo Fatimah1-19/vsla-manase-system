@@ -5,6 +5,7 @@ const { protect, committee } = require('../middleware/auth');
 router.use(protect);
 router.get('/', c.listMembers);
 router.get('/me', c.getMyRecord);
+router.get('/:id/avatar', c.getMemberAvatar);
 router.get('/:id', c.getMember);
 
 module.exports = router;

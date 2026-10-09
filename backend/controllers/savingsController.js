@@ -1,8 +1,7 @@
 const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { sendSMS } = require('../utils/sms');
-const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
+const { emit, EVENTS } = require('../utils/events');
 const { getActiveCycle } = require('../utils/helpers');
 
 // POST /api/savings — treasurer or secretary records money handed over at the meeting
@@ -36,21 +35,15 @@ const recordSaving = wrap(async (req, res) => {
     [member_id, cycle.id]
   );
 
-  await audit(recordedBy, 'RECORD_SAVING', 'savings', saving.id,
-    `${member.full_name}: ${amount}`);
-
-  // She gets a receipt on her own phone, in her own language.
-  const sms = await sendSMS(
-    member.phone,
-    build('savingRecorded', member.language, {
-      name: member.full_name, amount, date: saving.date, total: totals.total,
-    }),
-    { name: member.full_name, category: 'saving', sentBy: recordedBy }
-  );
+  // Announce it: a listener writes the audit trail and texts her the receipt.
+  const [sms] = await emit(EVENTS.SAVING_RECORDED, {
+    recordedBy, member, saving, total: totals.total,
+  });
 
   res.status(201).json({
     message: `Saving recorded for ${member.full_name}.`,
-    saving, member_total: totals.total, sms_sent: sms.ok, sms_error: sms.ok ? null : sms.error,
+    saving, member_total: totals.total,
+    sms_sent: !!(sms && sms.ok), sms_error: sms && sms.ok ? null : (sms && sms.error),
   });
 });
 
@@ -66,7 +59,8 @@ const listSavings = wrap(async (req, res) => {
 
   const rows = await query(
     `SELECT s.id, s.amount::float, s.shares, s.date, s.note, s.member_id, s.cycle_id,
-            m.membership_number, u.full_name, r.full_name AS recorded_by_name
+            m.membership_number, u.full_name, r.full_name AS recorded_by_name,
+            (m.avatar IS NOT NULL) AS has_avatar
        FROM savings s
        JOIN members m ON m.id = s.member_id
        JOIN users u ON u.id = m.user_id

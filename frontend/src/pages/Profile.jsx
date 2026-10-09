@@ -5,10 +5,12 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import PersonHeader from '../components/PersonHeader.jsx';
+import Avatar from '../components/Avatar.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Ledger from '../components/Ledger.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
 import './Profile.css';
 
@@ -25,7 +27,7 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
 
 export default function Profile() {
   const { t } = useLang();
-  const { user, refresh, logout } = useAuth();
+  const { user, refresh, logout, avatar, reloadAvatar } = useAuth();
   const toast = useToast();
 
   const [data, setData] = useState(null);
@@ -34,7 +36,9 @@ export default function Profile() {
   const [pass, setPass] = useState({ current_password: '', new_password: '', confirm: '' });
   const [docType, setDocType] = useState('national_id');
   const [busy, setBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const fileRef = useRef(null);
+  const photoRef = useRef(null);
 
   const load = useCallback(async () => {
     if (!user.member_id) { setData({ member: null }); return; }
@@ -106,6 +110,40 @@ export default function Profile() {
     }
   }
 
+  async function changePhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { toast.error(t('profile.photoType')); return; }
+    if (file.size > MAX_BYTES) { toast.error(t('profile.fileBig')); return; }
+    setPhotoBusy(true);
+    try {
+      toast.success((await api.put('/profile/avatar', { mime_type: file.type, data: await toBase64(file) })).message);
+      await refresh();
+      reloadAvatar();
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    if (!window.confirm(t('common.confirm'))) return;
+    setPhotoBusy(true);
+    try {
+      toast.success((await api.put('/profile/avatar', { data: null })).message);
+      await refresh();
+      reloadAvatar();
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   async function openDoc(doc) {
     try {
       const url = await fetchFile(`/profile/documents/${doc.id}`);
@@ -129,8 +167,54 @@ export default function Profile() {
   if (!data) return <Spinner />;
   const m = data.member;
 
-  const tabs = m ? ['details', 'savings', 'loans', 'fines', 'documents', 'account'] : ['account'];
+  const tabs = m ? ['details', 'report', 'savings', 'loans', 'fines', 'documents', 'account'] : ['account'];
   const active = tabs.includes(tab) ? tab : tabs[0];
+
+  const savingsColumns = [
+    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
+    { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
+    { key: 'note', label: t('savings.note'), hideOnPhone: true, render: (r) => r.note || '—' },
+  ];
+
+  const finesColumns = [
+    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'reason', label: t('common.reason'), render: (r) => r.reason || '—' },
+    { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
+    { key: 'paid', label: t('common.status'),
+      render: (r) => <span className={r.paid ? 'tag tag--green' : 'tag tag--red'}>{r.paid ? t('fines.paid') : t('fines.unpaid')}</span> },
+  ];
+
+  const welfareColumns = [
+    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'type', label: t('profile.welfareType'),
+      render: (r) => (r.type === 'payout'
+        ? <span className="tag tag--blue">{t('welfare.payout')}</span>
+        : <span className="tag tag--green">{t('welfare.contribution')}</span>) },
+    { key: 'notes', label: t('common.reason'), hideOnPhone: true, render: (r) => r.notes || r.category || '—' },
+    { key: 'amount', label: t('common.amount'), align: 'right', money: true,
+      render: (r) => <span className={r.type === 'payout' ? 'money money--neg' : 'money'}>{money(r.amount)}</span> },
+  ];
+
+  const monthsColumns = [
+    { key: 'period', label: t('wrappers.month') },
+    { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
+    { key: 'paid_on', label: t('common.date'), hideOnPhone: true, render: (r) => shortDate(r.paid_on) },
+  ];
+
+  const shareoutColumns = [
+    { key: 'cycle_name', label: t('profile.cycle'), render: (r) => r.cycle_name || '—' },
+    { key: 'status', label: t('common.status'),
+      render: (r) => <span className={`tag tag--${r.status === 'distributed' ? 'green' : 'gold'}`}>
+        {r.status === 'distributed' ? t('profile.handedOut') : t('profile.notDistributed')}</span> },
+    { key: 'date_distributed', label: t('profile.dateHandedOut'), hideOnPhone: true,
+      render: (r) => (r.date_distributed ? shortDate(r.date_distributed) : '—') },
+    { key: 'member_savings', label: t('profile.totalSavings'), align: 'right', money: true, render: (r) => money(r.member_savings) },
+    { key: 'profit_share', label: t('shareout.profitShare'), align: 'right', money: true, hideOnPhone: true, render: (r) => money(r.profit_share) },
+    { key: 'deductions', label: t('shareout.deductions'), align: 'right', money: true, hideOnPhone: true,
+      render: (r) => (r.deductions > 0 ? <span className="money money--neg">{money(r.deductions)}</span> : money(r.deductions)) },
+    { key: 'share_amount', label: t('profile.payout'), align: 'right', money: true, render: (r) => money(r.share_amount) },
+  ];
 
   const loanColumns = [
     { key: 'amount', label: t('loans.principal'), align: 'right', money: true, render: (l) => money(l.amount) },
@@ -149,6 +233,7 @@ export default function Profile() {
         name={user.full_name}
         role={t(`roles.${user.role}`)}
         detail={m ? `${t('members.number')} ${m.membership_number}` : null}
+        photo={avatar || null}
       />
 
       {user.must_change_password && <p className="notice notice--warn">{t('profile.mustChange')}</p>}
@@ -174,6 +259,27 @@ export default function Profile() {
       {active === 'details' && m && details && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.personal')}</h2>
+
+          <div className="profile__photo">
+            <Avatar name={user.full_name} size={72} src={avatar || null} />
+            <div className="profile__photoCtl">
+              <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp"
+                ref={photoRef} onChange={changePhoto} hidden />
+              <div className="profile__photoBtns">
+                <button type="button" className="btn btn--small" disabled={photoBusy}
+                  onClick={() => photoRef.current?.click()}>
+                  {photoBusy ? t('common.saving') : (m.has_avatar ? t('profile.changePhoto') : t('profile.addPhoto'))}
+                </button>
+                {m.has_avatar && (
+                  <button type="button" className="btn btn--small btn--danger" disabled={photoBusy} onClick={removePhoto}>
+                    {t('profile.removePhoto')}
+                  </button>
+                )}
+              </div>
+              <span className="profile__hint">{t('profile.photoHint')}</span>
+            </div>
+          </div>
+
           <dl className="profile__rows profile__rows--static">
             <div><dt>{t('common.name')}</dt><dd>{user.full_name}</dd></div>
             <div><dt>{t('login.username')}</dt><dd><code>{user.username}</code></dd></div>
@@ -245,15 +351,7 @@ export default function Profile() {
       {active === 'savings' && m && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_savings')}</h2>
-          <Ledger
-            rows={data.savings}
-            columns={[
-              { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
-              { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
-              { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
-              { key: 'note', label: t('savings.note'), hideOnPhone: true, render: (r) => r.note || '—' },
-            ]}
-          />
+          <Ledger rows={data.savings} columns={savingsColumns} />
         </section>
       )}
 
@@ -268,16 +366,7 @@ export default function Profile() {
       {active === 'fines' && m && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_fines')}</h2>
-          <Ledger
-            rows={data.fines}
-            columns={[
-              { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
-              { key: 'reason', label: t('common.reason'), render: (r) => r.reason || '—' },
-              { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
-              { key: 'paid', label: t('common.status'),
-                render: (r) => <span className={r.paid ? 'tag tag--green' : 'tag tag--red'}>{r.paid ? t('fines.paid') : t('fines.unpaid')}</span> },
-            ]}
-          />
+          <Ledger rows={data.fines} columns={finesColumns} />
         </section>
       )}
 
@@ -321,6 +410,71 @@ export default function Profile() {
         </section>
       )}
 
+      {active === 'report' && m && (
+        <>
+          <div className="profile__toolbar no-print">
+            <button type="button" className="btn btn--small" onClick={load} disabled={busy}>
+              {t('profile.reportReload')}
+            </button>
+            <button type="button" className="btn btn--sky btn--small no-print" onClick={() => window.print()}>
+              {t('profile.reportPrint')}
+            </button>
+          </div>
+
+          <div className="print-area">
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.shareholdingTitle')}</h2>
+              <dl className="profile__rows">
+                <div><dt>{t('profile.cycle')}</dt><dd>{data.cycle ? data.cycle.cycle_name : '—'}</dd></div>
+                <div><dt>{t('profile.totalSavings')}</dt><dd className="money">{money(data.totals.savings)}</dd></div>
+                <div><dt>{t('savings.shares')}</dt><dd>{data.totals.shares}</dd></div>
+                <div><dt>{t('profile.shareValue')}</dt><dd className="money">{money(data.cycle ? data.cycle.share_value : 0)}</dd></div>
+                <div><dt>{t('profile.estPayout')}</dt>
+                  <dd className="money">{money(data.totals.savings - data.totals.unpaid_fines - data.totals.outstanding)}</dd></div>
+                <div><dt>{t('profile.stillOwe')}</dt>
+                  <dd className={data.totals.outstanding > 0 ? 'money money--neg' : 'money'}>{money(data.totals.outstanding)}</dd></div>
+                <div><dt>{t('dashboard.unpaidFines')}</dt>
+                  <dd className={data.totals.unpaid_fines > 0 ? 'money money--neg' : 'money'}>{money(data.totals.unpaid_fines)}</dd></div>
+              </dl>
+              <p className="profile__hint">{t('shareout.memberWait')}</p>
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.shareoutTitle')}</h2>
+              {data.shareouts.length === 0
+                ? <EmptyState title={t('profile.noShareouts')} />
+                : <Ledger rows={data.shareouts} keyField="share_out_id" columns={shareoutColumns} />}
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.tab_savings')}</h2>
+              <Ledger rows={data.savings} columns={savingsColumns} />
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.tab_loans')}</h2>
+              <p className="muted">{t('profile.loanRule', data.loan_limit.multiplier)}</p>
+              <Ledger rows={data.loans} columns={loanColumns} />
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.tab_fines')}</h2>
+              <Ledger rows={data.fines} columns={finesColumns} />
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.welfareTitle')}</h2>
+              <Ledger rows={data.welfare} keyField="id" columns={welfareColumns} />
+            </section>
+
+            <section className="profile__card">
+              <h2 className="profile__h2">{t('profile.wrappersTitle')}</h2>
+              <Ledger rows={data.months} keyField="id" columns={monthsColumns} />
+            </section>
+          </div>
+        </>
+      )}
+
       {active === 'account' && (
         <>
           <section className="profile__card">
@@ -345,7 +499,7 @@ export default function Profile() {
             </form>
           </section>
 
-          <button type="button" className="btn btn--ghost btn--full" onClick={() => logout()}>{t('nav.logout')}</button>
+          <button type="button" className="btn btn--danger btn--full" onClick={() => logout()}>{t('nav.logout')}</button>
         </>
       )}
     </div>

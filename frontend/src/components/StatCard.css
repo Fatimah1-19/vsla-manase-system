@@ -1,9 +1,10 @@
 .stat {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.85rem 0.95rem 0.95rem;
-  background: var(--card);
+  padding: 0.9rem 1rem 1rem;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FDFEFC 100%);
   border: 1px solid var(--rule);
   border-top: 4px solid var(--rule-dark);
   border-radius: var(--radius);
@@ -12,6 +13,7 @@
   font: inherit;
   color: inherit;
   width: 100%;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .stat--gold  { border-top-color: var(--maize); }
@@ -19,8 +21,27 @@
 .stat--red   { border-top-color: var(--flame); }
 .stat--blue  { border-top-color: var(--sky); }
 
+.stat__icon {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: #8B977F;
+  background: var(--leaf-wash);
+}
+.stat--gold  .stat__icon { background: var(--maize-wash); color: var(--maize-deep); }
+.stat--green .stat__icon { background: var(--leaf-wash);  color: var(--leaf); }
+.stat--red   .stat__icon { background: #FBEBE3;          color: var(--flame); }
+.stat--blue  .stat__icon { background: #E4F0FA;          color: var(--sky); }
+.stat--plain .stat__icon { background: var(--leaf-wash);  color: #6B7A6E; }
+
 .stat--clickable { cursor: pointer; }
-.stat--clickable:hover { background: var(--leaf-wash); }
+.stat--clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+.stat--clickable:active { transform: translateY(0); box-shadow: var(--shadow); }
 
 .stat__label {
   font-size: 0.85rem;

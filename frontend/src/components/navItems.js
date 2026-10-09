@@ -6,6 +6,7 @@
 export const NAV_ITEMS = [
   { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['admin', 'treasurer', 'secretary', 'member'], phone: true, end: true },
   { to: '/app/analytics',  key: 'nav.analytics', icon: 'analytics', roles: ['admin', 'treasurer', 'secretary'] },
+  { to: '/app/reports',    key: 'nav.reports',   icon: 'reports',   roles: ['admin', 'treasurer', 'secretary'] },
   { to: '/app/savings',    key: 'nav.savings',   icon: 'savings',   roles: ['admin', 'treasurer', 'secretary'], phone: true },
   { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/loans',      key: 'nav.loans',     icon: 'loans',     roles: ['admin', 'treasurer', 'secretary', 'member'], phone: true },

@@ -8,6 +8,7 @@ import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
 import './Loans.css';
 
@@ -145,7 +146,13 @@ export default function Loans() {
   const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
 
   const columns = [
-    { key: 'full_name', label: t('loans.borrower'), render: (l) => l.full_name },
+    { key: 'full_name', label: t('loans.borrower'),
+      render: (l) => (
+        <span className="vcell">
+          <MemberAvatar memberId={l.member_id} hasAvatar={l.has_avatar} name={l.full_name} size={32} />
+          <span className="vcell__name">{l.full_name}</span>
+        </span>
+      ) },
     { key: 'amount', label: t('loans.principal'), align: 'right', money: true, render: (l) => money(l.amount) },
     { key: 'interest', label: t('loans.interest'), align: 'right', money: true, hideOnPhone: true,
       render: (l) => (l.with_interest ? money(l.interest_amount) : <span className="muted">—</span>) },
@@ -167,7 +174,7 @@ export default function Loans() {
         action={
           <>
             {isCommittee && (
-              <button type="button" className="btn btn--ghost" onClick={sendReminders} disabled={busy}>
+              <button type="button" className="btn btn--sky" onClick={sendReminders} disabled={busy}>
                 {t('loans.remind')}
               </button>
             )}
@@ -347,7 +354,7 @@ export default function Loans() {
             )}
 
             <div className="no-print loans__printRow">
-              <button type="button" className="btn btn--ghost" onClick={() => window.print()}>
+              <button type="button" className="btn btn--gold" onClick={() => window.print()}>
                 {t('loans.print')}
               </button>
             </div>

@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
+import Icon from '../../components/Icon.jsx';
+import { LineChart, HBars, Ring } from '../../components/Charts.jsx';
 import { money, shortDate } from '../../utils/format.js';
 import './MemberDashboard.css';
+
+const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 
 /** What one woman needs to know: what she saved, what she owes, what is coming. */
 export default function MemberDashboard({ data }) {
@@ -10,6 +14,23 @@ export default function MemberDashboard({ data }) {
   const { savings, active_loan: loan, unpaid_fines: fines, my_share: share, next_meeting: meeting } = data;
   const limit = data.loan_limit;
   const wr = data.wrappers;
+  const trend = data.savings_trend || [];
+  const entries = data.recent_savings || [];
+  const hasTrend = trend.some((d) => d.amount > 0);
+
+  const shares = Number(savings?.shares || 0);
+  const shareValue = data.cycle ? Number(data.cycle.share_value) : 0;
+  const worth = +(shares * shareValue).toFixed(2);
+  const repaidPct = loan && loan.total_due > 0
+    ? Math.round((loan.total_repaid / loan.total_due) * 100)
+    : 0;
+
+  const where = [
+    { label: t('dashboard.mySavings'), value: Number(savings?.total || 0), text: money(savings?.total), tone: 'leaf' },
+    { label: t('loans.outstanding'), value: loan?.outstanding || 0, text: money(loan?.outstanding || 0), tone: 'sky' },
+    { label: t('dashboard.unpaidFines'), value: Number(fines || 0), text: money(fines), tone: 'flame' },
+    { label: t('wrappers.title'), value: wr?.owed || 0, text: money(wr?.owed || 0), tone: 'maize' },
+  ];
 
   return (
     <>
@@ -27,6 +48,7 @@ export default function MemberDashboard({ data }) {
           value={money(savings?.total)}
           hint={`${savings?.shares || 0} ${t('savings.shares').toLowerCase()}`}
           tone="gold"
+          icon="savings"
           big
         />
         {limit && (
@@ -35,6 +57,7 @@ export default function MemberDashboard({ data }) {
             value={money(limit.max_loan)}
             hint={t('dashboard.canBorrowHint', limit.multiplier)}
             tone="green"
+            icon="loans"
           />
         )}
         {wr && (
@@ -43,13 +66,78 @@ export default function MemberDashboard({ data }) {
             value={wr.owed > 0 ? money(wr.owed) : t('wrappers.paidUp')}
             hint={wr.owed > 0 ? t('wrappers.stillOwed') : undefined}
             tone={wr.owed > 0 ? 'red' : 'plain'}
+            icon="wrappers"
           />
         )}
         <StatCard
           label={t('dashboard.unpaidFines')}
           value={money(fines)}
           tone={fines > 0 ? 'red' : 'plain'}
+          icon="fines"
         />
+      </div>
+
+      <div className="dash__cols dash__cols--2">
+        <section className="mdash__holdings">
+          <h2 className="mdash__cardTitle">
+            <span className="mdash__cardIcon" aria-hidden="true"><Icon name="shareout" size={18} /></span>
+            {t('profile.shareholdingTitle')}
+          </h2>
+
+          <div className="mdash__holdHero">
+            <span className="mdash__holdShares money">{shares}</span>
+            <span className="mdash__holdSharesLabel">{t('savings.shares').toLowerCase()}</span>
+          </div>
+
+          <dl className="mdash__holdRows">
+            <div><dt>{t('profile.shareValue')}</dt><dd className="money">{money(shareValue)}</dd></div>
+            <div><dt>{t('profile.totalSavings')}</dt><dd className="money">{money(savings?.total)}</dd></div>
+            <div className="is-strong">
+              <dt>{t('profile.estPayout')}</dt>
+              <dd className="money">{money(worth)}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.analytics')}</h2>
+          <p className="mdash__subTitle">{t('dashboard.savingsTrend')}</p>
+          {hasTrend
+            ? <LineChart
+                data={trend.map((d) => ({ label: shortMonth(d.month), value: d.amount }))}
+                format={(v) => money(v, { compact: true })}
+              />
+            : <p className="muted">{t('dashboard.noSavingsYet')}</p>}
+        </section>
+      </div>
+
+      <div className="dash__cols dash__cols--2">
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.whereMoney')}</h2>
+          <HBars items={where} />
+          {loan && (
+            <div className="mdash__ringWrap">
+              <Ring value={Math.min(100, repaidPct)} label={t('dashboard.repaymentProgress')} tone="auto" />
+            </div>
+          )}
+        </section>
+
+        {entries.length > 0 && (
+          <section className="dash__card">
+            <h2 className="dash__sectionTitle">{t('dashboard.recentEntries')}</h2>
+            <ul className="dash__list">
+              {entries.map((e) => (
+                <li key={e.id}>
+                  <span className="dash__who">
+                    {shortDate(e.date)}
+                    {e.shares > 0 && <span className="dash__tag">{e.shares} {t('savings.shares').toLowerCase()}</span>}
+                  </span>
+                  <span className="dash__amount money">{money(e.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <section className="mdash__loan">
@@ -74,7 +162,7 @@ export default function MemberDashboard({ data }) {
               <div><dt>{t('dashboard.dueBy')}</dt><dd>{shortDate(loan.due_date)}</dd></div>
             </dl>
 
-            <Link to="/app/loans" className="btn btn--ghost btn--small btn--full">{t('common.view')}</Link>
+            <Link to="/app/loans" className="btn btn--sky btn--small btn--full">{t('common.view')}</Link>
           </div>
         ) : (
           <div className="mdash__noLoan">

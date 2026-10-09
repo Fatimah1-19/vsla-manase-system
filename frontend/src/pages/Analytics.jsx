@@ -46,7 +46,7 @@ export default function Analytics() {
       <PageHeader
         title={t('analytics.title')}
         subtitle={`${d.cycle.cycle_name} · ${t('analytics.updated')} ${shortDate(d.generated_at)}`}
-        action={<button type="button" className="btn btn--ghost no-print" onClick={() => window.print()}>{t('analytics.print')}</button>}
+        action={<button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>{t('analytics.print')}</button>}
       />
 
       <div className="print-area">

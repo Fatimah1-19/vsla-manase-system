@@ -239,6 +239,10 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS marital_status VARCHAR(15);
 ALTER TABLE members ADD COLUMN IF NOT EXISTS date_of_birth  DATE;
 ALTER TABLE members ADD COLUMN IF NOT EXISTS occupation     VARCHAR(80);
 
+-- The member's own picture, shown next to her name everywhere.
+ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar        BYTEA;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_mime   VARCHAR(12);
+
 -- Money that could not be taken from a member's payout at share-out
 -- (she owed more than her savings and returned interest together).
 ALTER TABLE share_out_details ADD COLUMN IF NOT EXISTS unrecovered NUMERIC(12,2) NOT NULL DEFAULT 0;
@@ -280,7 +284,8 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('default_interest_rate', '10'),
   ('weekly_share_value', '1000'),
   ('welfare_contribution', '200'),
-  ('monthly_levy', '3000')
+  ('monthly_levy', '3000'),
+  ('absence_fine', '0')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- The group agreed: a member may borrow 2 times her savings (it used to be 3).
@@ -298,3 +303,58 @@ DO $$ BEGIN
 EXCEPTION WHEN unique_violation THEN
   RAISE NOTICE 'Skipped one_open_loan_per_member: some members already have two open loans.';
 END $$;
+-- =====================================================================
+--  MEMBER CASES
+--  Suspending, dismissing or bringing back a member is decided by a vote of
+--  the members. The chairperson opens the case and carries out the result.
+-- =====================================================================
+
+-- A member can now also be suspended or dismissed. ('inactive' stays valid for old records.)
+ALTER TABLE members DROP CONSTRAINT IF EXISTS members_status_check;
+ALTER TABLE members ADD CONSTRAINT members_status_check
+  CHECK (status IN ('active','inactive','suspended','dismissed'));
+
+CREATE TABLE IF NOT EXISTS member_cases (
+  id                     SERIAL PRIMARY KEY,
+  member_id              INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  action                 VARCHAR(10) NOT NULL CHECK (action IN ('suspend','dismiss','reinstate')),
+  reason                 TEXT NOT NULL,
+  member_response        TEXT,                      -- the member's own side of the story
+  status                 VARCHAR(10) NOT NULL DEFAULT 'open'
+                         CHECK (status IN ('open','passed','rejected','lapsed','withdrawn')),
+  opened_by              INT NOT NULL REFERENCES users(id),
+  opened_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  closes_at              TIMESTAMPTZ NOT NULL,
+  decided_at             TIMESTAMPTZ,
+  eligible_voters        INT NOT NULL DEFAULT 0,    -- how many members could vote when it opened
+  yes_votes              INT NOT NULL DEFAULT 0,    -- filled in when voting closes
+  no_votes               INT NOT NULL DEFAULT 0,
+  executed_by            INT REFERENCES users(id),
+  executed_at            TIMESTAMPTZ,
+  settlement_amount      NUMERIC(12,2),             -- what a dismissed member is owed back
+  settlement_unrecovered NUMERIC(12,2),             -- what they still owe beyond that
+  settlement_paid_on     DATE,
+  settlement_paid_by     INT REFERENCES users(id)
+);
+
+-- One vote per member per case. Only the totals are ever shown, never who voted how.
+CREATE TABLE IF NOT EXISTS member_case_votes (
+  id        SERIAL PRIMARY KEY,
+  case_id   INT NOT NULL REFERENCES member_cases(id) ON DELETE CASCADE,
+  member_id INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  vote      VARCHAR(3) NOT NULL CHECK (vote IN ('yes','no')),
+  voted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (case_id, member_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_case_votes_case ON member_case_votes(case_id);
+CREATE INDEX IF NOT EXISTS idx_member_cases_status ON member_cases(status, closes_at);
+-- Only one open case about the same member at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS one_open_case_per_member ON member_cases (member_id) WHERE status = 'open';
+
+-- Voting rules (change them on the Settings page).
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('case_voting_days', '7'),        -- how long a vote stays open
+  ('case_quorum_percent', '50'),    -- at least this % of members must vote
+  ('case_dismiss_percent', '67')    -- a dismissal needs at least this % of "yes" among the votes
+ON CONFLICT (setting_key) DO NOTHING;

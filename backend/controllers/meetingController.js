@@ -1,9 +1,8 @@
 const { query, one, tx } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { sendBulk } = require('../utils/sms');
-const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
-const { getActiveCycle, activeMembersWithPhone } = require('../utils/helpers');
+const { emit, EVENTS } = require('../utils/events');
+const { getActiveCycle } = require('../utils/helpers');
 
 // POST /api/meetings — the secretary calls the group together
 const createMeeting = wrap(async (req, res) => {
@@ -20,19 +19,11 @@ const createMeeting = wrap(async (req, res) => {
 
   await audit(req.user.id, 'CREATE_MEETING', 'meetings', meeting.id, `Meeting on ${meeting_date}`);
 
-  let result = { sent: 0, failed: 0, total: 0 };
-  if (notify) {
-    const members = await activeMembersWithPhone();
-    result = await sendBulk(
-      members,
-      (m) => build('meetingScheduled', m.language, {
-        name: m.full_name, date: meeting_date, time: meeting_time, location,
-      }),
-      { category: 'meeting', isBroadcast: true, sentBy: req.user.id }
-    );
-  }
+  const [result] = await emit(EVENTS.MEETING_SCHEDULED, {
+    notify, meeting_date, meeting_time, location, recordedBy: req.user.id,
+  });
 
-  res.status(201).json({ message: 'Meeting saved.', meeting, notified: result });
+  res.status(201).json({ message: 'Meeting saved.', meeting, notified: result || { sent: 0, failed: 0, total: 0 } });
 });
 
 // GET /api/meetings
@@ -58,6 +49,7 @@ const getMeeting = wrap(async (req, res) => {
 
   const attendance = await query(
     `SELECT m.id AS member_id, m.membership_number, u.full_name,
+            (m.avatar IS NOT NULL) AS has_avatar,
             COALESCE(a.status, 'absent') AS status
        FROM members m
        JOIN users u ON u.id = m.user_id
@@ -84,6 +76,12 @@ const saveAttendance = wrap(async (req, res) => {
       );
     }
   });
+
+  const meeting = await one(`SELECT meeting_date, cycle_id FROM meetings WHERE id=$1`, [id]);
+
+  // A listener fines the unexplained absences. It never throws, so attendance
+  // is saved whether or not a fine is raised.
+  await emit(EVENTS.ATTENDANCE_SAVED, { recordedBy: req.user.id, meeting, list });
 
   await audit(req.user.id, 'SAVE_ATTENDANCE', 'meetings', id, `${list.length} member(s) marked`);
   res.json({ message: 'Attendance saved.' });

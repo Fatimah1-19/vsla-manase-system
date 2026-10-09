@@ -19,7 +19,7 @@ async function protect(req, res, next) {
     if (!user) {
       user = await one(
         `SELECT u.id, u.username, u.role, u.full_name, u.phone, u.language, u.is_active,
-                u.must_change_password, m.id AS member_id
+                u.must_change_password, m.id AS member_id, (m.avatar IS NOT NULL) AS has_avatar
            FROM users u
            LEFT JOIN members m ON m.user_id = u.id
           WHERE u.id = $1`,

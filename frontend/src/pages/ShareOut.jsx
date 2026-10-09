@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate } from '../utils/format.js';
 import './ShareOut.css';
 
@@ -115,7 +116,13 @@ export default function ShareOut() {
   const draft = history.find((h) => h.status === 'draft');
 
   const columns = [
-    { key: 'full_name', label: t('common.name') },
+    { key: 'full_name', label: t('common.name'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
     { key: 'member_savings', label: t('shareout.savedByMembers'), align: 'right', money: true,
       render: (r) => money(r.member_savings) },
     { key: 'profit_share', label: t('shareout.interestBack'), align: 'right', money: true, hideOnPhone: true,

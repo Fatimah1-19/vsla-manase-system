@@ -1,9 +1,45 @@
 const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { sendSMS } = require('../utils/sms');
-const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
-const { getActiveCycle } = require('../utils/helpers');
+const { emit, EVENTS } = require('../utils/events');
+const { getActiveCycle, getSetting } = require('../utils/helpers');
+
+/**
+ * A fine for missing a meeting, when the group has set one.
+ * The amount lives in Settings (`absence_fine`); 0 means the group does not
+ * fine for absences. Never throws — attendance is saved either way.
+ */
+const createAbsenceFine = async ({ member_id, reason = null, date = null, recorded_by = null, meeting_id = null, cycle_id = null }) => {
+  const amount = Number(await getSetting('absence_fine', '0'));
+  if (!(amount > 0)) return null;
+  const cycle = cycle_id ? { id: cycle_id } : await getActiveCycle();
+  const member = await one(
+    `SELECT m.id, u.full_name, u.phone, u.language
+       FROM members m JOIN users u ON u.id = m.user_id
+      WHERE m.id = $1 AND m.status = 'active'`,
+    [member_id]
+  );
+  if (!member) return null;
+  const fineDate = date || new Date().toISOString().slice(0, 10);
+  const fineReason = reason || `Absence (meeting ${meeting_id || ''})`;
+
+  // One fine per member, date and reason: re-saving attendance must not stack them up.
+  const existing = await one(
+    `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND paid=FALSE LIMIT 1`,
+    [member_id, fineDate, fineReason]
+  );
+  if (existing) return existing;
+
+  const fine = await one(
+    `INSERT INTO fines (member_id, cycle_id, amount, reason, paid, date, recorded_by)
+     VALUES ($1,$2,$3,$4,FALSE,$5,$6) RETURNING id, amount::float, date`,
+    [member_id, cycle ? cycle.id : null, amount, fineReason, fineDate, recorded_by || null]
+  );
+
+  await emit(EVENTS.FINE_RECORDED, { recordedBy: recorded_by, member, fine, reason: fineReason });
+
+  return fine;
+};
 
 // POST /api/fines
 const recordFine = wrap(async (req, res) => {
@@ -28,15 +64,11 @@ const recordFine = wrap(async (req, res) => {
      date || new Date().toISOString().slice(0, 10), req.user.id]
   );
 
-  await audit(req.user.id, 'RECORD_FINE', 'fines', fine.id, `${member.full_name}: ${amount} — ${reason || 'no reason given'}`);
+  const [sms] = await emit(EVENTS.FINE_RECORDED, {
+    recordedBy: req.user.id, member, fine, reason: reason || null,
+  });
 
-  const sms = await sendSMS(
-    member.phone,
-    build('fineRecorded', member.language, { name: member.full_name, amount, reason, date: fine.date }),
-    { name: member.full_name, category: 'fine', sentBy: req.user.id }
-  );
-
-  res.status(201).json({ message: `Fine recorded for ${member.full_name}.`, fine, sms_sent: sms.ok });
+  res.status(201).json({ message: `Fine recorded for ${member.full_name}.`, fine, sms_sent: !!(sms && sms.ok) });
 });
 
 // GET /api/fines
@@ -48,7 +80,7 @@ const listFines = wrap(async (req, res) => {
 
   const rows = await query(
     `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.member_id,
-            m.membership_number, u.full_name
+            m.membership_number, u.full_name, (m.avatar IS NOT NULL) AS has_avatar
        FROM fines f JOIN members m ON m.id = f.member_id JOIN users u ON u.id = m.user_id
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
       ORDER BY f.date DESC, f.id DESC`,
@@ -88,4 +120,4 @@ const finesSummary = wrap(async (req, res) => {
   res.json(row);
 });
 
-module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary };
+module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary, createAbsenceFine };

@@ -22,6 +22,13 @@ const SHAPES = {
       <path d="M8 17v-3" />
     </>
   ),
+  reports: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M9 3v3M15 3v3" />
+      <path d="M8 11h8M8 15h8M8 19h5" />
+    </>
+  ),
   savings: (
     <>
       <circle cx="8" cy="8" r="6" />

@@ -20,6 +20,7 @@ import Activity from './pages/Activity.jsx';
 import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
 import Analytics from './pages/Analytics.jsx';
+import Reports from './pages/Reports.jsx';
 import Wrappers from './pages/Wrappers.jsx';
 import NotFound from './pages/NotFound.jsx';
 import './App.css';
@@ -43,6 +44,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="savings"  element={<ProtectedRoute roles={COMMITTEE}><Savings /></ProtectedRoute>} />
         <Route path="analytics" element={<ProtectedRoute roles={COMMITTEE}><Analytics /></ProtectedRoute>} />
+        <Route path="reports"   element={<ProtectedRoute roles={COMMITTEE}><Reports /></ProtectedRoute>} />
         <Route path="wrappers" element={<Wrappers />} />
         <Route path="loans"    element={<Loans />} />
         <Route path="members"  element={<ProtectedRoute roles={COMMITTEE}><Members /></ProtectedRoute>} />

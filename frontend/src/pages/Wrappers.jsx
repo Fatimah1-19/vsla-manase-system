@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { Ring } from '../components/Charts.jsx';
 import { money, shortDate, inputDate, monthLong, thisMonth } from '../utils/format.js';
 import './Wrappers.css';
@@ -121,7 +122,13 @@ export default function Wrappers() {
   const rate = tot.expected > 0 ? Math.round((tot.collected / tot.expected) * 100) : 0;
 
   const columns = [
-    { key: 'full_name', label: t('common.name') },
+    { key: 'full_name', label: t('common.name'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
     { key: 'paid', label: t('wrappers.paid'), align: 'right', money: true, render: (r) => money(r.paid) },
     { key: 'balance', label: t('wrappers.balance'), align: 'right', money: true, hideOnPhone: true,
       render: (r) => (r.balance > 0 ? <span className="money money--neg">{money(r.balance)}</span> : '—') },
@@ -178,7 +185,13 @@ export default function Wrappers() {
           rows={payments}
           empty={<p className="muted">{t('common.none')}</p>}
           columns={[
-            { key: 'full_name', label: t('common.name') },
+            { key: 'full_name', label: t('common.name'),
+            render: (r) => (
+              <span className="vcell">
+                <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={28} />
+                <span className="vcell__name">{r.full_name}</span>
+              </span>
+            ) },
             { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
             { key: 'paid_on', label: t('common.date'), render: (r) => shortDate(r.paid_on) },
             { key: 'recorded_by_name', label: t('savings.recordedBy'), hideOnPhone: true, render: (r) => <span className="muted">{r.recorded_by_name || '—'}</span> },

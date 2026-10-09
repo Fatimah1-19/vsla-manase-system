@@ -8,7 +8,7 @@ import Avatar from './Avatar.jsx';
 import './Sidebar.css';
 
 export default function Sidebar({ open, onNavigate }) {
-  const { user, logout } = useAuth();
+  const { user, logout, avatar } = useAuth();
   const { t } = useLang();
   if (!user) return null;
 
@@ -37,7 +37,7 @@ export default function Sidebar({ open, onNavigate }) {
       </ul>
 
       <NavLink to="/app/profile" onClick={onNavigate} className="sidebar__me">
-        <Avatar name={user.full_name} size={40} />
+        <Avatar name={user.full_name} size={40} src={avatar || null} />
         <span className="sidebar__meText">
           <span className="sidebar__meName">{user.full_name}</span>
           <span className="sidebar__meRole">{t(`roles.${user.role}`)}</span>

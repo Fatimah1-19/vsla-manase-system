@@ -8,3 +8,8 @@
   line-height: 1;
   user-select: none;
 }
+
+.avatar--img {
+  display: block;
+  border-radius: 50%;
+}

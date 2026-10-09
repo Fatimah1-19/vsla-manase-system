@@ -1,12 +1,13 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--ink);
+  background: linear-gradient(180deg, #152C23 0%, var(--ink) 100%);
   color: #D7E3DC;
   width: 262px;
   flex-shrink: 0;
   padding: 1rem 0.7rem 1.1rem;
   overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .sidebar__brand {
@@ -25,19 +26,21 @@
   gap: 0.8rem;
   min-height: 48px;
   padding: 0.45rem 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: #C6D6CD;
   text-decoration: none;
   font-weight: 500;
   font-size: 1rem;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .sidebar__link:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
 
 .sidebar__link.is-on {
-  background: var(--leaf);
+  background: linear-gradient(180deg, var(--leaf) 0%, var(--leaf-dark) 100%);
   color: #fff;
   font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar__icon { color: var(--maize); }
@@ -50,8 +53,9 @@
   gap: 0.7rem;
   margin-top: 0.9rem;
   padding: 0.6rem 0.65rem;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   text-decoration: none;
 }
@@ -67,14 +71,16 @@
   gap: 0.5rem;
   margin-top: 0.7rem;
   min-height: var(--tap);
-  background: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
-  color: #D7E3DC;
-  border-radius: var(--radius-sm);
+  background: var(--flame);
+  border: 1.5px solid #C44A3C;
+  color: #fff;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
-.sidebar__logout:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+.sidebar__logout:hover { background: #9A2E24; border-color: #8A2A21; }
+.sidebar__logout:active { transform: translateY(1px); }
 
 /* On a phone the sidebar is a drawer; the bottom bar does the day-to-day work. */
 @media (max-width: 899px) {

@@ -5,6 +5,7 @@ const MEMBER_SUMMARY = `
   SELECT m.id, m.membership_number, m.date_joined, m.status, m.village, m.address,
          m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
          u.id AS user_id, u.full_name, u.phone, u.username, u.role, u.language, u.is_active,
+         (m.avatar IS NOT NULL) AS has_avatar,
          COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id), 0)::float AS total_savings,
          COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id), 0)::int   AS total_shares,
          COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.member_id = m.id AND f.paid = FALSE), 0)::float AS unpaid_fines,
@@ -68,4 +69,19 @@ const getMyRecord = wrap(async (req, res) => {
   return getMember(req, res);
 });
 
-module.exports = { listMembers, getMember, getMyRecord };
+// GET /api/members/:id/avatar — the picture that shows next to names on the screens
+const getMemberAvatar = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  // A plain member may only pull up her own picture.
+  if (req.user.role === 'member' && req.user.member_id !== id) {
+    return res.status(403).json({ message: 'You can only view your own picture.' });
+  }
+  const row = await one(`SELECT avatar, avatar_mime FROM members WHERE id = $1`, [id]);
+  if (!row || !row.avatar) return res.status(404).json({ message: 'No profile picture yet.' });
+
+  res.setHeader('Content-Type', row.avatar_mime || 'image/jpeg');
+  res.setHeader('Cache-Control', 'private, max-age=300, immutable');
+  res.send(row.avatar);
+});
+
+module.exports = { listMembers, getMember, getMyRecord, getMemberAvatar };

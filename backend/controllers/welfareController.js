@@ -1,9 +1,7 @@
 const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { sendSMS, sendBulk } = require('../utils/sms');
-const { build } = require('../utils/messages');
-const { audit } = require('../utils/audit');
-const { getActiveCycle, activeMembersWithPhone } = require('../utils/helpers');
+const { emit, EVENTS } = require('../utils/events');
+const { getActiveCycle } = require('../utils/helpers');
 
 const BALANCE_SQL = `
   SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
@@ -25,18 +23,14 @@ const recordContribution = wrap(async (req, res) => {
      date || new Date().toISOString().slice(0, 10), notes || null, req.user.id]
   );
 
-  await audit(req.user.id, 'WELFARE_CONTRIBUTION', 'welfare_fund', row.id, `Amount ${amount}`);
+  const member = member_id
+    ? await one(
+        `SELECT u.full_name, u.phone, u.language FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`,
+        [member_id]
+      )
+    : null;
 
-  if (member_id) {
-    const member = await one(
-      `SELECT u.full_name, u.phone, u.language FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`,
-      [member_id]
-    );
-    if (member) {
-      await sendSMS(member.phone, build('welfareContribution', member.language, { name: member.full_name, amount }),
-        { name: member.full_name, category: 'welfare', sentBy: req.user.id });
-    }
-  }
+  await emit(EVENTS.WELFARE_CONTRIBUTION, { recordedBy: req.user.id, transaction: row, member });
 
   res.status(201).json({ message: 'Welfare contribution recorded.', transaction: row });
 });
@@ -79,31 +73,14 @@ const recordPayout = wrap(async (req, res) => {
      date || new Date().toISOString().slice(0, 10), notes || null, req.user.id]
   );
 
-  await audit(req.user.id, 'WELFARE_PAYOUT', 'welfare_fund', row.id,
-    `${member.full_name}: ${amount} (${category})`);
-
-  const personalKey = category === 'sickness' ? 'welfarePayoutSickness'
-    : category === 'funeral' ? 'welfarePayoutFuneral'
-    : 'welfarePayoutOther';
-
-  await sendSMS(member.phone, build(personalKey, member.language, { name: member.full_name, amount }),
-    { name: member.full_name, category: 'welfare', sentBy: req.user.id });
-
-  let announced = { sent: 0, failed: 0, total: 0 };
-  if (announce_to_group && (category === 'sickness' || category === 'funeral')) {
-    const others = (await activeMembersWithPhone()).filter((m) => m.user_id !== member.user_id);
-    const key = category === 'sickness' ? 'welfareAnnounceSickness' : 'welfareAnnounceFuneral';
-    announced = await sendBulk(
-      others,
-      (r) => build(key, r.language, { member: member.full_name, notes: notes || '' }),
-      { category: 'welfare_announcement', isBroadcast: true, sentBy: req.user.id }
-    );
-  }
+  const [announced] = await emit(EVENTS.WELFARE_PAYOUT, {
+    recordedBy: req.user.id, transaction: row, member, category, notes, announceToGroup: announce_to_group,
+  });
 
   const after = await one(BALANCE_SQL);
   res.status(201).json({
     message: `Welfare payment recorded for ${member.full_name}.`,
-    transaction: row, remaining_balance: after.balance, group_notified: announced,
+    transaction: row, remaining_balance: after.balance, group_notified: announced || { sent: 0, failed: 0, total: 0 },
   });
 });
 
@@ -114,7 +91,8 @@ const getBalance = wrap(async (req, res) => res.json(await one(BALANCE_SQL)));
 const listWelfare = wrap(async (req, res) => {
   const rows = await query(
     `SELECT w.id, w.amount::float, w.type, w.category, w.date, w.notes, w.member_id,
-            u.full_name, m.membership_number, r.full_name AS recorded_by_name
+            u.full_name, m.membership_number, r.full_name AS recorded_by_name,
+            (m.avatar IS NOT NULL) AS has_avatar
        FROM welfare_fund w
        LEFT JOIN members m ON m.id = w.member_id
        LEFT JOIN users u ON u.id = m.user_id

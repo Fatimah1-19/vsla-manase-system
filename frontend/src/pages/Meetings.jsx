@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { shortDate, inputDate } from '../utils/format.js';
 import './Meetings.css';
 
@@ -196,7 +197,7 @@ export default function Meetings() {
             <ul className="meetings__marks">
               {detail.attendance.map((a) => (
                 <li key={a.member_id}>
-                  <span className="meetings__markName">{a.full_name}</span>
+                  <span className="meetings__markName"><span className="vcell"><MemberAvatar memberId={a.member_id} hasAvatar={a.has_avatar} name={a.full_name} size={28} />{a.full_name}</span></span>
                   <div className="meetings__markBtns" role="group" aria-label={a.full_name}>
                     {['present', 'absent', 'excused'].map((s) => (
                       <button

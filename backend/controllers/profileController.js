@@ -1,13 +1,15 @@
 const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { audit } = require('../utils/audit');
-const { loanTotals, getSetting } = require('../utils/helpers');
+const { loanTotals, getSetting, getActiveCycle } = require('../utils/helpers');
 
 const GENDERS = ['female', 'male'];
 const MARITAL = ['single', 'married', 'divorced', 'widowed'];
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png'];
+const ALLOWED_AVATAR_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_DOC_BYTES = 2 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 // GET /api/profile/me — everything a member wants to see about herself in one place
 const getMyProfile = wrap(async (req, res) => {
@@ -17,11 +19,12 @@ const getMyProfile = wrap(async (req, res) => {
   const member = await one(
     `SELECT m.id, m.membership_number, m.date_joined, m.status, m.village, m.address,
             m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
+            (m.avatar IS NOT NULL) AS has_avatar,
             u.full_name, u.username, u.phone, u.role, u.language
        FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`, [memberId]
   );
 
-  const [savings, loanRows, fines, documents, share] = await Promise.all([
+  const [savings, loanRows, fines, documents, share, welfare, months, shareouts, cycle] = await Promise.all([
     query(`SELECT id, amount::float, shares, date, note FROM savings WHERE member_id = $1
             ORDER BY date DESC, id DESC LIMIT 60`, [memberId]),
     query(`SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
@@ -32,6 +35,19 @@ const getMyProfile = wrap(async (req, res) => {
              FROM member_documents WHERE member_id = $1 ORDER BY id DESC`, [memberId]),
     one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares
            FROM savings WHERE member_id = $1`, [memberId]),
+    query(`SELECT id, amount::float, type, category, date, notes FROM welfare_fund
+            WHERE member_id = $1 ORDER BY date DESC, id DESC`, [memberId]),
+    query(`SELECT id, TO_CHAR(period, 'YYYY-MM') AS period, amount::float AS amount, paid_on
+             FROM monthly_contributions WHERE member_id = $1 ORDER BY period DESC, id DESC`, [memberId]),
+    query(`SELECT d.share_out_id, so.status, so.date_distributed, c.cycle_name,
+                  d.member_savings::float AS member_savings, d.profit_share::float AS profit_share,
+                  d.deductions::float AS deductions, d.unrecovered::float AS unrecovered,
+                  d.share_amount::float AS share_amount
+             FROM share_out_details d
+             JOIN share_out so ON so.id = d.share_out_id
+             LEFT JOIN cycles c ON c.id = so.cycle_id
+            WHERE d.member_id = $1 ORDER BY so.id DESC`, [memberId]),
+    getActiveCycle(),
   ]);
 
   const loans = loanRows.map((l) => {
@@ -42,7 +58,8 @@ const getMyProfile = wrap(async (req, res) => {
 
   const multiplier = Number(await getSetting('loan_multiplier', '2'));
   res.json({
-    member, savings, loans, fines, documents,
+    member, savings, loans, fines, documents, welfare, months, shareouts,
+    cycle: cycle ? { id: cycle.id, cycle_name: cycle.cycle_name, share_value: Number(cycle.share_value) } : null,
     totals: {
       savings: share.total,
       shares: share.shares,
@@ -90,6 +107,49 @@ const updateMyProfile = wrap(async (req, res) => {
 
   await audit(req.user.id, 'UPDATE_OWN_PROFILE', 'members', memberId, null);
   res.json({ message: 'Your details have been saved.' });
+});
+
+// PUT /api/profile/avatar  { mime_type, data }  — her own picture. data = base64.
+// Send data empty (or omit it) to remove the picture and go back to initials.
+const setAvatar = wrap(async (req, res) => {
+  const memberId = req.user.member_id;
+  if (!memberId) return res.status(404).json({ message: 'You do not have a member record yet.' });
+
+  const { mime_type, data } = req.body;
+  if (data === undefined || data === null || data === '') {
+    await query(`UPDATE members SET avatar = NULL, avatar_mime = NULL WHERE id = $1`, [memberId]);
+    await audit(req.user.id, 'UPDATE_OWN_PROFILE', 'members', memberId, 'Removed profile picture');
+    return res.json({ message: 'Profile picture removed.', has_avatar: false });
+  }
+
+  if (!ALLOWED_AVATAR_MIME.includes(mime_type)) {
+    return res.status(400).json({ message: 'Only JPG, PNG or WEBP pictures are accepted.' });
+  }
+  const buffer = Buffer.from(String(data), 'base64');
+  if (!buffer.length) return res.status(400).json({ message: 'That file is empty.' });
+  if (buffer.length > MAX_AVATAR_BYTES) return res.status(400).json({ message: 'The picture is too big. The limit is 2 MB.' });
+
+  const head = buffer.subarray(0, 4);
+  const ok = (mime_type === 'image/png' && head.toString('hex') === '89504e47')
+          || (mime_type === 'image/jpeg' && head.toString('hex').startsWith('ffd8'))
+          || (mime_type === 'image/webp' && head.toString('ascii') === 'RIFF');
+  if (!ok) return res.status(400).json({ message: 'That does not look like the picture type you chose.' });
+
+  await query(`UPDATE members SET avatar = $2, avatar_mime = $3 WHERE id = $1`, [memberId, buffer, mime_type]);
+  await audit(req.user.id, 'UPDATE_OWN_PROFILE', 'members', memberId, 'Changed profile picture');
+  res.json({ message: 'Profile picture saved.', has_avatar: true });
+});
+
+// GET /api/profile/avatar — the member's own picture, as it stands in the database
+const getAvatar = wrap(async (req, res) => {
+  const memberId = req.user.member_id;
+  if (!memberId) return res.status(404).json({ message: 'You do not have a member record yet.' });
+  const row = await one(`SELECT avatar, avatar_mime FROM members WHERE id = $1`, [memberId]);
+  if (!row || !row.avatar) return res.status(404).json({ message: 'No profile picture yet.' });
+
+  res.setHeader('Content-Type', row.avatar_mime || 'image/jpeg');
+  res.setHeader('Cache-Control', 'private, max-age=300');
+  res.send(row.avatar);
 });
 
 // POST /api/profile/documents  { document_type, file_name, mime_type, data }  (data = base64)
@@ -154,4 +214,4 @@ const deleteDocument = wrap(async (req, res) => {
   res.json({ message: 'Document removed.' });
 });
 
-module.exports = { getMyProfile, updateMyProfile, uploadDocument, downloadDocument, deleteDocument };
+module.exports = { getMyProfile, updateMyProfile, setAvatar, getAvatar, uploadDocument, downloadDocument, deleteDocument };

@@ -67,14 +67,14 @@ export default function Cycles() {
       <PageHeader
         title={t('cycles.title')}
         subtitle={t('cycles.oneYear')}
-        action={<button type="button" className="btn" onClick={() => setOpen(true)}>{t('cycles.start')}</button>}
+        action={<button type="button" className="btn btn--gold" onClick={() => setOpen(true)}>{t('cycles.start')}</button>}
       />
 
       {cycles.length === 0 ? (
         <EmptyState
           title="No cycle has been started."
           body="The group saves inside a cycle. Start one before recording any money."
-          action={<button type="button" className="btn" onClick={() => setOpen(true)}>{t('cycles.start')}</button>}
+action={<button type="button" className="btn btn--gold" onClick={() => setOpen(true)}>{t('cycles.start')}</button>}
         />
       ) : (
         <ul className="cycles__list">

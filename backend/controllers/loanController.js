@@ -3,6 +3,7 @@ const { wrap } = require('../middleware/errorHandler');
 const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
+const { emit, EVENTS } = require('../utils/events');
 const { getActiveCycle, getSetting, loanTotals, cashInBox } = require('../utils/helpers');
 
 const withBalance = (loan) => {
@@ -115,11 +116,7 @@ const applyLoan = wrap(async (req, res) => {
      purpose || null, due.toISOString().slice(0, 10)]
   );
 
-  await audit(req.user.id, 'APPLY_LOAN', 'loans', loan.id,
-    `${member.full_name}: ${amount}, interest ${carriesInterest ? defaultRate + '%' : 'none'}`);
-
-  await sendSMS(member.phone, build('loanApplied', member.language, { name: member.full_name, amount }),
-    { name: member.full_name, category: 'loan', sentBy: req.user.id });
+  await emit(EVENTS.LOAN_APPLIED, { recordedBy: req.user.id, member, loan });
 
   res.status(201).json({
     message: 'Loan request sent to the committee.',
@@ -173,24 +170,15 @@ const decideLoan = wrap(async (req, res) => {
   if (outcome.code) return res.status(outcome.code).json({ message: outcome.message, available: outcome.available });
   const loan = outcome.loan;
 
-  await audit(req.user.id, status === 'approved' ? 'APPROVE_LOAN' : 'REJECT_LOAN', 'loans', id,
-    `${loan.full_name}: ${loan.amount}${note ? ' — ' + note : ''}`);
-
-  const { totalDue } = loanTotals(loan);
-  const sms = await sendSMS(
-    loan.phone,
-    status === 'approved'
-      ? build('loanApproved', loan.language, {
-          name: loan.full_name, amount: loan.amount, totalDue, dueDate: loan.due_date })
-      : build('loanRejected', loan.language, { name: loan.full_name, amount: loan.amount, note }),
-    { name: loan.full_name, category: 'loan', sentBy: req.user.id }
-  );
+  const [sms] = await emit(EVENTS.LOAN_DECIDED, {
+    decidedBy: req.user.id, loan, status, note,
+  });
 
   res.json({
     message: status === 'approved'
       ? `Loan approved. ${loan.full_name} has been told.`
       : `Loan turned down. ${loan.full_name} has been told.`,
-    sms_sent: sms.ok,
+    sms_sent: !!(sms && sms.ok),
   });
 });
 
@@ -252,17 +240,11 @@ const recordRepayment = wrap(async (req, res) => {
     return { repayment: rows[0], newPaid, cleared: newPaid >= totalDue - 0.01 };
   });
 
-  await audit(req.user.id, 'RECORD_REPAYMENT', 'loan_repayments', result.repayment.id,
-    `${loan.full_name}: ${pay} (principal ${principalPart}, interest ${interestPart})`);
-
   const stillOwing = Math.max(0, +(totalDue - result.newPaid).toFixed(2));
-  await sendSMS(
-    loan.phone,
-    result.cleared
-      ? build('loanCleared', loan.language, { name: loan.full_name })
-      : build('repaymentRecorded', loan.language, { name: loan.full_name, amount: pay, remaining: stillOwing }),
-    { name: loan.full_name, category: 'loan', sentBy: req.user.id }
-  );
+  await emit(EVENTS.LOAN_REPAYMENT, {
+    recordedBy: req.user.id, loan, repayment: result.repayment,
+    principalPart, interestPart, cleared: result.cleared, stillOwing,
+  });
 
   res.status(201).json({
     message: result.cleared ? 'Loan fully repaid.' : 'Repayment recorded.',
@@ -285,6 +267,7 @@ const listLoans = wrap(async (req, res) => {
 
   const rows = await query(
     `SELECT l.*, m.membership_number, u.full_name, u.phone,
+            (m.avatar IS NOT NULL) AS has_avatar,
             COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid,
             a.full_name AS decided_by_name
        FROM loans l

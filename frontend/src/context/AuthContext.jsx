@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { api, getToken, setToken, setSessionEndHandler } from '../api/client.js';
+import { api, fetchFile, getToken, setToken, setSessionEndHandler } from '../api/client.js';
 import { useLang } from './LangContext.jsx';
 import { useToast } from './ToastContext.jsx';
 
@@ -48,6 +48,35 @@ export function AuthProvider({ children }) {
     showWarning(false);
     if (message) toastRef.current.info(message);
   }, [clearTimers, showWarning]);
+
+  // ---- her profile picture ----
+  // The photo is private, so it is fetched with the same token as everything else
+  // and held here as a temporary link that Avatar shows wherever her name appears.
+  const [avatar, setAvatar] = useState(null);
+  const avatarRef = useRef(null);
+  const [avatarTick, setAvatarTick] = useState(0);
+
+  const clearAvatar = useCallback(() => {
+    if (avatarRef.current) { URL.revokeObjectURL(avatarRef.current); avatarRef.current = null; }
+    setAvatar(null);
+  }, []);
+
+  // Fetch the picture whenever the account (or the "uploaded" flag) changes, and
+  // again whenever something tells us a new one was uploaded.
+  useEffect(() => {
+    if (!user || !user.has_avatar || !getToken()) { clearAvatar(); return undefined; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = await fetchFile('/profile/avatar');
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        if (avatarRef.current) URL.revokeObjectURL(avatarRef.current);
+        avatarRef.current = url;
+        setAvatar(url);
+      } catch { /* no picture yet */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, user?.has_avatar, avatarTick, clearAvatar]);
 
   // The API layer calls this when the server rejects an expired token.
   useEffect(() => {
@@ -143,6 +172,8 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user, checking, login, logout, refresh, setUser,
+      avatar,
+      reloadAvatar: () => setAvatarTick((t) => t + 1),
       idleWarning, secondsLeft,
       stayLoggedIn: () => resetRef.current && resetRef.current(),
       // Chairperson, treasurer, secretary: can see the books.
@@ -151,7 +182,7 @@ export function AuthProvider({ children }) {
       isRecorder: !!user && ['treasurer', 'secretary'].includes(user.role),
       isAdmin: user?.role === 'admin',
     }),
-    [user, checking, login, logout, refresh, idleWarning, secondsLeft]
+    [user, checking, login, logout, refresh, avatar, idleWarning, secondsLeft]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

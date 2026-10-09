@@ -1,0 +1,52 @@
+.reports__tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.reports__tab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0.4rem 0.95rem;
+  background: none;
+  cursor: pointer;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--slate);
+  font-weight: 600;
+}
+
+.reports__tab.is-on { color: var(--leaf-dark); border-bottom-color: var(--leaf); }
+
+.reports__status {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+}
+
+.reports__filter {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--rule-dark);
+  background: var(--card);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--slate);
+  cursor: pointer;
+}
+
+.reports__filter.is-on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.reports__date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.reports__date .field-label { margin: 0; }
+.reports__date input { min-height: 38px; }

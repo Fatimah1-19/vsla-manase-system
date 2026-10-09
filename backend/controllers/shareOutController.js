@@ -195,7 +195,8 @@ const getShareOut = wrap(async (req, res) => {
   if (req.user.role === 'member') { params.push(req.user.member_id); filter = `AND d.member_id = $2`; }
 
   const details = await query(
-    `SELECT ${DETAIL_COLUMNS}, u.full_name, m.membership_number
+    `SELECT ${DETAIL_COLUMNS}, u.full_name, m.membership_number,
+            (m.avatar IS NOT NULL) AS has_avatar
        FROM share_out_details d
        JOIN members m ON m.id = d.member_id
        JOIN users u ON u.id = m.user_id

@@ -27,10 +27,10 @@
   --sky:        #2A5D8F;   /* information */
   --sky-wash:   #E2EBF4;
 
-  --radius:     10px;
-  --radius-sm:  6px;
-  --shadow:     0 1px 2px rgba(18, 38, 31, 0.10);
-  --shadow-lift: 0 6px 20px rgba(18, 38, 31, 0.14);
+  --radius:     12px;
+  --radius-sm:  7px;
+  --shadow:     0 1px 2px rgba(18, 38, 31, 0.05), 0 4px 12px rgba(18, 38, 31, 0.06);
+  --shadow-lift: 0 8px 24px rgba(18, 38, 31, 0.16);
 
   --head: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
   --body: 'Public Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -104,7 +104,10 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   cursor: not-allowed;
 }
 
-/* ---- buttons ---- */
+/* ---- buttons ----
+   Buttons carry their action's colour as a solid face, with the
+   border and hover just a shade darker. The ghost/print button
+   stays paper-white. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -112,23 +115,30 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   gap: 0.45rem;
   min-height: var(--tap);
   padding: 0.5rem 1.15rem;
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--leaf-dark);
+  border-radius: 10px;
   background: var(--leaf);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: background 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease, filter 120ms ease;
 }
-.btn:hover:not(:disabled) { background: var(--leaf-dark); }
-.btn--ghost { background: transparent; color: var(--ink); border-color: var(--rule-dark); }
-.btn--ghost:hover:not(:disabled) { background: var(--leaf-wash); }
-.btn--danger { background: var(--flame); }
-.btn--danger:hover:not(:disabled) { background: #8E2C22; }
-.btn--gold { background: var(--maize); color: var(--ink); }
-.btn--gold:hover:not(:disabled) { background: #D5A32C; }
-.btn--small { min-height: 34px; padding: 0.2rem 0.7rem; font-size: 0.88rem; }
+.btn:hover:not(:disabled) { background: var(--leaf-dark); border-color: #0F3E2C; filter: brightness(1.04); }
+.btn:active:not(:disabled) { transform: translateY(1px); filter: brightness(0.97); }
+.btn--ghost {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--rule-dark);
+}
+.btn--ghost:hover:not(:disabled) { background: var(--leaf-wash); border-color: var(--leaf); color: var(--leaf-dark); filter: none; }
+.btn--danger { background: var(--flame); border-color: #9A2E24; color: #fff; }
+.btn--danger:hover:not(:disabled) { background: #9A2E24; border-color: #82271F; }
+.btn--gold { background: var(--maize); border-color: var(--maize-deep); color: var(--ink); }
+.btn--gold:hover:not(:disabled) { background: #D5A32C; border-color: #8F5E14; color: var(--ink); }
+.btn--sky { background: var(--sky); border-color: #224B73; color: #fff; }
+.btn--sky:hover:not(:disabled) { background: #224B73; border-color: #1B3A58; }
+.btn--small { min-height: 32px; padding: 0.2rem 0.7rem; font-size: 0.88rem; border-radius: 9px; }
 .btn--full { width: 100%; }
 
 /* ---- small shared pieces ---- */
@@ -147,7 +157,7 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .tag--grey   { background: #E8EDE6;           color: var(--slate);      border-color: var(--rule); }
 
 .card {
-  background: var(--card);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FDFEFC 100%);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--shadow);

@@ -49,3 +49,20 @@
 .profile__docs li { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--rule); }
 .profile__docs li:last-child { border-bottom: 0; }
 .profile__docName { min-width: 0; overflow-wrap: anywhere; }
+
+.profile__photo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+.profile__photoCtl { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.profile__photoBtns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.profile__toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}

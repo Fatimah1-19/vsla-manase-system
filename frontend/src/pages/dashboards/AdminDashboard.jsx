@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
+import { BarChart } from '../../components/Charts.jsx';
 import { money, plainNumber, shortDate } from '../../utils/format.js';
 import './AdminDashboard.css';
+
+const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 
 /**
  * The chairperson sees the whole group: the money, the people and the
@@ -12,20 +15,22 @@ export default function AdminDashboard({ data }) {
   const { t } = useLang();
   const m = data.money || {};
   const sys = data.system || {};
+  const flow = data.monthly_flow || [];
 
   return (
     <>
       <div className="page-grid">
-        <StatCard label={t('dashboard.cashInBox')}      value={money(m.cash_in_box)}     tone="gold" big />
-        <StatCard label={t('dashboard.totalSavings')}   value={money(m.total_savings)}   tone="green" />
-        <StatCard label={t('dashboard.loansOut')}       value={money(m.outstanding)}     tone="blue" />
-        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} />
+        <StatCard label={t('dashboard.cashInBox')}      value={money(m.cash_in_box)}     tone="gold" icon="savings" big />
+        <StatCard label={t('dashboard.totalSavings')}   value={money(m.total_savings)}   tone="green" icon="analytics" />
+        <StatCard label={t('dashboard.loansOut')}       value={money(m.outstanding)}     tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} icon="welfare" />
         {data.wrappers && (
           <StatCard
             label={t('dashboard.wrappersCollected')}
             value={money(data.wrappers.collected_this_month)}
             hint={t('dashboard.wrappersOf', money(data.wrappers.expected_this_month), data.wrappers.behind_count)}
             tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
+            icon="wrappers"
           />
         )}
       </div>
@@ -33,14 +38,28 @@ export default function AdminDashboard({ data }) {
       <section className="adash__group">
         <h2 className="dash__sectionTitle">{t('nav.people')}</h2>
         <div className="page-grid">
-          <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} />
+          <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} icon="members" />
           <StatCard label={t('dashboard.pendingRequests')} value={plainNumber(data.pending_join_requests)}
-            tone={data.pending_join_requests > 0 ? 'gold' : 'plain'} />
-          <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} />
+            tone={data.pending_join_requests > 0 ? 'gold' : 'plain'} icon="requests" />
+          <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} icon="loans" />
           <StatCard label={t('dashboard.overdueLoans')} value={plainNumber(data.loans?.overdue)}
-            tone={data.loans?.overdue > 0 ? 'red' : 'plain'} />
+            tone={data.loans?.overdue > 0 ? 'red' : 'plain'} icon="fines" />
         </div>
       </section>
+
+      {flow.length > 0 && (
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.moneyFlow')}</h2>
+          <BarChart
+            data={flow.map((f) => ({ label: shortMonth(f.month), savings: f.savings, repayments: f.repayments }))}
+            series={[
+              { key: 'savings', label: t('dashboard.received') },
+              { key: 'repayments', label: t('dashboard.repaid') },
+            ]}
+            format={(v) => money(v, { compact: true })}
+          />
+        </section>
+      )}
 
       <section className="adash__system">
         <h2 className="dash__sectionTitle">{t('dashboard.system')}</h2>
@@ -74,9 +93,9 @@ export default function AdminDashboard({ data }) {
       <section className="adash__quick">
         <h2 className="dash__sectionTitle">{t('dashboard.commonJobs')}</h2>
         <div className="adash__links">
-          <Link to="/app/members" className="btn btn--ghost">{t('members.addPerson')}</Link>
-          <Link to="/app/analytics" className="btn btn--ghost">{t('nav.analytics')}</Link>
-          <Link to="/app/messages" className="btn btn--ghost">{t('messages.send')}</Link>
+          <Link to="/app/members" className="btn">{t('members.addPerson')}</Link>
+          <Link to="/app/analytics" className="btn btn--sky">{t('nav.analytics')}</Link>
+          <Link to="/app/messages" className="btn btn--gold">{t('messages.send')}</Link>
           <Link to="/app/shareout" className="btn btn--ghost">{t('shareout.title')}</Link>
         </div>
       </section>

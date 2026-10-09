@@ -79,3 +79,95 @@
   border-left: 4px solid var(--sky);
   border-radius: var(--radius);
 }
+
+/* ---- shareholding summary (gold, money-flavoured) ---- */
+.mdash__holdings {
+  background: linear-gradient(160deg, #FFFDF6 0%, var(--maize-wash) 100%);
+  border: 1px solid #E7D2A0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.mdash__cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--head);
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 0 0 0.85rem;
+  color: var(--maize-deep);
+}
+
+.mdash__cardIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(180deg, #F2C453 0%, var(--maize) 100%);
+  box-shadow: 0 1px 3px rgba(169, 116, 26, 0.35);
+}
+
+.mdash__holdHero {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed #E7D2A0;
+}
+
+.mdash__holdShares {
+  font-family: var(--head);
+  font-size: 2.7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.mdash__holdSharesLabel { color: var(--maize-deep); font-weight: 600; }
+
+.mdash__holdRows { margin: 0.6rem 0 0; }
+
+.mdash__holdRows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid rgba(231, 210, 160, 0.7);
+}
+.mdash__holdRows > div:last-child { border-bottom: 0; }
+.mdash__holdRows dt { color: var(--slate); font-size: 0.92rem; }
+.mdash__holdRows dd { margin: 0; font-weight: 600; }
+
+.mdash__holdRows .is-strong dt { color: var(--ink); font-weight: 600; }
+.mdash__holdRows .is-strong dd {
+  font-family: var(--head);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--maize-deep);
+}
+
+/* ---- analytics card ---- */
+.mdash__subTitle {
+  margin: -0.3rem 0 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.mdash__ringWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 560px) {
+  .mdash__holdShares { font-size: 2.2rem; }
+}

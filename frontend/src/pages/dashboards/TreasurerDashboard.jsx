@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
+import { BarChart } from '../../components/Charts.jsx';
 import { money, shortDate } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './TreasurerDashboard.css';
+
+const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 
 /** The treasurer watches the money: what came in, what went out, what is owed. */
 export default function TreasurerDashboard({ data }) {
@@ -11,19 +14,24 @@ export default function TreasurerDashboard({ data }) {
   const { isRecorder } = useAuth();
   const m = data.money || {};
   const w = data.wrappers;
+  const flow = data.monthly_flow || [];
+  const today = data.today || {};
+  const welfareTotal = m.welfare_in + m.welfare_out;
+  const welfareInPct = welfareTotal > 0 ? Math.round((m.welfare_in / welfareTotal) * 100) : 0;
 
   return (
     <>
       <div className="page-grid">
-        <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" big />
-        <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" />
-        <StatCard label={t('dashboard.loansOut')}      value={money(m.outstanding)}   tone="blue" />
-        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} />
-        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} />
+        <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" icon="savings" big />
+        <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" />
+        <StatCard label={t('dashboard.loansOut')}      value={money(m.outstanding)}   tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} icon="shareout" />
+        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} icon="welfare" />
         <StatCard
           label={t('dashboard.finesOutstanding')}
           value={money(m.fines_outstanding)}
           tone={m.fines_outstanding > 0 ? 'red' : 'plain'}
+          icon="fines"
         />
         {w && (
           <StatCard
@@ -31,8 +39,24 @@ export default function TreasurerDashboard({ data }) {
             value={money(w.collected_this_month)}
             hint={t('dashboard.wrappersOf', money(w.expected_this_month), w.behind_count)}
             tone={w.behind_count > 0 ? 'gold' : 'green'}
+            icon="wrappers"
           />
         )}
+      </div>
+
+      <div className="dash__chips">
+        <div className="dash__chip">
+          <span className="dash__chipLabel">{t('dashboard.todayCollected')}</span>
+          <span className="dash__chipValue money">{money(today.saved)}</span>
+        </div>
+        <div className="dash__chip">
+          <span className="dash__chipLabel">{t('dashboard.todayRepaid')}</span>
+          <span className="dash__chipValue money">{money(today.repaid)}</span>
+        </div>
+        <div className="dash__chip">
+          <span className="dash__chipLabel">{t('dashboard.todayFines')}</span>
+          <span className="dash__chipValue money">{money(today.fines_paid)}</span>
+        </div>
       </div>
 
       {data.loans?.overdue > 0 && (
@@ -40,6 +64,42 @@ export default function TreasurerDashboard({ data }) {
           {data.loans.overdue} {t('dashboard.overdueLoans').toLowerCase()}.{' '}
           <Link to="/app/loans">{t('common.view')}</Link>
         </p>
+      )}
+
+      {flow.length > 0 && (
+        <div className="dash__cols dash__cols--2">
+          <section className="dash__card">
+            <h2 className="dash__sectionTitle">{t('dashboard.moneyFlow')}</h2>
+            <BarChart
+              data={flow.map((f) => ({ label: shortMonth(f.month), savings: f.savings, repayments: f.repayments }))}
+              series={[
+                { key: 'savings', label: t('dashboard.received') },
+                { key: 'repayments', label: t('dashboard.repaid') },
+              ]}
+              format={(v) => money(v, { compact: true })}
+            />
+          </section>
+
+          <section className="dash__card">
+            <h2 className="dash__sectionTitle">{t('dashboard.welfareInOut')}</h2>
+            {welfareTotal > 0 ? (
+              <div className="dash__split">
+                <div className="dash__splitRow">
+                  <span>{t('dashboard.welfareIn')}</span>
+                  <span className="dash__splitTrack"><span className="dash__splitIn" style={{ width: `${welfareInPct}%` }} /></span>
+                  <span className="dash__splitVal money">{money(m.welfare_in)}</span>
+                </div>
+                <div className="dash__splitRow">
+                  <span>{t('dashboard.welfareOut')}</span>
+                  <span className="dash__splitTrack"><span className="dash__splitOut" style={{ width: `${100 - welfareInPct}%` }} /></span>
+                  <span className="dash__splitVal money">{money(m.welfare_out)}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="muted">{t('common.none')}</p>
+            )}
+          </section>
+        </div>
       )}
 
       <section className="tdash__cols">
@@ -60,7 +120,7 @@ export default function TreasurerDashboard({ data }) {
           ) : (
             <p className="muted">{t('dashboard.nothingPending')}</p>
           )}
-          <Link to="/app/loans" className="btn btn--ghost btn--small">{t('loans.title')}</Link>
+          <Link to="/app/loans" className="btn btn--sky btn--small">{t('loans.title')}</Link>
         </div>
 
         <div className="tdash__col">
@@ -80,7 +140,7 @@ export default function TreasurerDashboard({ data }) {
           )}
           {isRecorder
             ? <Link to="/app/savings" className="btn btn--small">{t('savings.record')}</Link>
-            : <Link to="/app/analytics" className="btn btn--small">{t('nav.analytics')}</Link>}
+            : <Link to="/app/analytics" className="btn btn--sky btn--small">{t('nav.analytics')}</Link>}
         </div>
       </section>
     </>

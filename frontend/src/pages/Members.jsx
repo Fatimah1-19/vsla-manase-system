@@ -8,6 +8,7 @@ import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate } from '../utils/format.js';
 import './Members.css';
 
@@ -170,7 +171,13 @@ export default function Members() {
   const isLocked = (p) => p.locked_until && new Date(p.locked_until) > new Date();
 
   const columns = [
-    { key: 'full_name', label: t('common.name') },
+    { key: 'full_name', label: t('common.name'),
+      render: (p) => (
+        <span className="vcell">
+          <MemberAvatar memberId={p.member_id} hasAvatar={p.has_avatar} name={p.full_name} size={34} />
+          <span className="vcell__name">{p.full_name}</span>
+        </span>
+      ) },
     { key: 'username', label: t('login.username'), hideOnPhone: true,
       render: (p) => <code className="members__user">{p.username}</code> },
     { key: 'role', label: t('common.role'),

@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
 import './Savings.css';
 
@@ -100,7 +101,13 @@ export default function Savings() {
   }, [rows, search]);
 
   const columns = [
-    { key: 'full_name', label: t('savings.member') },
+    { key: 'full_name', label: t('savings.member'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },

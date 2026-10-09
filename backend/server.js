@@ -4,6 +4,7 @@ const cors = require('cors');
 const { pool, warmUp } = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { publicImpact } = require('./controllers/dashboardController');
+const { registerDomainListeners } = require('./events/listeners');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,9 +52,14 @@ app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/contributions', require('./routes/contributionRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Counts only, no money — this is what the public front page shows.
 app.get('/api/public/impact', publicImpact);
+
+// Wire the domain listeners (SMS, audit trail, automatic absence fines) onto the
+// event bus. Done once, here, so every controller only has to say what happened.
+registerDomainListeners();
 
 app.get('/api/health', async (req, res) => {
   try {

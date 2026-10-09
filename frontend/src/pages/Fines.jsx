@@ -8,6 +8,7 @@ import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
 import './Fines.css';
 
@@ -71,7 +72,13 @@ export default function Fines() {
   if (!rows) return <Spinner />;
 
   const columns = [
-    { key: 'full_name', label: t('common.name') },
+    { key: 'full_name', label: t('common.name'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
     { key: 'reason', label: t('common.reason'), hideOnPhone: true,
       render: (r) => r.reason || <span className="muted">—</span> },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },

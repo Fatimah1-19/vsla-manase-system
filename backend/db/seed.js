@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = [
   ['weekly_share_value', '1000'],
   ['welfare_contribution', '200'],
   ['monthly_levy', '3000'],          // every member, every month, for the group's wrappers
+  ['absence_fine', '0'],             // fine for missing a meeting without a reason (0 = off)
 ];
 
 // Demo people. Change the phone numbers to real ones to test SMS.

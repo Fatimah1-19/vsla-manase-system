@@ -16,8 +16,18 @@ const pick = (name) => {
   return COLOURS[sum % COLOURS.length];
 };
 
-/** A round badge with the person's initials. With no name it shows a person icon. */
-export default function Avatar({ name, size = 38, className = '' }) {
+/** A round badge. With a photo (`src`) it shows the picture; otherwise the person's initials. */
+export default function Avatar({ name, size = 38, className = '', src }) {
+  if (src) {
+    return (
+      <img
+        className={className ? `avatar avatar--img ${className}` : 'avatar avatar--img'}
+        src={src}
+        alt=""
+        style={{ width: size, height: size, objectFit: 'cover' }}
+      />
+    );
+  }
   const [bg, fg] = pick(name);
   return (
     <span

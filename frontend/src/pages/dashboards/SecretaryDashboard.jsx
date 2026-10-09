@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
+import { BarChart } from '../../components/Charts.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
 import './SecretaryDashboard.css';
 
@@ -10,24 +11,27 @@ import './SecretaryDashboard.css';
  */
 export default function SecretaryDashboard({ data }) {
   const { t } = useLang();
+  const attendance = [...(data.recent_meetings || [])].reverse();
 
   return (
     <>
       <div className="page-grid">
-        <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} tone="green" big />
-        <StatCard label={t('dashboard.attendanceRate')} value={`${data.attendance_rate ?? 0}%`} tone="blue" />
+        <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} tone="green" icon="members" big />
+        <StatCard label={t('dashboard.attendanceRate')} value={`${data.attendance_rate ?? 0}%`} tone="blue" icon="meetings" />
         <StatCard
           label={t('dashboard.pendingRequests')}
           value={plainNumber(data.pending_join_requests)}
           tone={data.pending_join_requests > 0 ? 'gold' : 'plain'}
+          icon="requests"
         />
-        <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} />
+        <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} icon="loans" />
         {data.wrappers && (
           <StatCard
             label={t('dashboard.wrappersCollected')}
             value={money(data.wrappers.collected_this_month)}
             hint={t('dashboard.wrappersOf', money(data.wrappers.expected_this_month), data.wrappers.behind_count)}
             tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
+            icon="wrappers"
           />
         )}
       </div>
@@ -37,6 +41,24 @@ export default function SecretaryDashboard({ data }) {
           {t('dashboard.waitingNote', data.pending_join_requests)}{' '}
           <Link to="/app/requests">{t('common.view')}</Link>
         </p>
+      )}
+
+      {attendance.length > 0 && (
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.attendanceTrend')}</h2>
+          <BarChart
+            data={attendance.map((mt) => ({
+              label: shortDate(mt.meeting_date),
+              present: mt.present_count || 0,
+              marked: mt.marked || 0,
+            }))}
+            series={[
+              { key: 'present', label: t('dashboard.present') },
+              { key: 'marked', label: t('dashboard.marked') },
+            ]}
+            format={(v) => plainNumber(v)}
+          />
+        </section>
       )}
 
       <section className="sdash__next">
@@ -70,7 +92,7 @@ export default function SecretaryDashboard({ data }) {
           ) : (
             <p className="muted">{t('meetings.empty')}</p>
           )}
-          <Link to="/app/meetings" className="btn btn--ghost btn--small">{t('meetings.title')}</Link>
+          <Link to="/app/meetings" className="btn btn--sky btn--small">{t('meetings.title')}</Link>
         </div>
 
         <div className="sdash__col">
@@ -88,7 +110,7 @@ export default function SecretaryDashboard({ data }) {
           ) : (
             <p className="muted">{t('common.none')}</p>
           )}
-          <Link to="/app/activity" className="btn btn--ghost btn--small">{t('nav.activity')}</Link>
+          <Link to="/app/activity" className="btn btn--gold btn--small">{t('nav.activity')}</Link>
         </div>
       </section>
     </>

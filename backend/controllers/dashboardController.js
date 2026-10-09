@@ -1,7 +1,18 @@
 const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { getActiveCycle, loanTotals, cashInBox, getSetting } = require('../utils/helpers');
-const { arrears, currentMonth } = require('../utils/wrappers');
+const { arrears, currentMonth, monthsBetween } = require('../utils/wrappers');
+
+const round = (n) => +Number(n || 0).toFixed(2);
+
+// The last six calendar months, oldest first, for the cash-flow charts.
+function sixMonths() {
+  const now = currentMonth();
+  const [ny, nm] = now.split('-').map(Number);
+  const first = new Date(ny, nm - 6, 1);
+  const from = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-01`;
+  return { from, months: monthsBetween(`${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}`, now) };
+}
 
 /**
  * GET /api/dashboard
@@ -66,6 +77,23 @@ const getDashboard = wrap(async (req, res) => {
     const levy = owing.all?.find((r) => r.member_id === memberId) || null;
     const levyAmount = Number(levySetting);
 
+    // Her savings month by month (six months), for the little trend picture.
+    const { from, months } = sixMonths();
+    const [trendBuckets, recentEntries] = await Promise.all([
+      query(
+        `SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v
+           FROM savings WHERE member_id = $1 AND date >= $2::date GROUP BY 1`,
+        [memberId, from]
+      ),
+      query(
+        `SELECT id, amount::float, shares, note, date FROM savings
+          WHERE member_id = $1 ORDER BY date DESC, id DESC LIMIT 4`,
+        [memberId]
+      ),
+    ]);
+    const trend = Object.fromEntries(trendBuckets.map((r) => [r.ym, r.v]));
+    const savings_trend = months.map((ym) => ({ month: ym, amount: round(trend[ym]) }));
+
     return res.json({
       ...base,
       loan_limit: { multiplier, max_loan: +(Number(savings.total) * multiplier).toFixed(2) },
@@ -75,6 +103,8 @@ const getDashboard = wrap(async (req, res) => {
       unpaid_fines: fines.unpaid,
       my_share: share,
       next_meeting: nextMeeting,
+      savings_trend,
+      recent_savings: recentEntries,
     });
   }
 
@@ -85,11 +115,13 @@ const getDashboard = wrap(async (req, res) => {
   const wantsMoney = role === 'treasurer' || role === 'admin';
   const wantsPeople = role === 'secretary' || role === 'admin';
   const isAdmin = role === 'admin';
+  const { from: flowFrom, months: flowMonths } = sixMonths();
 
   const [
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
     recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
+    monthlyFlow, todayTick,
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
                 COALESCE((SELECT SUM(amount) FROM loans WHERE status = 'approved'),0)::float AS loans_out,
@@ -104,8 +136,8 @@ const getDashboard = wrap(async (req, res) => {
                 COUNT(*) FILTER (WHERE status='rejected')::int AS rejected,
                 COUNT(*) FILTER (WHERE status='approved' AND due_date < CURRENT_DATE)::int AS overdue
            FROM loans`),
-    one(`SELECT (COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)
-              - COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0))::float AS balance
+    one(`SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
+                COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0)::float AS payouts
            FROM welfare_fund`),
     one(`SELECT COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
                 COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding FROM fines`),
@@ -142,7 +174,8 @@ const getDashboard = wrap(async (req, res) => {
     // The secretary watches the people and the record of what happened.
     wantsPeople ? query(
       `SELECT mt.id, mt.meeting_date, mt.location,
-              (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id AND a.status='present') AS present_count
+              (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id AND a.status='present') AS present_count,
+              (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id) AS marked
          FROM meetings mt ORDER BY mt.meeting_date DESC LIMIT 5`
     ) : null,
     wantsPeople ? one(
@@ -162,6 +195,23 @@ const getDashboard = wrap(async (req, res) => {
               (SELECT COUNT(*)::int FROM sms_notifications WHERE sent_at::date = CURRENT_DATE) AS sms_today,
               (SELECT COUNT(*)::int FROM sms_notifications WHERE status = 'failed') AS sms_failed`
     ) : null,
+
+    // The money crew charts what has been coming in for the last six months.
+    wantsMoney ? Promise.all([
+      query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings
+              WHERE date >= $1::date GROUP BY 1`, [flowFrom]),
+      query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments
+              WHERE date >= $1::date GROUP BY 1`, [flowFrom]),
+      query(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
+              WHERE status IN ('approved','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
+    ]) : null,
+
+    // What moved today, for the treasurer's opening line.
+    wantsMoney ? one(
+      `SELECT COALESCE((SELECT SUM(amount)::float FROM savings WHERE date::date = CURRENT_DATE),0) AS saved,
+              COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE date::date = CURRENT_DATE),0) AS repaid,
+              COALESCE((SELECT SUM(amount)::float FROM fines WHERE paid = TRUE AND date::date = CURRENT_DATE),0) AS fines_paid`
+    ) : null,
   ]);
 
   const outstanding = outstandingRows.reduce((sum, l) => {
@@ -179,7 +229,9 @@ const getDashboard = wrap(async (req, res) => {
       outstanding: +outstanding.toFixed(2),
       interest_earned: money.interest_earned,
       cash_in_box: cashNow,
-      welfare_balance: welfare.balance,
+      welfare_balance: round(welfare.contributions - welfare.payouts),
+      welfare_in: welfare.contributions,
+      welfare_out: welfare.payouts,
       fines_collected: fines.collected,
       fines_outstanding: fines.outstanding,
     },
@@ -195,6 +247,17 @@ const getDashboard = wrap(async (req, res) => {
   if (wantsMoney) {
     payload.recent_savings = recentSavings;
     payload.pending_loans = pendingLoans;
+    payload.today = {
+      saved: todayTick?.saved || 0, repaid: todayTick?.repaid || 0,
+      fines_paid: todayTick?.fines_paid || 0,
+    };
+    if (monthlyFlow) {
+      const by = (rows) => Object.fromEntries(rows.map((r) => [r.ym, r.v]));
+      const [savBy, repBy, giveBy] = monthlyFlow.map((rows) => by(rows || []));
+      payload.monthly_flow = flowMonths.map((ym) => ({
+        month: ym, savings: round(savBy[ym]), repayments: round(repBy[ym]), loans_given: round(giveBy[ym]),
+      }));
+    }
   }
   if (wantsPeople) {
     payload.recent_meetings = recentMeetings;

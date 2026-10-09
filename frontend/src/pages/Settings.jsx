@@ -8,12 +8,14 @@ import Spinner from '../components/Spinner.jsx';
 import './Settings.css';
 
 const NUMBERS = ['loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution', 'monthly_levy'];
+const FINE_RULES = ['absence_fine'];
 const LABELS = {
   loan_multiplier: 'settings.loanMultiplier',
   default_interest_rate: 'settings.interestRate',
   weekly_share_value: 'settings.shareValue',
   welfare_contribution: 'settings.welfarePerMeeting',
   monthly_levy: 'settings.monthlyLevy',
+  absence_fine: 'settings.absenceFine',
 };
 
 /** The rules the group agreed on. Only the chairperson can change them. */
@@ -60,6 +62,25 @@ export default function Settings() {
         <section className="settings__group">
           <h2 className="settings__h2">{t('loans.title')}</h2>
           {NUMBERS.filter((k) => k in values).map((k) => (
+            <div className="settings__row" key={k}>
+              <label className="field-label" htmlFor={`set-${k}`}>{t(LABELS[k])}</label>
+              <input
+                id={`set-${k}`}
+                type="number"
+                min="0"
+                step="any"
+                value={values[k]}
+                onChange={(e) => set(k, e.target.value)}
+                disabled={!isAdmin}
+              />
+            </div>
+          ))}
+        </section>
+
+        <section className="settings__group">
+          <h2 className="settings__h2">{t('fines.title')}</h2>
+          <p className="settings__note">{t('settings.absenceFineNote')}</p>
+          {FINE_RULES.filter((k) => k in values).map((k) => (
             <div className="settings__row" key={k}>
               <label className="field-label" htmlFor={`set-${k}`}>{t(LABELS[k])}</label>
               <input

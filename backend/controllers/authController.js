@@ -29,6 +29,7 @@ function publicUser(user, memberId = null) {
     language: user.language,
     must_change_password: user.must_change_password,
     member_id: memberId,
+    has_avatar: !!user.has_avatar,
   };
 }
 
@@ -91,8 +92,10 @@ const login = wrap(async (req, res) => {
     [user.id]
   );
 
-  const member = await one(`SELECT id FROM members WHERE user_id = $1`, [user.id]);
+  const member = await one(`SELECT id, (avatar IS NOT NULL) AS has_avatar FROM members WHERE user_id = $1`, [user.id]);
   await audit(user.id, 'LOGIN', 'users', user.id, null);
+
+  user.has_avatar = member && member.has_avatar;
 
   res.json({
     message: 'Logged in.',

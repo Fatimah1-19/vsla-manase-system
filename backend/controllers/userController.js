@@ -14,7 +14,8 @@ const listUsers = wrap(async (req, res) => {
     `SELECT u.id, u.username, u.role, u.full_name, u.phone, u.language, u.is_active,
             u.last_login, u.created_at, u.locked_until,
             m.id AS member_id, m.membership_number, m.status AS member_status, m.village, m.address,
-            m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation
+            m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
+            (m.avatar IS NOT NULL) AS has_avatar
        FROM users u
        LEFT JOIN members m ON m.user_id = u.id
       ORDER BY

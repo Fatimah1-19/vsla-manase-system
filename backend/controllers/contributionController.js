@@ -45,7 +45,8 @@ const listPayments = wrap(async (req, res) => {
   const params = where ? [`${req.query.month}-01`] : [];
   const rows = await query(
     `SELECT c.id, c.amount::float, c.paid_on, c.note, to_char(c.period,'YYYY-MM') AS month,
-            u.full_name, m.membership_number, r.full_name AS recorded_by_name
+            c.member_id, u.full_name, m.membership_number, r.full_name AS recorded_by_name,
+            (m.avatar IS NOT NULL) AS has_avatar
        FROM monthly_contributions c
        JOIN members m ON m.id = c.member_id JOIN users u ON u.id = m.user_id
        LEFT JOIN users r ON r.id = c.recorded_by

@@ -29,7 +29,7 @@ export default function Dashboard() {
     return (
       <div className="notice notice--danger">
         <p>{error}</p>
-        <button type="button" className="btn btn--small" onClick={() => window.location.reload()}>
+        <button type="button" className="btn btn--sky btn--small" onClick={() => window.location.reload()}>
           {t('common.retry')}
         </button>
       </div>
@@ -49,8 +49,13 @@ export default function Dashboard() {
   return (
     <div className="dash">
       <header className="dash__head">
-        <h1 className="dash__greeting">{t('dashboard.greeting', user.full_name.split(' ')[0])}</h1>
-        <p className="dash__role">{t(`roles.${user.role}`)}</p>
+        <div className="dash__headLine">
+          <h1 className="dash__greeting">{t('dashboard.greeting', user.full_name.split(' ')[0])}</h1>
+          <span className="dash__roleChip">{t(`roles.${user.role}`)}</span>
+        </div>
+        <p className="dash__today">
+          {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
       </header>
 
       <CycleBar cycle={data.cycle} />

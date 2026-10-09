@@ -3,7 +3,7 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Ziwerengero', wrappers: 'Zovala za mwezi' },
+  nav: { analytics: 'Ziwerengero', reports: 'Lipoti la kupezeka', wrappers: 'Zovala za mwezi' },
 
   idle: { loggedOut: 'Mwatulutsidwa chifukwa foni sinagwiritsidwe ntchito.' },
 
@@ -29,6 +29,30 @@ export default {
     lockedNote: (n) => `Maakaunti ${n} atsekedwa chifukwa cha achinsinsi olakwika. Mutha kuwatsegula.`,
     commonJobs: 'Ntchito zofala',
     waitingNote: (n) => `Anthu ${n} akudikira chigamulo cha gulu.`,
+    noCycle: 'Palibe nyengo yosunga yomwe ikuyenda. Wapampando ayenera kuyambitsa.',
+    savingsTrend: 'Zosunga zanga, mwezi ndi mwezi',
+    recentEntries: 'Zosunga zanga zaposachedwa',
+    noSavingsYet: 'Palibe zosunga panobe',
+    todayCollected: 'Zolandiridwa lero',
+    todayRepaid: 'Zobwezedwa lero',
+    todayFines: 'Zindapusa zolipidwa lero',
+    moneyFlow: 'Ndalama zikuyenda m\u2019miyezi isanu ndi umodzi yapitayi',
+    welfareInOut: 'Thumba la chithandizo',
+    welfareIn: 'Zolowetsa',
+    welfareOut: 'Zotulutsa',
+    received: 'Zosunga zolandiridwa',
+    repaid: 'Zobwezedwa',
+    attendanceTrend: 'Kupezeka pa misonkhano',
+    present: 'Apezeka',
+    marked: 'Olembedwa',
+    cycleEnded: 'Yatha',
+    timeToShareOut: 'Nyengo yatha. Nthawi yowerengera bokosi ndi kugawana.',
+    shareValueLine: (n) => `Gawo limodzi ndi ${n}`,
+    analytics: 'Ziwerengero zanga',
+    whereMoney: 'Ndalama zanga zili kuti',
+    sharesHeld: 'Magawo omwe ndili nawo',
+    worthToday: 'Mtengo pa kugawana',
+    repaymentProgress: 'Ngongole yabwezedwa',
   },
 
   savings: {
@@ -69,9 +93,21 @@ export default {
     passShort: 'Achinsinsi atsopano akhale ndi zilembo zosachepera 6.', passChanged: 'Achinsinsi asinthidwa.',
     chooseFile: 'Sankhani fayilo choyamba.', fileBig: 'Fayiloyo ndi yaikulu kwambiri. Malire ndi 2 MB.',
     stillOwe: 'Ndikungongolabe',
-    tab_details: 'Zanga', tab_savings: 'Zosunga zanga', tab_loans: 'Ngongole zanga', tab_fines: 'Zindapusa zanga',
+    tab_details: 'Zanga', tab_report: 'Ripoti yanga', tab_savings: 'Zosunga zanga', tab_loans: 'Ngongole zanga', tab_fines: 'Zindapusa zanga',
     tab_documents: 'Zikalata', tab_account: 'Achinsinsi ndi chilankhulo',
+    reportReload: 'Kuyambiranso',
+    reportPrint: 'Sindikizani kuti mupeze PDF',
+    addPhoto: 'Onjezani chithunzi', changePhoto: 'Sinthani chithunzi', removePhoto: 'Chotsani chithunzi',
+    photoHint: 'JPG, PNG kapena WEBP, mpaka 2 MB. Chidzawoneka pafupi ndi dzina lanu.',
+    photoType: 'Sankhani chithunzi cha JPG, PNG kapena WEBP.',
     personal: 'Za ine', phoneHint: 'Mauthenga okhudza ndalama zanu amapita ku nambala iyi.',
+    shareholdingTitle: 'Chidule cha magawo anu',
+    cycle: 'Nyengo', totalSavings: 'Zosunga mu nyengo ino', shareValue: 'Mtengo wa gawo limodzi',
+    estPayout: 'Zomwe mungapeze ngati tagawana lero',
+    shareoutTitle: 'Mbiri ya kugawana', noShareouts: 'Palibe kugawana kochitikira inu panobe.',
+    handedOut: 'Kwaperekedwa', notDistributed: 'Kukuyembekezera kuwerengedwa', dateHandedOut: 'Kuperekedwa pa',
+    payout: 'Gawo langa',
+    welfareType: 'Zolowetsa / zotulutsa', welfareTitle: 'Thumba la chithandizo', wrappersTitle: 'Zovala za mwezi',
     loanRule: (m) => `Mungakongole mpaka kuwirikiza ${m} zosunga zanu. Ngongole imodzi nthawi imodzi.`,
     docsNote: 'Sungani pano kopi ya chizindikiritso ndi fomu yolowera. Inu ndi komiti yokha mungazitsegule.',
     docType: 'Ndi chiyani?', docFile: 'Fayilo', docLimit: 'PDF, JPG kapena PNG, mpaka 2 MB.', upload: 'Kwezani',
@@ -96,6 +132,8 @@ export default {
 
   settings: {
     monthlyLevy: 'Ndalama za mwezi za zovala (MWK pa membala)',
+    absenceFine: 'Chindapusa chosowa msonkhano popanda chifukwa (MWK)',
+    absenceFineNote: 'Ikani 0 kuti chindapusa chosowa chisagwire ntchito. Amene anadziwitsa salipidwa chindapusa.',
     adminOnly: 'Mtsogoleri yekha ndiye angasinthe izi.',
   },
 
@@ -135,6 +173,20 @@ export default {
     finesWelfare: 'Zindapusa ndi chithandizo', keptNote: 'Zonse ziwiri sizigawidwa kumapeto kwa nyengo.',
     welfareIn: 'Zoperekedwa ku thumba', welfareOut: 'Thandizo loperekedwa', welfareFlow: 'Thumba la chithandizo, mwezi ndi mwezi',
     ifEnded: 'Nyengo ikanatha lero',
+  },
+
+  reports: {
+    title: 'Lipoti la kupezeka',
+    subtitle: 'Amene akusowa misonkhano, ndi amene anadziwitsa.',
+    tab_list: 'Msonkhano ndi msonkhano',
+    tab_register: 'Membala ndi membala',
+    from: 'Kuyambira', to: 'Kufika', clear: 'Chotsani masiku',
+    total: 'Nthawi zosowa', last30: 'Masiku 30 apitawo', last: 'Komaliza',
+    unpaidFine: 'Chindapusa chosalipidwa',
+    note: 'Misonkhano yokha imene kupezeka kunalembedwa ndi imene imawerengedwa. Kusowa kopanda chifukwa kumatha kubweretsa chindapusa; amene anadziwitsa salipidwa.',
+    empty: 'Palibe kusowa kolembedwa pa masiku awa.',
+    emptyRegister: 'Palibe amene anasowa msonkhano pa masiku awa.',
+    print: 'Sindikizani lipoti ili',
   },
 
   home: {
