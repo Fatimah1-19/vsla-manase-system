@@ -10,7 +10,7 @@
     "db:setup": "node db/setup.js",
     "db:seed": "node db/seed.js",
     "db:reset": "node db/setup.js --force && node db/seed.js",
-    "test": "node test/shareout.test.js"
+    "test": "node test/shareout.test.js && node test/cases.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -17,6 +18,7 @@ const MAX_LEN = 320;
 export default function Messages() {
   const { t } = useLang();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [target, setTarget] = useState('everyone');
   const [role, setRole] = useState('member');
@@ -64,8 +66,7 @@ export default function Messages() {
     e.preventDefault();
     if (!message.trim()) return;
     if (isBroadcast) {
-      // eslint-disable-next-line no-alert
-      if (!window.confirm(`Send this to ${recipientCount} people?`)) return;
+      if (!(await confirm({ message: t('messages.confirmSend', recipientCount) }))) return;
     }
 
     setBusy(true);

@@ -16,7 +16,7 @@ A village savings and loan (VSLA) system for the Manase group: weekly savings, l
 | **Monthly wrappers: MWK 3,000** | Every member, every month. Not savings, not borrowable against, not shared. Set in Settings (`monthly_levy`). |
 | **Secretary and Treasurer record everything** | Only these two roles can record savings, repayments, fines, welfare, wrappers, meetings and run the share-out. The chairperson (admin) manages members, cycles and settings, decides loans with the committee, and can delete mistaken entries. |
 
-Share-out per member = her savings in the cycle + the interest she paid − what she still owes (open loan, unpaid fines). If she owes more than she is due, the rest is shown as *unrecovered* and is never silently erased. The rule is in `backend/utils/shareout.js` and is tested: run `npm test` inside `backend/`.
+Share-out per member = Their savings in the cycle + the interest they paid − what she still owes (open loan, unpaid fines). If they owe more than they are due, the rest is shown as *unrecovered* and is never silently erased. The rule is in `backend/utils/shareout.js` and is tested: run `npm test` inside `backend/`.
 
 > The label "Wrappers" for the monthly MWK 3,000 contribution can be renamed in `frontend/src/i18n/en.extra.js` and `ny.extra.js` (search for `wrappers`).
 

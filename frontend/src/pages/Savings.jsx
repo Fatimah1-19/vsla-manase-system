@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -10,7 +11,7 @@ import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate, inputDate } from '../utils/format.js';
+import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
 import './Savings.css';
 
 const blank = { member_id: '', amount: '', shares: '1', date: inputDate(), note: '' };
@@ -19,6 +20,7 @@ export default function Savings() {
   const { t } = useLang();
   const { isRecorder, isAdmin } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [rows, setRows] = useState(null);
   const [members, setMembers] = useState([]);
@@ -85,7 +87,7 @@ export default function Savings() {
   }
 
   async function remove(row) {
-    if (!window.confirm(t('savings.confirmRemove', row.full_name, money(row.amount)))) return;
+    if (!(await confirm({ message: t('savings.confirmRemove', row.full_name, money(row.amount)), danger: true }))) return;
     try {
       toast.success((await api.del(`/savings/${row.id}`)).message);
       await load();
@@ -99,6 +101,28 @@ export default function Savings() {
     const q = search.trim().toLowerCase();
     return q ? rows.filter((r) => r.full_name.toLowerCase().includes(q)) : rows;
   }, [rows, search]);
+
+  const groups = useMemo(() => {
+    const months = new Map();
+    for (const r of filtered) {
+      const mKey = String(r.date).slice(0, 7);
+      if (!months.has(mKey)) months.set(mKey, { key: mKey, total: 0, dates: new Map() });
+      const m = months.get(mKey);
+      m.total += Number(r.amount) || 0;
+      const dKey = String(r.date).slice(0, 10);
+      if (!m.dates.has(dKey)) m.dates.set(dKey, { key: dKey, rows: [] });
+      m.dates.get(dKey).rows.push(r);
+    }
+    return [...months.values()]
+      .sort((a, b) => b.key.localeCompare(a.key))
+      .map((m) => ({
+        key: m.key,
+        total: m.total,
+        dates: [...m.dates.values()]
+          .sort((a, b) => b.key.localeCompare(a.key))
+          .map((d) => ({ ...d, rows: [...d.rows].sort((x, y) => x.full_name.localeCompare(y.full_name)) })),
+      }));
+  }, [filtered]);
 
   const columns = [
     { key: 'full_name', label: t('savings.member'),
@@ -129,6 +153,8 @@ export default function Savings() {
       ) }] : []),
   ];
 
+  const groupColumns = columns.filter((c) => c.key !== 'date');
+
   if (!rows) return <Spinner />;
 
   return (
@@ -140,7 +166,7 @@ export default function Savings() {
       />
 
       {summary && (
-        <div className="page-grid">
+        <div className="page-grid page-grid--stat">
           <StatCard label={t('savings.thisCycle')} value={money(summary.total_savings)} tone="gold" big />
           <StatCard label={t('common.total')} value={`${summary.entries} entries`} />
           <StatCard label={t('nav.members')} value={`${summary.savers} saving`} />
@@ -158,16 +184,27 @@ export default function Savings() {
         />
       </div>
 
-      <Ledger
-        columns={columns}
-        rows={filtered}
-        empty={
-          <EmptyState
-            title={t('savings.empty')}
-            action={isRecorder && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
-          />
-        }
-      />
+      {groups.length === 0 ? (
+        <EmptyState
+          title={t('savings.empty')}
+          action={isRecorder && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
+        />
+      ) : (
+        groups.map((g) => (
+          <section key={g.key} className="savings__month">
+            <div className="savings__monthHead">
+              <h2 className="savings__monthTitle">{monthLong(g.key)}</h2>
+              <span className="savings__monthTotal money">{money(g.total)}</span>
+            </div>
+            {g.dates.map((d) => (
+              <div key={d.key} className="savings__day">
+                <h3 className="savings__dayTitle">{shortDate(d.key)}</h3>
+                <Ledger columns={groupColumns} rows={d.rows} />
+              </div>
+            ))}
+          </section>
+        ))
+      )}
 
       <Modal
         open={!!editing}

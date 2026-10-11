@@ -14,8 +14,10 @@ export default function StatCard({ label, value, hint, tone = 'plain', big = fal
       className={`stat stat--${tone}${onClick ? ' stat--clickable' : ''}`}
       onClick={onClick}
     >
-      {icon && <span className="stat__icon"><Icon name={icon} size={16} /></span>}
-      <span className="stat__label">{label}</span>
+      <span className="stat__head">
+        <span className="stat__label">{label}</span>
+        {icon && <span className="stat__icon"><Icon name={icon} size={16} /></span>}
+      </span>
       <span className={big ? 'stat__value stat__value--big money' : 'stat__value money'}>{value}</span>
       {hint && <span className="stat__hint">{hint}</span>}
     </Tag>

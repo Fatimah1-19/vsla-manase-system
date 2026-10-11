@@ -100,6 +100,8 @@ const base = {
     title: 'Meetings', schedule: 'Set a meeting', when: 'Date', time: 'Time', place: 'Where',
     agenda: 'What will be discussed', minutes: 'What happened', attendance: 'Attendance',
     present: 'Present', absent: 'Absent', excused: 'Excused', markAttendance: 'Mark attendance',
+    markedAttendance: 'Attendance marked',
+    otherRecordings: 'Other recordings',
     notify: 'Text everyone about this meeting', empty: 'No meetings recorded yet.',
     presentCount: (n, t) => `${n} of ${t} present`,
   },
@@ -208,4 +210,5 @@ const base = {
   },
 };
 
-export default deepMerge(base, extra);
+import votes from './en.votes.js';
+export default deepMerge(deepMerge(base, extra), votes);

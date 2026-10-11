@@ -50,7 +50,7 @@ export default function Analytics() {
       />
 
       <div className="print-area">
-        <div className="page-grid">
+        <div className="page-grid page-grid--stat">
           <StatCard label={t('dashboard.cashInBox')} value={money(d.cash_in_box)} tone="gold" big />
           <StatCard label={t('dashboard.totalSavings')} value={money(d.savings.total)} tone="green" />
           <StatCard label={t('analytics.lentOut')} value={money(d.loans.outstanding)} hint={t('analytics.ofBox', d.loans.box_in_use)} tone="blue" />

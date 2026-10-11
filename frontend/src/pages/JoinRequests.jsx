@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -15,6 +16,7 @@ export default function JoinRequests() {
   const { t } = useLang();
   const { isCommittee } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -36,8 +38,7 @@ export default function JoinRequests() {
   }
 
   async function decide(request, status) {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(t('common.confirm'))) return;
+    if (!(await confirm({ message: t('requests.confirmDecide') }))) return;
     setBusy(true);
     try {
       const res = await api.patch(`/join-requests/${request.id}`, { status });

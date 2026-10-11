@@ -14,6 +14,7 @@ import Welfare from './pages/Welfare.jsx';
 import Fines from './pages/Fines.jsx';
 import ShareOut from './pages/ShareOut.jsx';
 import JoinRequests from './pages/JoinRequests.jsx';
+import Cases from './pages/Cases.jsx';
 import Messages from './pages/Messages.jsx';
 import Cycles from './pages/Cycles.jsx';
 import Activity from './pages/Activity.jsx';
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="fines"    element={<Fines />} />
         <Route path="shareout" element={<ShareOut />} />
         <Route path="requests" element={<JoinRequests />} />
+        <Route path="cases"    element={<Cases />} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
         <Route path="activity" element={<ProtectedRoute roles={COMMITTEE}><Activity /></ProtectedRoute>} />

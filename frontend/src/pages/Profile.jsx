@@ -3,10 +3,12 @@ import { api, fetchFile } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import PersonHeader from '../components/PersonHeader.jsx';
 import Avatar from '../components/Avatar.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Ledger from '../components/Ledger.jsx';
@@ -29,7 +31,7 @@ export default function Profile() {
   const { t } = useLang();
   const { user, refresh, logout, avatar, reloadAvatar } = useAuth();
   const toast = useToast();
-
+  const confirm = useConfirm();
   const [data, setData] = useState(null);
   const [tab, setTab] = useState('details');
   const [details, setDetails] = useState(null);
@@ -130,7 +132,7 @@ export default function Profile() {
   }
 
   async function removePhoto() {
-    if (!window.confirm(t('common.confirm'))) return;
+    if (!(await confirm({ message: t('profile.confirmRemovePhoto'), danger: true }))) return;
     setPhotoBusy(true);
     try {
       toast.success((await api.put('/profile/avatar', { data: null })).message);
@@ -155,7 +157,7 @@ export default function Profile() {
   }
 
   async function removeDoc(doc) {
-    if (!window.confirm(t('common.confirm'))) return;
+    if (!(await confirm({ message: t('profile.confirmRemoveDoc'), danger: true }))) return;
     try {
       toast.success((await api.del(`/profile/documents/${doc.id}`)).message);
       await load();
@@ -239,7 +241,7 @@ export default function Profile() {
       {user.must_change_password && <p className="notice notice--warn">{t('profile.mustChange')}</p>}
 
       {m && (
-        <div className="page-grid">
+        <div className="page-grid page-grid--stat">
           <StatCard label={t('dashboard.mySavings')} value={money(data.totals.savings)} hint={`${data.totals.shares} ${t('savings.shares').toLowerCase()}`} tone="gold" />
           <StatCard label={t('dashboard.canBorrow')} value={money(data.loan_limit.max_loan)} hint={t('dashboard.canBorrowHint', data.loan_limit.multiplier)} tone="green" />
           <StatCard label={t('profile.stillOwe')} value={money(data.totals.outstanding)} tone={data.totals.outstanding > 0 ? 'red' : 'plain'} />
@@ -429,6 +431,7 @@ export default function Profile() {
                 <div><dt>{t('profile.totalSavings')}</dt><dd className="money">{money(data.totals.savings)}</dd></div>
                 <div><dt>{t('savings.shares')}</dt><dd>{data.totals.shares}</dd></div>
                 <div><dt>{t('profile.shareValue')}</dt><dd className="money">{money(data.cycle ? data.cycle.share_value : 0)}</dd></div>
+                <div><dt>{t('profile.moneyInBox')}</dt><dd className="money">{money(data.totals.net)}</dd></div>
                 <div><dt>{t('profile.estPayout')}</dt>
                   <dd className="money">{money(data.totals.savings - data.totals.unpaid_fines - data.totals.outstanding)}</dd></div>
                 <div><dt>{t('profile.stillOwe')}</dt>
@@ -491,7 +494,7 @@ export default function Profile() {
                 ['confirm', 'p-confirm', 'profile.confirm', 'new-password']].map(([key, id, label, ac]) => (
                 <div className="profile__field" key={key}>
                   <label className="field-label" htmlFor={id}>{t(label)}</label>
-                  <input id={id} type="password" autoComplete={ac} value={pass[key]}
+                  <PasswordInput id={id} autoComplete={ac} value={pass[key]}
                     onChange={(e) => setPass((p) => ({ ...p, [key]: e.target.value }))} required />
                 </div>
               ))}

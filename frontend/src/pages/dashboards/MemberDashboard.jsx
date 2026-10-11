@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import Icon from '../../components/Icon.jsx';
+import GroupedList from '../../components/GroupedList.jsx';
 import { LineChart, HBars, Ring } from '../../components/Charts.jsx';
 import { money, shortDate } from '../../utils/format.js';
 import './MemberDashboard.css';
@@ -12,6 +13,8 @@ const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { 
 export default function MemberDashboard({ data }) {
   const { t } = useLang();
   const { savings, active_loan: loan, unpaid_fines: fines, my_share: share, next_meeting: meeting } = data;
+  const box = data.money || {};
+  const contrib = data.recent_contributions || [];
   const limit = data.loan_limit;
   const wr = data.wrappers;
   const trend = data.savings_trend || [];
@@ -42,7 +45,7 @@ export default function MemberDashboard({ data }) {
         </section>
       )}
 
-      <div className="page-grid">
+      <div className="page-grid page-grid--stat">
         <StatCard
           label={t('dashboard.mySavings')}
           value={money(savings?.total)}
@@ -76,6 +79,30 @@ export default function MemberDashboard({ data }) {
           icon="fines"
         />
       </div>
+
+      {data.money && (
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.moneyInBox')}</h2>
+          <dl className="mdash__holdRows">
+            <div>
+              <dt>{t('dashboard.totalSavings')}</dt>
+              <dd className="money">{money(box.total_savings)}</dd>
+            </div>
+            <div>
+              <dt>{t('dashboard.interestEarned')}</dt>
+              <dd className="money">{money(box.interest_earned)}</dd>
+            </div>
+            <div>
+              <dt>{t('dashboard.loansOut')}</dt>
+              <dd className="money">{money(box.outstanding)}</dd>
+            </div>
+            <div className="is-strong">
+              <dt>{t('dashboard.amountInBank')}</dt>
+              <dd className="money">{money(box.cash_in_box)}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <div className="dash__cols dash__cols--2">
         <section className="mdash__holdings">
@@ -125,20 +152,37 @@ export default function MemberDashboard({ data }) {
         {entries.length > 0 && (
           <section className="dash__card">
             <h2 className="dash__sectionTitle">{t('dashboard.recentEntries')}</h2>
-            <ul className="dash__list">
-              {entries.map((e) => (
-                <li key={e.id}>
+            <GroupedList
+              items={entries}
+              nameKey={null}
+              renderItem={(e) => (
+                <>
                   <span className="dash__who">
-                    {shortDate(e.date)}
                     {e.shares > 0 && <span className="dash__tag">{e.shares} {t('savings.shares').toLowerCase()}</span>}
+                    {e.note && <span className="muted">{e.note}</span>}
                   </span>
                   <span className="dash__amount money">{money(e.amount)}</span>
-                </li>
-              ))}
-            </ul>
+                </>
+              )}
+            />
           </section>
         )}
       </div>
+
+      {contrib.length > 0 && (
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('dashboard.recentContributions')}</h2>
+          <GroupedList
+            items={contrib}
+            renderItem={(c) => (
+              <>
+                <span className="dash__who">{c.full_name}</span>
+                <span className="dash__amount money">{money(c.amount)}</span>
+              </>
+            )}
+          />
+        </section>
+      )}
 
       <section className="mdash__loan">
         <h2 className="dash__sectionTitle">{t('dashboard.myLoan')}</h2>

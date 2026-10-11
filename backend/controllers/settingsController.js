@@ -10,7 +10,15 @@ const EDITABLE = {
   welfare_contribution: 'Welfare contribution per meeting',
   monthly_levy: 'Monthly contribution every member pays for the group wrappers (MWK)',
   absence_fine: 'Fine for missing a meeting without a reason (MWK)',
+  case_voting_days: 'How many days a vote about a member stays open',
+  case_quorum_percent: 'Share of members who must vote for the result to count (%)',
+  case_dismiss_percent: 'Share of yes votes needed to dismiss a member (%)',
 };
+
+const NUMERIC = [
+  'loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution',
+  'monthly_levy', 'absence_fine', 'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
+];
 
 // GET /api/settings
 const listSettings = wrap(async (req, res) => {
@@ -27,7 +35,7 @@ const updateSettings = wrap(async (req, res) => {
 
   for (const key of keys) {
     let value = String(updates[key]).trim();
-    if (['loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution', 'monthly_levy', 'absence_fine'].includes(key)) {
+    if (NUMERIC.includes(key)) {
       if (Number.isNaN(Number(value)) || Number(value) < 0) {
         return res.status(400).json({ message: `${EDITABLE[key]} must be a number.` });
       }

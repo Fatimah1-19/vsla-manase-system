@@ -27,6 +27,7 @@ async function request(method, path, body, { auth = true } = {}) {
     res = await fetch(`${BASE}/api${path}`, {
       method,
       headers,
+      cache: 'no-store',
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {

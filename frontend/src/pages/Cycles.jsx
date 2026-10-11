@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -12,6 +13,7 @@ import './Cycles.css';
 export default function Cycles() {
   const { t } = useLang();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [cycles, setCycles] = useState(null);
   const [open, setOpen] = useState(false);
@@ -50,8 +52,7 @@ export default function Cycles() {
   }
 
   async function close(id) {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(t('common.confirm'))) return;
+    if (!(await confirm({ message: t('cycles.confirmClose'), danger: true }))) return;
     try {
       toast.success((await api.patch(`/cycles/${id}/close`)).message);
       await load();

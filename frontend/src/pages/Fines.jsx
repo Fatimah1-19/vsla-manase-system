@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -18,6 +19,7 @@ export default function Fines() {
   const { t } = useLang();
   const { isCommittee, isRecorder, isAdmin } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [rows, setRows] = useState(null);
   const [members, setMembers] = useState([]);
@@ -51,7 +53,7 @@ export default function Fines() {
   }
 
   async function remove(id) {
-    if (!window.confirm(t('fines.confirmRemove'))) return;
+    if (!(await confirm({ message: t('fines.confirmRemove'), danger: true }))) return;
     try {
       toast.success((await api.del(`/fines/${id}`)).message);
       await load();

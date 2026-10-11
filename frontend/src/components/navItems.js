@@ -16,6 +16,7 @@ export const NAV_ITEMS = [
   { to: '/app/fines',      key: 'nav.fines',     icon: 'fines',     roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/shareout',   key: 'nav.shareout',  icon: 'shareout',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/requests',   key: 'nav.requests',  icon: 'requests',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
+  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',     roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/messages',   key: 'nav.messages',  icon: 'messages',  roles: ['admin', 'treasurer', 'secretary'] },
   { to: '/app/cycles',     key: 'nav.cycles',    icon: 'cycles',    roles: ['admin'] },
   { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['admin', 'treasurer', 'secretary'] },

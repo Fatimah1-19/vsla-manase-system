@@ -6,8 +6,28 @@
 .chart__bar--c2 { fill: var(--maize); background: var(--maize); }
 .chart__bar--c3 { fill: var(--sky); background: var(--sky); }
 .chart__bar--c4 { fill: var(--flame); background: var(--flame); }
-.chart__line { fill: none; stroke: var(--leaf); stroke-width: 2.5; stroke-linejoin: round; }
-.chart__point { fill: var(--card); stroke: var(--leaf); stroke-width: 2; }
+.chart__line { fill: none; stroke: var(--leaf); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; shape-rendering: geometricPrecision; }
+.chart__area { stroke: none; }
+.chart__point { fill: #fff; stroke: var(--leaf); stroke-width: 1.4; }
+.chart__halo { stroke: none; }
+.chart__halo--leaf { fill: var(--leaf); opacity: 0.14; }
+.chart__halo--maize { fill: var(--maize); opacity: 0.14; }
+.chart__halo--sky { fill: var(--sky); opacity: 0.14; }
+.chart__halo--flame { fill: var(--flame); opacity: 0.14; }
+.chart__halo--purple { fill: #8E6BC9; opacity: 0.14; }
+.chart__halo--teal { fill: #2C9AA0; opacity: 0.14; }
+.chart__line--leaf, .chart__point--leaf { stroke: var(--leaf); }
+.chart__line--maize, .chart__point--maize { stroke: var(--maize); }
+.chart__line--sky, .chart__point--sky { stroke: var(--sky); }
+.chart__line--flame, .chart__point--flame { stroke: var(--flame); }
+.chart__line--purple, .chart__point--purple { stroke: #8E6BC9; }
+.chart__line--teal, .chart__point--teal { stroke: #2C9AA0; }
+.chart__dot--leaf { background: var(--leaf); }
+.chart__dot--maize { background: var(--maize); }
+.chart__dot--sky { background: var(--sky); }
+.chart__dot--flame { background: var(--flame); }
+.chart__dot--purple { background: #8E6BC9; }
+.chart__dot--teal { background: #2C9AA0; }
 .chart__legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.4rem; font-size: 0.85rem; color: var(--ink-soft); }
 .chart__key { display: inline-flex; align-items: center; gap: 0.35rem; }
 .chart__dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
@@ -33,3 +53,35 @@
 .ring__fill--flame { stroke: var(--flame); }
 .ring__num { font-family: var(--head); font-weight: 800; font-size: 8px; fill: var(--ink); }
 .ring__label { font-size: 0.82rem; color: var(--slate); max-width: 14ch; line-height: 1.25; }
+
+/* ---- pie chart (a filled circle cut into coloured slices) ---- */
+.pie { margin: 0; display: grid; gap: 0.9rem; justify-items: center; }
+.pie__svg {
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+  filter: drop-shadow(0 3px 8px rgba(18, 38, 31, 0.14));
+}
+.pie__slice { stroke: #fff; stroke-width: 0.6; stroke-linejoin: round; }
+.pie__legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; width: 100%; font-size: 0.9rem; }
+.pie__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.pie__dot { width: 14px; height: 11px; border-radius: 2px; flex: none; }
+.pie__keyLabel { color: var(--ink-soft); overflow-wrap: anywhere; }
+.pie__keyValue {
+  font-family: var(--head);
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+.pie__key--c1 .pie__dot    { background: linear-gradient(135deg, #2E9B6C, #1F6B4D); }
+.pie__key--c1 .pie__keyValue { color: var(--leaf-dark); }
+.pie__key--c2 .pie__dot    { background: linear-gradient(135deg, #F5CD63, #DEA821); }
+.pie__key--c2 .pie__keyValue { color: var(--maize-deep); }
+.pie__key--c3 .pie__dot    { background: linear-gradient(135deg, #E26A4E, #B23A2E); }
+.pie__key--c3 .pie__keyValue { color: var(--flame); }
+.pie__key--c4 .pie__dot    { background: linear-gradient(135deg, #4C8FC9, #2A5D8F); }
+.pie__key--c4 .pie__keyValue { color: var(--sky); }

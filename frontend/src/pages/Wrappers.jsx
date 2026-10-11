@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -25,7 +26,7 @@ export default function Wrappers() {
   const { t } = useLang();
   const { isCommittee, isRecorder, isAdmin } = useAuth();
   const toast = useToast();
-
+  const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
   const [view, setView] = useState(null);       // committee: one month
   const [mine, setMine] = useState(null);       // member: her own history
@@ -77,7 +78,7 @@ export default function Wrappers() {
   }
 
   async function remove(p) {
-    if (!window.confirm(t('common.confirm'))) return;
+    if (!(await confirm({ message: t('wrappers.confirmRemove'), danger: true }))) return;
     try {
       toast.success((await api.del(`/contributions/${p.id}`)).message);
       await load();
@@ -93,7 +94,7 @@ export default function Wrappers() {
     return (
       <div className="wrappers">
         <PageHeader title={t('wrappers.title')} subtitle={t('wrappers.explain', money(mine.levy))} />
-        <div className="page-grid">
+        <div className="page-grid page-grid--stat">
           <StatCard label={t('wrappers.monthly')} value={money(mine.levy)} tone="gold" />
           <StatCard label={t('wrappers.totalPaid')} value={money(mine.total_paid)} tone="green" />
           <StatCard label={t('wrappers.stillOwed')} value={money(mine.owed)} tone={mine.owed > 0 ? 'red' : 'plain'} />
@@ -154,7 +155,7 @@ export default function Wrappers() {
       </div>
 
       <div className="wrappers__top">
-        <div className="page-grid wrappers__stats">
+        <div className="page-grid page-grid--stat wrappers__stats">
           <StatCard label={t('wrappers.collected')} value={money(tot.collected)} tone="green" big />
           <StatCard label={t('wrappers.expected')} value={money(tot.expected)} />
           <StatCard label={t('wrappers.outstanding')} value={money(tot.outstanding)} tone={tot.outstanding > 0 ? 'red' : 'plain'} />

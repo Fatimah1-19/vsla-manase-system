@@ -7,6 +7,16 @@
   margin-bottom: 1.25rem;
 }
 
+/* Let each card shrink inside its track and wrap long figures instead of
+   pushing the number out past the card edge. */
+.page-grid > * { min-width: 0; }
+
+/* A tidy row of money cards that wraps and always fills the width, so a row
+   of three looks just as even as a row of four. Cards keep roughly the same
+   width and share any spare space equally. */
+.page-grid--stat { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.page-grid--stat > * { flex: 1 1 200px; min-width: 0; }
+
 .panel {
   background: linear-gradient(180deg, #FFFFFF 0%, #FDFEFC 100%);
   border: 1px solid var(--rule);

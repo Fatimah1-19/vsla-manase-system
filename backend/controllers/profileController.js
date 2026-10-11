@@ -57,6 +57,8 @@ const getMyProfile = wrap(async (req, res) => {
   });
 
   const multiplier = Number(await getSetting('loan_multiplier', '2'));
+  const outstanding = +loans.filter((l) => l.status === 'approved').reduce((a, l) => a + l.outstanding, 0).toFixed(2);
+  const unpaidFines = +fines.filter((f) => !f.paid).reduce((a, f) => a + f.amount, 0).toFixed(2);
   res.json({
     member, savings, loans, fines, documents, welfare, months, shareouts,
     cycle: cycle ? { id: cycle.id, cycle_name: cycle.cycle_name, share_value: Number(cycle.share_value) } : null,
@@ -64,8 +66,10 @@ const getMyProfile = wrap(async (req, res) => {
       savings: share.total,
       shares: share.shares,
       active_loans: loans.filter((l) => l.status === 'approved').length,
-      outstanding: +loans.filter((l) => l.status === 'approved').reduce((a, l) => a + l.outstanding, 0).toFixed(2),
-      unpaid_fines: +fines.filter((f) => !f.paid).reduce((a, f) => a + f.amount, 0).toFixed(2),
+      outstanding,
+      unpaid_fines: unpaidFines,
+      // What is really still hers in the box right now: her savings less what she owes.
+      net: +(share.total - outstanding - unpaidFines).toFixed(2),
       documents: documents.length,
     },
     loan_limit: { multiplier, max_loan: +(share.total * multiplier).toFixed(2) },

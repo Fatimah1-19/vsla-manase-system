@@ -102,10 +102,16 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
   padding: 0.55rem 0.75rem;
+  min-width: 0;
 }
 .dash__chip span { display: block; }
 .dash__chip .dash__chipLabel { font-size: 0.78rem; color: var(--slate); font-weight: 500; }
-.dash__chip .dash__chipValue { font-family: var(--head); font-weight: 800; font-size: 1.05rem; }
+.dash__chip .dash__chipValue {
+  font-family: var(--head);
+  font-weight: 800;
+  font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.05rem);
+  overflow-wrap: anywhere;
+}
 @media (max-width: 560px) {
   .dash__chips { grid-template-columns: 1fr; }
 }

@@ -8,6 +8,11 @@ const { generateUsername, nextMembershipNumber, tempPassword } = require('../uti
 
 const ROLES = ['admin', 'treasurer', 'secretary', 'member'];
 
+// Suspending, dismissing or bringing back an ordinary member is the members' decision,
+// made by a vote (see controllers/memberCaseController.js). It cannot be done from here.
+const VOTE_MESSAGE =
+  'Suspending, dismissing or bringing back a member is decided by a vote of the members. Open a vote on the Votes page.';
+
 // GET /api/users
 const listUsers = wrap(async (req, res) => {
   const rows = await query(
@@ -119,6 +124,20 @@ const updateUser = wrap(async (req, res) => {
     if (admins.c <= 1) return res.status(400).json({ message: 'This is the only admin. Make someone else an admin first.' });
   }
 
+  // An ordinary member's standing in the group (active, suspended, dismissed) can only
+  // change through a vote. Saving the same value again is fine.
+  if (existing.role === 'member') {
+    if (typeof is_active === 'boolean' && is_active !== existing.is_active) {
+      return res.status(400).json({ message: VOTE_MESSAGE });
+    }
+    if (member_status) {
+      const current = await one(`SELECT status FROM members WHERE user_id = $1`, [id]);
+      if (current && current.status !== member_status) {
+        return res.status(400).json({ message: VOTE_MESSAGE });
+      }
+    }
+  }
+
   await query(
     `UPDATE users SET
        full_name = COALESCE($2, full_name),
@@ -194,6 +213,9 @@ const deactivateUser = wrap(async (req, res) => {
   const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
 
+  // An ordinary member is suspended or dismissed by a vote of the members, not from here.
+  if (user.role === 'member') return res.status(400).json({ message: VOTE_MESSAGE });
+
   const openLoan = await one(
     `SELECT l.id FROM loans l JOIN members m ON m.id = l.member_id
       WHERE m.user_id = $1 AND l.status IN ('pending','approved') LIMIT 1`,
@@ -208,4 +230,24 @@ const deactivateUser = wrap(async (req, res) => {
   res.json({ message: `${user.full_name} has been suspended.` });
 });
 
-module.exports = { listUsers, createUser, updateUser, adminResetPassword, unlockUser, deactivateUser };
+// POST /api/users/:id/reactivate — the chairperson brings a suspended account back
+const reactivateUser = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) return res.status(400).json({ message: 'You cannot reactivate your own account.' });
+
+  const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
+  if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
+
+  // Like suspension, an ordinary member is brought back by a vote of the members, not from here.
+  if (user.role === 'member') return res.status(400).json({ message: VOTE_MESSAGE });
+
+  if (user.is_active) return res.status(400).json({ message: `${user.full_name} is already active.` });
+
+  await query(`UPDATE users SET is_active = TRUE, failed_attempts = 0, locked_until = NULL WHERE id = $1`, [id]);
+  await query(`UPDATE members SET status = 'active' WHERE user_id = $1`, [id]);
+  await audit(req.user.id, 'REACTIVATE_USER', 'users', id, user.full_name);
+
+  res.json({ message: `${user.full_name} is back.` });
+});
+
+module.exports = { listUsers, createUser, updateUser, adminResetPassword, unlockUser, deactivateUser, reactivateUser };

@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -19,6 +20,7 @@ export default function ShareOut() {
   const { t } = useLang();
   const { isCommittee, isRecorder } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [preview, setPreview] = useState(null);
   const [history, setHistory] = useState([]);
@@ -62,8 +64,7 @@ export default function ShareOut() {
   }
 
   async function distribute(id) {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(t('shareout.confirmDistribute'))) return;
+    if (!(await confirm({ message: t('shareout.confirmDistribute') }))) return;
     setBusy(true);
     try {
       const res = await api.post(`/shareout/${id}/distribute`);

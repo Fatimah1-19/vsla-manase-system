@@ -1,0 +1,26 @@
+.glist__month { margin-bottom: 1.1rem; }
+.glist__month:last-child { margin-bottom: 0; }
+
+.glist__monthTitle {
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--rule);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.glist__day { margin-bottom: 0.7rem; }
+.glist__day:last-child { margin-bottom: 0; }
+
+.glist__dayTitle {
+  margin: 0 0 0.2rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--slate);
+}
+
+.glist__day .dash__list,
+.glist__day .tdash__list { margin-bottom: 0; }

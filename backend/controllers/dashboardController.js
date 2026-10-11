@@ -46,7 +46,8 @@ const getDashboard = wrap(async (req, res) => {
     if (!memberId) return res.json({ ...base, member: null });
 
     // Everything the member board needs, asked together instead of one by one.
-    const [savings, loans, fines, share, nextMeeting, multiplierSetting, levySetting, owing] = await Promise.all([
+    const [savings, loans, fines, share, nextMeeting, multiplierSetting, levySetting, owing,
+           groupMoney, groupLoans, groupCash, recentContrib] = await Promise.all([
       one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares,
                   COUNT(*)::int AS entries, MAX(date) AS last_date
              FROM savings WHERE member_id = $1 AND ($2::int IS NULL OR cycle_id = $2)`,
@@ -63,6 +64,18 @@ const getDashboard = wrap(async (req, res) => {
       getSetting('loan_multiplier', '2'),
       getSetting('monthly_levy', '3000'),
       arrears(),
+
+      // The whole group's money, so the box is not a mystery to the women who fill it.
+      one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
+                  COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
+        [cycle ? cycle.id : null]),
+      query(`SELECT l.amount::float, l.with_interest, l.interest_rate::float,
+                    COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+               FROM loans l WHERE l.status = 'approved'`),
+      cashInBox(cycle ? cycle.id : null),
+      query(`SELECT s.id, s.amount::float, s.date, u.full_name
+               FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
+              ORDER BY s.id DESC LIMIT 6`),
     ]);
 
     const activeLoan = loans.map((l) => {
@@ -94,6 +107,11 @@ const getDashboard = wrap(async (req, res) => {
     const trend = Object.fromEntries(trendBuckets.map((r) => [r.ym, r.v]));
     const savings_trend = months.map((ym) => ({ month: ym, amount: round(trend[ym]) }));
 
+    const groupOutstanding = groupLoans.reduce((sum, l) => {
+      const { totalDue } = loanTotals(l);
+      return sum + Math.max(0, totalDue - l.total_repaid);
+    }, 0);
+
     return res.json({
       ...base,
       loan_limit: { multiplier, max_loan: +(Number(savings.total) * multiplier).toFixed(2) },
@@ -105,6 +123,13 @@ const getDashboard = wrap(async (req, res) => {
       next_meeting: nextMeeting,
       savings_trend,
       recent_savings: recentEntries,
+      money: {
+        total_savings: groupMoney.total_savings,
+        interest_earned: groupMoney.interest_earned,
+        outstanding: +groupOutstanding.toFixed(2),
+        cash_in_box: groupCash,
+      },
+      recent_contributions: recentContrib,
     });
   }
 
@@ -121,7 +146,7 @@ const getDashboard = wrap(async (req, res) => {
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
     recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
-    monthlyFlow, todayTick,
+    monthlyFlow, todayTick, contribMonthly,
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
                 COALESCE((SELECT SUM(amount) FROM loans WHERE status = 'approved'),0)::float AS loans_out,
@@ -212,6 +237,14 @@ const getDashboard = wrap(async (req, res) => {
               COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE date::date = CURRENT_DATE),0) AS repaid,
               COALESCE((SELECT SUM(amount)::float FROM fines WHERE paid = TRUE AND date::date = CURRENT_DATE),0) AS fines_paid`
     ) : null,
+
+    // This year's monthly levy contributions, one figure per calendar month.
+    wantsMoney ? query(
+      `SELECT to_char(period,'YYYY-MM') AS ym, SUM(amount)::float AS v
+         FROM monthly_contributions
+        WHERE period >= $1::date AND period < ($1::date + interval '1 year')
+        GROUP BY 1`, [`${currentMonth().slice(0, 4)}-01-01`]
+    ) : null,
   ]);
 
   const outstanding = outstandingRows.reduce((sum, l) => {
@@ -258,6 +291,14 @@ const getDashboard = wrap(async (req, res) => {
         month: ym, savings: round(savBy[ym]), repayments: round(repBy[ym]), loans_given: round(giveBy[ym]),
       }));
     }
+
+    // This year's monthly figures for the contribution overview, starting July.
+    const year = currentMonth().slice(0, 4);
+    const startYm = `${year}-07` <= currentMonth() ? `${year}-07` : currentMonth();
+    const contribBy = Object.fromEntries((contribMonthly || []).map((r) => [r.ym, r.v]));
+    payload.contributions_by_month = monthsBetween(startYm, currentMonth()).map((ym) => ({
+      month: ym, amount: round(contribBy[ym]),
+    }));
   }
   if (wantsPeople) {
     payload.recent_meetings = recentMeetings;

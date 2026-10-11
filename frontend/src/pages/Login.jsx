@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import Icon from '../components/Icon.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import './Login.css';
 import './LoginTop.css';
 
@@ -107,10 +108,9 @@ export default function Login() {
 
           <div className="login__field">
             <label className="field-label" htmlFor="password">{t('login.password')}</label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

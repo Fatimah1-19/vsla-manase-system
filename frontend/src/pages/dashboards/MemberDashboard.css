@@ -121,11 +121,13 @@
 
 .mdash__holdShares {
   font-family: var(--head);
-  font-size: 2.7rem;
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 2.7rem);
   font-weight: 800;
   line-height: 1;
   color: var(--ink);
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .mdash__holdSharesLabel { color: var(--maize-deep); font-weight: 600; }

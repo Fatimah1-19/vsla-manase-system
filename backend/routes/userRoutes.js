@@ -9,5 +9,6 @@ router.patch('/:id', authorize('admin'), c.updateUser);
 router.post('/:id/reset-password', authorize('admin'), c.adminResetPassword);
 router.post('/:id/unlock', authorize('admin'), c.unlockUser);
 router.delete('/:id', authorize('admin'), c.deactivateUser);
+router.post('/:id/reactivate', authorize('admin'), c.reactivateUser);
 
 module.exports = router;

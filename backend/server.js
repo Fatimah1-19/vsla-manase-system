@@ -46,12 +46,14 @@ app.use('/api/meetings', require('./routes/meetingRoutes'));
 app.use('/api/cycles', require('./routes/cycleRoutes'));
 app.use('/api/shareout', require('./routes/shareOutRoutes'));
 app.use('/api/join-requests', require('./routes/joinRequestRoutes'));
+app.use('/api/cases', require('./routes/memberCaseRoutes'));
 app.use('/api/sms', require('./routes/smsRoutes'));
 app.use('/api/audit', require('./routes/auditRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/contributions', require('./routes/contributionRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/member-cases', require('./routes/memberCaseRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Counts only, no money — this is what the public front page shows.

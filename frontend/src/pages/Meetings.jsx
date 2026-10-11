@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -8,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
+import Icon from '../components/Icon.jsx';
 import { shortDate, inputDate } from '../utils/format.js';
 import './Meetings.css';
 
@@ -15,7 +17,7 @@ const blank = { meeting_date: inputDate(), meeting_time: '', location: '', agend
 
 export default function Meetings() {
   const { t } = useLang();
-  const { isRecorder } = useAuth();
+  const { isRecorder, isCommittee } = useAuth();
   const toast = useToast();
 
   const [meetings, setMeetings] = useState(null);
@@ -90,6 +92,29 @@ export default function Meetings() {
         )}
       />
 
+      {isCommittee && (
+        <div className="meetings__recordings">
+          <span className="meetings__recordLabel">{t('meetings.otherRecordings')}</span>
+          <div className="meetings__recordLinks">
+            <Link to="/app/savings" className="btn btn--ghost btn--small">
+              <Icon name="savings" size={18} />{t('nav.savings')}
+            </Link>
+            <Link to="/app/fines" className="btn btn--ghost btn--small">
+              <Icon name="fines" size={18} />{t('nav.fines')}
+            </Link>
+            <Link to="/app/loans" className="btn btn--ghost btn--small">
+              <Icon name="loans" size={18} />{t('nav.loans')}
+            </Link>
+            <Link to="/app/welfare" className="btn btn--ghost btn--small">
+              <Icon name="welfare" size={18} />{t('nav.welfare')}
+            </Link>
+            <Link to="/app/wrappers" className="btn btn--ghost btn--small">
+              <Icon name="wrappers" size={18} />{t('nav.wrappers')}
+            </Link>
+          </div>
+        </div>
+      )}
+
       {meetings.length === 0 ? (
         <EmptyState
           title={t('meetings.empty')}
@@ -122,8 +147,12 @@ export default function Meetings() {
                   </p>
                 </div>
                 {isRecorder && (
-                  <button type="button" className="btn btn--ghost btn--small" onClick={() => openDetail(m.id)}>
-                    {t('meetings.markAttendance')}
+                  <button
+                    type="button"
+                    className={m.marked_count > 0 ? 'btn btn--ghost btn--small is-marked' : 'btn btn--ghost btn--small'}
+                    onClick={() => openDetail(m.id)}
+                  >
+                    {m.marked_count > 0 ? `\u2713 ${t('meetings.markedAttendance')}` : t('meetings.markAttendance')}
                   </button>
                 )}
               </li>

@@ -15,7 +15,7 @@ export default function SecretaryDashboard({ data }) {
 
   return (
     <>
-      <div className="page-grid">
+      <div className="page-grid page-grid--stat">
         <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} tone="green" icon="members" big />
         <StatCard label={t('dashboard.attendanceRate')} value={`${data.attendance_rate ?? 0}%`} tone="blue" icon="meetings" />
         <StatCard
@@ -24,12 +24,11 @@ export default function SecretaryDashboard({ data }) {
           tone={data.pending_join_requests > 0 ? 'gold' : 'plain'}
           icon="requests"
         />
-        <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} icon="loans" />
+        <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} tone="blue" icon="loans" />
         {data.wrappers && (
           <StatCard
             label={t('dashboard.wrappersCollected')}
             value={money(data.wrappers.collected_this_month)}
-            hint={t('dashboard.wrappersOf', money(data.wrappers.expected_this_month), data.wrappers.behind_count)}
             tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
             icon="wrappers"
           />
@@ -85,7 +84,10 @@ export default function SecretaryDashboard({ data }) {
               {data.recent_meetings.map((mt) => (
                 <li key={mt.id}>
                   <span>{shortDate(mt.meeting_date)}</span>
-                  <span className="sdash__present">{mt.present_count} present</span>
+                  <span className="sdash__present">
+                    {mt.marked > 0 && <span className="sdash__marked">✓</span>}
+                    {mt.present_count} present
+                  </span>
                 </li>
               ))}
             </ul>

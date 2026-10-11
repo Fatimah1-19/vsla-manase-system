@@ -113,7 +113,7 @@ function isFinished({ eligible, voted, closesAt, now = new Date() }) {
 }
 
 /** When the voting closes. */
-function closingTime(votingDays = 7, now = new Date()) {
+function closingTime(votingDays = 1, now = new Date()) {
   return new Date(now.getTime() + votingDays * 86400000);
 }
 

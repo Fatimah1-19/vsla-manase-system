@@ -106,7 +106,8 @@ const base = {
     title: 'Misonkhano', schedule: 'Konzani msonkhano', when: 'Tsiku', time: 'Nthawi',
     place: 'Kuti', agenda: 'Zomwe zikambidwa', minutes: 'Zomwe zachitika',
     attendance: 'Kupezeka', present: 'Analipo', absent: 'Sanabwere', excused: 'Anadziwitsa',
-    markAttendance: 'Lembani opezeka', notify: 'Uzani onse za msonkhanowu',
+    markAttendance: 'Lembani opezeka', markedAttendance: 'Kupezeka kwalembedwa',
+    otherRecordings: 'Zolemba zina', notify: 'Uzani onse za msonkhanowu',
     empty: 'Palibe misonkhano yolembedwa.',
     presentCount: (n, t) => `${n} mwa ${t} analipo`,
   },
@@ -216,6 +217,7 @@ const base = {
     notAllowed: 'Udindo wanu sungatsegule tsamba limenelo.',
     notFound: 'Tsamba limenelo kulibe.',
   },
-};
+}
 
-export default deepMerge(base, extra);
+import votes from './ny.votes.js';
+export default deepMerge(deepMerge(base, extra), votes);

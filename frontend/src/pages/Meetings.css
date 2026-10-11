@@ -1,5 +1,21 @@
 .meetings__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
 
+.meetings__recordings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--leaf-wash);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.meetings__recordLabel { font-size: 0.82rem; font-weight: 600; color: var(--leaf-dark); }
+.meetings__recordLinks { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.meetings__recordings .btn { display: inline-flex; align-items: center; gap: 0.35rem; }
+.meetings__recordings .btn .icon { color: var(--leaf); }
+
 .meetings__item {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -46,6 +62,12 @@
 .meetings__count { margin: 0; font-size: 0.85rem; color: var(--slate); }
 
 .meetings__item .btn { grid-column: 1 / -1; }
+.meetings__item .btn.is-marked {
+  border-color: var(--leaf);
+  background: var(--leaf-wash);
+  color: var(--leaf-dark);
+}
+.meetings__item .btn.is-marked:hover:not(:disabled) { background: #DCEFE3; border-color: var(--leaf); }
 
 .meetings__notify {
   display: flex;

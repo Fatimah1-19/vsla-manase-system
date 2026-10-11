@@ -4,6 +4,7 @@ import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import Brand from '../components/Brand.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import './ForgotPassword.css';
 
 /** Two steps: ask for a code by SMS, then use it to set a new password. */
@@ -119,13 +120,13 @@ export default function ForgotPassword() {
 
                 <div className="forgot__field">
                   <label className="field-label" htmlFor="p1">{t('forgot.newPassword')}</label>
-                  <input id="p1" type="password" autoComplete="new-password"
+                  <PasswordInput id="p1" autoComplete="new-password"
                     value={pass1} onChange={(e) => setPass1(e.target.value)} disabled={busy} required />
                 </div>
 
                 <div className="forgot__field">
                   <label className="field-label" htmlFor="p2">{t('forgot.confirmPassword')}</label>
-                  <input id="p2" type="password" autoComplete="new-password"
+                  <PasswordInput id="p2" autoComplete="new-password"
                     value={pass2} onChange={(e) => setPass2(e.target.value)} disabled={busy} required />
                 </div>
 

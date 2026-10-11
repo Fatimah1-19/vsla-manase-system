@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -64,8 +66,10 @@ function PersonalFields({ values, onChange, t, prefix }) {
 export default function Members() {
   const { t } = useLang();
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [editForm, setEditForm] = useState(null);
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [people, setPeople] = useState(null);
   const [search, setSearch] = useState('');
@@ -145,9 +149,11 @@ export default function Members() {
           password: res.temporary_password, smsSent: res.sms_sent,
         });
       } else if (what === 'suspend') {
-        // eslint-disable-next-line no-alert
-        if (!window.confirm(t('common.confirm'))) return;
+        if (!(await confirm({ message: t('members.confirmSuspend'), danger: true }))) return;
         toast.success((await api.del(`/users/${id}`)).message);
+      } else if (what === 'reactivate') {
+        if (!(await confirm({ message: t('members.confirmReactivate') }))) return;
+        toast.success((await api.post(`/users/${id}/reactivate`)).message);
       }
       setDetail(null);
       await load();
@@ -188,6 +194,36 @@ export default function Members() {
         if (!p.is_active) return <span className="tag tag--red">{t('members.inactive')}</span>;
         if (isLocked(p)) return <span className="tag tag--gold">{t('members.locked')}</span>;
         return <span className="tag tag--green">{t('members.active')}</span>;
+      } },
+    { key: 'action', label: t('common.actions'),
+      render: (p) => {
+        if (!p.is_active) {
+          return (
+            <button type="button" className="btn btn--gold btn--small" disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (p.role === 'member') navigate(`/app/cases?member=${p.member_id}&action=reinstate`);
+                else act(p.id, 'reactivate');
+              }}>{t('members.bringBack')}</button>
+          );
+        }
+        return (
+          <div className="members__rowActs">
+            <button type="button" className="btn btn--danger btn--small" disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (p.role === 'member') navigate(`/app/cases?member=${p.member_id}&action=suspend`);
+                else act(p.id, 'suspend');
+              }}>{t('members.suspend')}</button>
+            {p.role === 'member' && (
+              <button type="button" className="btn btn--ghost btn--small" disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/app/cases?member=${p.member_id}&action=dismiss`);
+                }}>{t('members.dismiss')}</button>
+            )}
+          </div>
+        );
       } },
   ];
 
@@ -413,16 +449,16 @@ export default function Members() {
             {isAdmin && (
               <div className="members__actions">
                 <button type="button" className="btn" disabled={busy} onClick={() => startEdit(detail)}>{t('common.edit')}</button>
+                {detail.member_id && (
+                  <button type="button" className="btn btn--sky" disabled={busy}
+                    onClick={() => navigate(`/app/cases?member=${detail.member_id}`)}>{t('cases.openFor')}</button>
+                )}
                 {isLocked(detail) && (
                   <button type="button" className="btn btn--gold" disabled={busy}
                     onClick={() => act(detail.id, 'unlock')}>{t('members.unlock')}</button>
                 )}
                 <button type="button" className="btn btn--ghost" disabled={busy}
                   onClick={() => act(detail.id, 'reset')}>{t('members.newPassword')}</button>
-                {detail.is_active && (
-                  <button type="button" className="btn btn--danger" disabled={busy}
-                    onClick={() => act(detail.id, 'suspend')}>{t('members.suspend')}</button>
-                )}
               </div>
             )}
           </div>

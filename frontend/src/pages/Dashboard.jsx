@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import Spinner from '../components/Spinner.jsx';
+import QuickSearch from '../components/QuickSearch.jsx';
 import MemberDashboard from './dashboards/MemberDashboard.jsx';
 import TreasurerDashboard from './dashboards/TreasurerDashboard.jsx';
 import SecretaryDashboard from './dashboards/SecretaryDashboard.jsx';
@@ -52,6 +53,7 @@ export default function Dashboard() {
         <div className="dash__headLine">
           <h1 className="dash__greeting">{t('dashboard.greeting', user.full_name.split(' ')[0])}</h1>
           <span className="dash__roleChip">{t(`roles.${user.role}`)}</span>
+          <QuickSearch />
         </div>
         <p className="dash__today">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}

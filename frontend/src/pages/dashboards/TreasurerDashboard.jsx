@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
-import { money, shortDate } from '../../utils/format.js';
+import GroupedList from '../../components/GroupedList.jsx';
+import { money, plainNumber } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './TreasurerDashboard.css';
 
@@ -21,12 +22,14 @@ export default function TreasurerDashboard({ data }) {
 
   return (
     <>
-      <div className="page-grid">
+      <div className="page-grid page-grid--stat">
         <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" icon="savings" big />
         <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" />
-        <StatCard label={t('dashboard.loansOut')}      value={money(m.outstanding)}   tone="blue" icon="loans" />
-        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} icon="shareout" />
-        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} icon="welfare" />
+        <StatCard label={t('dashboard.loansOut')}      value={money(m.loans_out)}     tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.activeLoans')}   value={plainNumber(data.loans?.approved)} tone="green" icon="loans" />
+        <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
+        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} tone="green" icon="welfare" />
         <StatCard
           label={t('dashboard.finesOutstanding')}
           value={money(m.fines_outstanding)}
@@ -37,7 +40,6 @@ export default function TreasurerDashboard({ data }) {
           <StatCard
             label={t('dashboard.wrappersCollected')}
             value={money(w.collected_this_month)}
-            hint={t('dashboard.wrappersOf', money(w.expected_this_month), w.behind_count)}
             tone={w.behind_count > 0 ? 'gold' : 'green'}
             icon="wrappers"
           />
@@ -126,15 +128,16 @@ export default function TreasurerDashboard({ data }) {
         <div className="tdash__col">
           <h2 className="dash__sectionTitle">{t('dashboard.recentSavings')}</h2>
           {data.recent_savings?.length ? (
-            <ul className="tdash__list">
-              {data.recent_savings.map((s) => (
-                <li key={s.id}>
+            <GroupedList
+              items={data.recent_savings}
+              listClass="tdash__list is-grouped"
+              renderItem={(s) => (
+                <>
                   <span className="tdash__who">{s.full_name}</span>
-                  <span className="tdash__meta">{shortDate(s.date)}</span>
                   <span className="tdash__amount money">{money(s.amount)}</span>
-                </li>
-              ))}
-            </ul>
+                </>
+              )}
+            />
           ) : (
             <p className="muted">{t('savings.empty')}</p>
           )}

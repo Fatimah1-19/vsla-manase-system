@@ -42,6 +42,8 @@
   font-weight: 700;
 }
 
+.tdash__list.is-grouped .tdash__amount { grid-row: auto; }
+
 @media (min-width: 820px) {
   .tdash__cols { grid-template-columns: 1fr 1fr; }
 }

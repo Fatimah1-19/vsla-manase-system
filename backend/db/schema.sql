@@ -354,7 +354,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_open_case_per_member ON member_cases (memb
 
 -- Voting rules (change them on the Settings page).
 INSERT INTO settings (setting_key, setting_value) VALUES
-  ('case_voting_days', '7'),        -- how long a vote stays open
+  ('case_voting_days', '1'),        -- how long a vote stays open
   ('case_quorum_percent', '50'),    -- at least this % of members must vote
   ('case_dismiss_percent', '67')    -- a dismissal needs at least this % of "yes" among the votes
 ON CONFLICT (setting_key) DO NOTHING;

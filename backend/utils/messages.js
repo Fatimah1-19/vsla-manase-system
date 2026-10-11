@@ -106,6 +106,23 @@ const T = {
     en: (p) => `Hello ${p.name}, your loan of ${money(p.outstanding)} is due on ${day(p.dueDate)}. Please repay before the cycle ends. — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, ngongole yanu ya ${money(p.outstanding)} iyenera kubwezedwa pa ${day(p.dueDate)}. Chonde bwezani nyengo isanathe. — ${GROUP}`,
   },
+  // ---- member cases: suspend, dismiss or bring back a member by a vote ----
+  caseOpened: {
+    en: (p) => `Hello ${p.name}, the group has opened a vote about you: to have you ${p.actionWord}. Reason: ${p.reason}. You may give your side to the chairperson before ${day(p.closesAt)}. — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, gulu latsegula voti yokhudza inu: kuti ${p.actionWord}. Chifukwa: ${p.reason}. Mutha kupereka mbali yanu kwa mtsogoleri isanafike ${day(p.closesAt)}. — ${GROUP}`,
+  },
+  caseVoteOpen: {
+    en: (p) => `A vote is open about our member ${p.member}: should she be ${p.actionWord}? Reason: ${p.reason}. Please vote before ${day(p.closesAt)}. — ${GROUP}`,
+    ny: (p) => `Voti yatsegulidwa yokhudza mnzathu ${p.member}: akuyenera ${p.actionWord}? Chifukwa: ${p.reason}. Chonde votani isanafike ${day(p.closesAt)}. — ${GROUP}`,
+  },
+  caseDecided: {
+    en: (p) => `Hello ${p.name}, the group's vote is finished. You are now ${p.actionWord}.${p.settlement != null ? ' Amount to be settled back to you: ' + money(p.settlement) + '.' : ''}${p.unrecovered ? ' You still owe ' + money(p.unrecovered) + '.' : ''} — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, voti ya gulu yatha. Tsopano ${p.actionWord}.${p.settlement != null ? ' Ndalama zobwezedwa kwa inu: ' + money(p.settlement) + '.' : ''}${p.unrecovered ? ' Mukadali ndi ngongole ya ' + money(p.unrecovered) + '.' : ''} — ${GROUP}`,
+  },
+  caseResult: {
+    en: (p) => `The group has finished voting about ${p.member}. Result: ${p.outcome}. — ${GROUP}`,
+    ny: (p) => `Gulu lamaliza voti yokhudza ${p.member}. Zotsatira: ${p.outcome}. — ${GROUP}`,
+  },
 };
 
 /** build('savingRecorded', 'ny', { name, amount, ... }) */

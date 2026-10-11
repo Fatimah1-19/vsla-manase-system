@@ -126,7 +126,7 @@ export default function Welfare() {
         )}
       />
 
-      <div className="page-grid">
+      <div className="page-grid page-grid--stat">
         <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
         <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
         <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
