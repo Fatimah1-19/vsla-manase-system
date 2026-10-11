@@ -7,7 +7,7 @@ import Ledger from '../components/Ledger.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import StatCard from '../components/StatCard.jsx';
-import { MultiLineChart, LineChart } from '../components/Charts.jsx';
+import { MultiLineChart, LineChart, BarChart } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLong } from '../utils/format.js';
 import './Reports.css';
 
@@ -285,8 +285,46 @@ export default function Reports() {
     </section>
   );
 
+  const attendanceSeen = group
+    ? group.totals.present + group.totals.absences + group.totals.excused : 0;
+  const attendanceRate = attendanceSeen > 0
+    ? Math.round((group.totals.present / attendanceSeen) * 100) : null;
+
+  const groupAttendancePanel = group && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.groupAttendanceTitle')}</h2>
+      <p className="reports__repNote">{t('reports.groupNote')} · {periodNote}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('reports.meetingsHeld')} value={plainNumber(group.totals.meetings)} tone="gold" icon="meetings" />
+        <StatCard label={t('reports.totalAbsences')} value={plainNumber(group.totals.absences)} tone="red" icon="fines" />
+        <StatCard label={t('reports.attendanceRate')} value={attendanceRate === null ? '—' : `${attendanceRate}%`} tone="green" icon="analytics" />
+      </div>
+      <BarChart
+        data={gb.map((b) => ({ label: b.label, present: b.present, absences: b.absences }))}
+        series={[
+          { key: 'present', label: t('reports.serPresent') },
+          { key: 'absences', label: t('reports.serAbsences') },
+        ]} />
+    </section>
+  );
+
+  const groupMembersPanel = group && (
+    <>
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{t('reports.groupMembersTitle')}</h2>
+        <p className="reports__repNote">{t('reports.groupNote')} · {periodNote}</p>
+        <div className="page-grid page-grid--stat reports__totals">
+          <StatCard label={t('reports.memberTotal')} value={plainNumber(members.length)} tone="green" icon="members" />
+          <StatCard label={t('reports.memberNew')} value={plainNumber(group.totals.new_members)} tone="blue" icon="members" />
+        </div>
+        <LineChart tone="leaf" data={gb.map((b) => ({ label: b.label, value: b.new_members }))} />
+      </section>
+      {membersTable}
+    </>
+  );
+
   const renderMemberReport = () => {
-    if (category === 'members') return membersTable;
+    if (category === 'members') return scope === 'group' ? groupMembersPanel : membersTable;
 
     const isMember = scope === 'member';
 
@@ -517,6 +555,8 @@ export default function Reports() {
 
         {category === 'attendance' ? (
           <>
+            {scope === 'group' && groupAttendancePanel}
+
             <div className="reports__tabs no-print" role="tablist">
               {['list', 'register'].map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k}

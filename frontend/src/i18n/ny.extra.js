@@ -281,6 +281,10 @@ export default {
     groupFinesTitle: 'Lipoti la zindapusa',
     reportScope: 'Lipoti la yani', scopeGroup: 'Lipoti la gulu', scopeMember: 'Lipoti la membala',
     groupPick: 'Gulu lonse, sabata, mwezi kapena chaka.',
+    groupAttendanceTitle: 'Lipoti la kupezeka', meetingsHeld: 'Misonkhano yomwe inachitika',
+    totalAbsences: 'Osapezeka', attendanceRate: 'Mlingo wa kupezeka',
+    serPresent: 'Opezeka', serAbsences: 'Osapezeka',
+    groupMembersTitle: 'Lipoti la mamembala', memberTotal: 'Mamembala pano', memberNew: 'Atsopano mu nthawi imeneyi',
   },
 
   home: {

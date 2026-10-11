@@ -256,7 +256,13 @@ const groupReport = wrap(async (req, res) => {
     return Object.fromEntries(rows.map((r) => [r.b, Number(r.v)]));
   };
 
-  const [contrib, loans, fines, wIn, wOut, savings, repay] = await Promise.all([
+  // Counts (meetings held, absences, new members) keyed by the same buckets.
+  const countBy = async (sql) => {
+    const rows = await query(sql, [from, to]);
+    return Object.fromEntries(rows.map((r) => [r.b, Number(r.v)]));
+  };
+
+  const [contrib, loans, fines, wIn, wOut, savings, repay, meetings, newMembers, att] = await Promise.all([
     series('monthly_contributions', 'paid_on'),
     series('loans', 'decided_at', "AND status IN ('approved','repaid','defaulted')"),
     series('fines', 'date'),
@@ -264,6 +270,31 @@ const groupReport = wrap(async (req, res) => {
     series('welfare_fund', 'date', "AND type = 'payout'"),
     series('savings', 'date'),
     series('loan_repayments', 'date'),
+    countBy(
+      `SELECT to_char(date_trunc('${trunc}', meeting_date::timestamp), 'YYYY-MM-DD') AS b,
+              COUNT(*)::int AS v
+         FROM meetings
+        WHERE meeting_date >= $1::date AND meeting_date < $2::date
+        GROUP BY 1`
+    ),
+    countBy(
+      `SELECT to_char(date_trunc('${trunc}', date_joined::timestamp), 'YYYY-MM-DD') AS b,
+              COUNT(*)::int AS v
+         FROM members
+        WHERE date_joined >= $1::date AND date_joined < $2::date
+        GROUP BY 1`
+    ),
+    query(
+      `SELECT to_char(date_trunc('${trunc}', mt.meeting_date::timestamp), 'YYYY-MM-DD') AS b,
+              COUNT(*) FILTER (WHERE a.status = 'absent')::int  AS absent,
+              COUNT(*) FILTER (WHERE a.status = 'excused')::int AS excused,
+              COUNT(*) FILTER (WHERE a.status = 'present')::int AS present
+         FROM attendance a
+         JOIN meetings mt ON mt.id = a.meeting_id
+        WHERE mt.meeting_date >= $1::date AND mt.meeting_date < $2::date
+        GROUP BY 1`,
+      [from, to]
+    ).then((rows) => Object.fromEntries(rows.map((r) => [r.b, r]))),
   ]);
 
   const round = (n) => +Number(n || 0).toFixed(2);
@@ -277,6 +308,11 @@ const groupReport = wrap(async (req, res) => {
     welfare: round((wIn[s] || 0) - (wOut[s] || 0)),
     savings: at(savings, s),
     repayments: at(repay, s),
+    meetings: round(meetings[s]),
+    new_members: round(newMembers[s]),
+    absences: att[s] ? att[s].absent : 0,
+    excused: att[s] ? att[s].excused : 0,
+    present: att[s] ? att[s].present : 0,
   }));
 
   const totals = buckets.reduce((acc, b) => ({
@@ -286,7 +322,15 @@ const groupReport = wrap(async (req, res) => {
     welfare: round(acc.welfare + b.welfare),
     savings: round(acc.savings + b.savings),
     repayments: round(acc.repayments + b.repayments),
-  }), { contributions: 0, loans: 0, fines: 0, welfare: 0, savings: 0, repayments: 0 });
+    meetings: acc.meetings + b.meetings,
+    new_members: acc.new_members + b.new_members,
+    absences: acc.absences + b.absences,
+    excused: acc.excused + b.excused,
+    present: acc.present + b.present,
+  }), {
+    contributions: 0, loans: 0, fines: 0, welfare: 0, savings: 0, repayments: 0,
+    meetings: 0, new_members: 0, absences: 0, excused: 0, present: 0,
+  });
 
   const [contributionsByMember, loansList, finesList] = await Promise.all([
     query(

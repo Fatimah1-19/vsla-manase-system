@@ -280,6 +280,10 @@ export default {
     groupFinesTitle: 'Fines report',
     reportScope: 'Whose report', scopeGroup: 'Group report', scopeMember: 'Member report',
     groupPick: 'The whole group, week, month or year.',
+    groupAttendanceTitle: 'Attendance report', meetingsHeld: 'Meetings held',
+    totalAbsences: 'Absences', attendanceRate: 'Attendance rate',
+    serPresent: 'Present', serAbsences: 'Absent',
+    groupMembersTitle: 'Membership report', memberTotal: 'Members now', memberNew: 'New in period',
   },
 
   home: {
