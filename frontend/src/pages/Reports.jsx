@@ -47,7 +47,8 @@ export default function Reports() {
   const [to, setTo] = useState('');
   const [rows, setRows] = useState(null);
 
-  // Member report picker.
+  // Whose report: the whole group, or one member.
+  const [scope, setScope] = useState('group');
   const [members, setMembers] = useState([]);
   const [memberId, setMemberId] = useState('');
   const [year, setYear] = useState('');
@@ -287,20 +288,24 @@ export default function Reports() {
   const renderMemberReport = () => {
     if (category === 'members') return membersTable;
 
+    const isMember = scope === 'member';
+
     if (category === 'overview') {
+      if (isMember) {
+        if (!memberId) return <p className="notice">{t('reports.reportHint')}</p>;
+        if (reportLoading) return <Spinner />;
+        return memberFacts;
+      }
       return (
-        <>
-          <section className="panel reports__panel">
-            <h2 className="panel__title">{t('reports.finTitle', t(`reports.gran_${granularity}`))}</h2>
-            <p className="reports__repNote">{t('reports.finNote')}{periodNote ? ` · ${periodNote}` : ''}</p>
-            {group ? <MultiLineChart data={gb} series={finSeries} /> : <Spinner />}
-          </section>
-          {memberId && (reportLoading ? <Spinner /> : memberFacts)}
-        </>
+        <section className="panel reports__panel">
+          <h2 className="panel__title">{t('reports.finTitle', t(`reports.gran_${granularity}`))}</h2>
+          <p className="reports__repNote">{t('reports.finNote')}{periodNote ? ` · ${periodNote}` : ''}</p>
+          {group ? <MultiLineChart data={gb} series={finSeries} /> : <Spinner />}
+        </section>
       );
     }
 
-    if (!memberId) {
+    if (!isMember) {
       if (!group) return <Spinner />;
       if (category === 'contributions') return groupContributions;
       if (category === 'loans') return groupLoans;
@@ -308,6 +313,7 @@ export default function Reports() {
       return null;
     }
 
+    if (!memberId) return <p className="notice">{t('reports.reportHint')}</p>;
     if (reportLoading) return <Spinner />;
     if (!report) return <p className="notice">{t('reports.reportHint')}</p>;
 
@@ -427,16 +433,25 @@ export default function Reports() {
       />
 
       <div className="reports__rep no-print">
-        <p className="reports__pick">{t('reports.reportPick')}</p>
+        <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
+          <button type="button" role="tab" aria-selected={scope === 'group'}
+            className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+            onClick={() => setScope('group')}>{t('reports.scopeGroup')}</button>
+          <button type="button" role="tab" aria-selected={scope === 'member'}
+            className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+            onClick={() => setScope('member')}>{t('reports.scopeMember')}</button>
+        </div>
 
         <div className="reports__controls">
-          <label className="reports__field reports__field--member">
-            <span className="field-label">{t('reports.reportMember')}</span>
-            <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
-              <option value="">{t('reports.reportChoose')}</option>
-              {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
-            </select>
-          </label>
+          {scope === 'member' && (
+            <label className="reports__field reports__field--member">
+              <span className="field-label">{t('reports.reportMember')}</span>
+              <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
+                <option value="">{t('reports.reportChoose')}</option>
+                {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+              </select>
+            </label>
+          )}
 
           <label className="reports__field reports__field--year">
             <span className="field-label">{t('reports.reportYear')}</span>
@@ -454,22 +469,26 @@ export default function Reports() {
             </select>
           </label>
 
-          <label className="reports__field reports__field--period">
-            <span className="field-label">{t('reports.groupBy')}</span>
-            <div className="reports__seg" role="group" aria-label={t('reports.groupBy')}>
-              {['week', 'month', 'year'].map((g) => (
-                <button key={g} type="button"
-                  className={granularity === g ? 'reports__segBtn is-on' : 'reports__segBtn'}
-                  onClick={() => setGranularity(g)}>
-                  {t(`reports.gran_${g}`)}
-                </button>
-              ))}
-            </div>
-          </label>
+          {scope === 'group' && (
+            <label className="reports__field reports__field--period">
+              <span className="field-label">{t('reports.groupBy')}</span>
+              <div className="reports__seg" role="group" aria-label={t('reports.groupBy')}>
+                {['week', 'month', 'year'].map((g) => (
+                  <button key={g} type="button"
+                    className={granularity === g ? 'reports__segBtn is-on' : 'reports__segBtn'}
+                    onClick={() => setGranularity(g)}>
+                    {t(`reports.gran_${g}`)}
+                  </button>
+                ))}
+              </div>
+            </label>
+          )}
 
-          <button type="button" className="btn btn--gold btn--small reports__filterBtn" onClick={loadReport}>
-            {t('reports.reportFilter')}
-          </button>
+          {scope === 'member' && (
+            <button type="button" className="btn btn--gold btn--small reports__filterBtn" onClick={loadReport}>
+              {t('reports.reportFilter')}
+            </button>
+          )}
           <button type="button" className="btn btn--sky btn--small reports__exportBtn" onClick={() => window.print()}>
             {t('reports.reportExport')}
           </button>
@@ -487,7 +506,7 @@ export default function Reports() {
       </div>
 
       <div className="print-area">
-        {totals && (
+        {totals && scope === 'group' && (
           <div className="page-grid page-grid--stat reports__totals">
             <StatCard label={t('reports.totalContribution')} value={money(totals.wrappers.cycle_total)} tone="gold" icon="wrappers" />
             <StatCard label={t('reports.totalLoans')} value={money(totals.loans.lent_principal)} tone="blue" icon="loans" />

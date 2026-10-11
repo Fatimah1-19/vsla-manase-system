@@ -279,6 +279,8 @@ export default {
     groupNote: 'Gulu lonse pa nthawi yosankhidwa',
     groupContribTitle: 'Lipoti la zolipira', groupLoansTitle: 'Lipoti la ngongole',
     groupFinesTitle: 'Lipoti la zindapusa',
+    reportScope: 'Lipoti la yani', scopeGroup: 'Lipoti la gulu', scopeMember: 'Lipoti la membala',
+    groupPick: 'Gulu lonse, sabata, mwezi kapena chaka.',
   },
 
   home: {

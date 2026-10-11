@@ -278,6 +278,8 @@ export default {
     groupNote: 'The whole group for the chosen period',
     groupContribTitle: 'Contributions report', groupLoansTitle: 'Loans report',
     groupFinesTitle: 'Fines report',
+    reportScope: 'Whose report', scopeGroup: 'Group report', scopeMember: 'Member report',
+    groupPick: 'The whole group, week, month or year.',
   },
 
   home: {

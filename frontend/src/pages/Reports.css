@@ -64,6 +64,13 @@
   font-weight: 700;
   color: var(--ink);
 }
+.reports__scope { display: inline-flex; margin: 0 0 0.85rem; border: 1px solid var(--rule-dark); border-radius: 10px; overflow: hidden; }
+.reports__scopeBtn {
+  border: 0; background: var(--card); color: var(--slate);
+  min-height: 38px; padding: 0.35rem 1.1rem; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+}
+.reports__scopeBtn + .reports__scopeBtn { border-left: 1px solid var(--rule-dark); }
+.reports__scopeBtn.is-on { background: var(--leaf); color: #fff; }
 .reports__controls { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: flex-end; margin-bottom: 0.85rem; }
 .reports__field { display: flex; flex-direction: column; gap: 0.25rem; }
 .reports__field .field-label { font-size: 0.78rem; font-weight: 600; color: var(--slate); }
