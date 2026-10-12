@@ -12,7 +12,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate, inputDate } from '../utils/format.js';
+import { money, shortDate, inputDate, monthName } from '../utils/format.js';
 import './Members.css';
 
 const blank = {
@@ -218,10 +218,29 @@ export default function Members() {
   const filtered = useMemo(() => {
     if (!people) return [];
     const q = search.trim().toLowerCase();
-    return q
+    const rows = q
       ? people.filter((p) => p.full_name.toLowerCase().includes(q) || p.username.includes(q))
-      : people;
+      : people.slice();
+    return rows.sort((a, b) => {
+      const da = a.date_joined || '';
+      const db = b.date_joined || '';
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return db.localeCompare(da);
+    });
   }, [people, search]);
+
+  const groupByJoin = (p) => {
+    const jd = p.date_joined ? String(p.date_joined).slice(0, 10) : '';
+    if (jd.length !== 10) return [{ key: 'none', label: t('members.noJoinDate') }];
+    const [y, m, d] = jd.split('-');
+    return [
+      { key: `y${y}`, label: y },
+      { key: `y${y}-${m}`, label: monthName(Number(m)) },
+      { key: `y${y}-${m}-${d}`, label: String(Number(d)) },
+    ];
+  };
 
   if (!people) return <Spinner />;
 
@@ -336,6 +355,7 @@ export default function Members() {
         columns={columns}
         rows={filtered}
         onRowClick={setDetail}
+        groupBy={groupByJoin}
         empty={<EmptyState title={t('members.empty')} />}
       />
 
@@ -527,16 +547,6 @@ export default function Members() {
               <div><dt>{t('profile.occupation')}</dt><dd>{detail.occupation || '—'}</dd></div>
               <div><dt>{t('profile.address')}</dt><dd>{detail.address || '—'}</dd></div>
               <div><dt>{t('members.nextOfKin')}</dt><dd>{detail.next_of_kin ? `${detail.next_of_kin}${detail.next_of_kin_phone ? ' · ' + detail.next_of_kin_phone : ''}` : '—'}</dd></div>
-              {detail.date_joined && (() => {
-                const [y, m, d] = String(detail.date_joined).slice(0, 10).split('-');
-                return (
-                  <>
-                    <div><dt>{t('members.joinedYear')}</dt><dd>{Number(y)}</dd></div>
-                    <div><dt>{t('members.joinedMonth')}</dt><dd>{Number(m)}</dd></div>
-                    <div><dt>{t('members.joinedDay')}</dt><dd>{Number(d)}</dd></div>
-                  </>
-                );
-              })()}
               <div><dt>{t('members.lastLogin')}</dt><dd>{detail.last_login ? shortDate(detail.last_login) : t('members.never')}</dd></div>
             </dl>
 

@@ -150,9 +150,7 @@ export default {
     regFeePaid: (amount, date) => `Paid ${amount} on ${date}.`,
     regFeeRecordShort: 'Record',
     recordFee: 'Record registration fee',
-    joinedYear: 'Year joined',
-    joinedMonth: 'Month joined',
-    joinedDay: 'Date joined',
+    noJoinDate: 'Join date not recorded',
   },
 
   profile: {

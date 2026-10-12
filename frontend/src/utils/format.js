@@ -59,4 +59,11 @@ export function monthLong(ym) {
   return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
+/** 10 -> 'October' */
+export function monthName(m) {
+  const n = Number(m);
+  if (!n) return '';
+  return new Date(2000, n - 1, 1).toLocaleDateString('en-GB', { month: 'long' });
+}
+
 export const thisMonth = () => new Date().toISOString().slice(0, 7);

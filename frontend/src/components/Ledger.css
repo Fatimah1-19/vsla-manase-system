@@ -42,6 +42,18 @@
 .ledger tbody tr.is-clickable { cursor: pointer; }
 .ledger tbody tr.is-clickable:hover { background: var(--leaf-wash); }
 
+/* Group headers inside the body, e.g. members grouped by join date. */
+.ledger tbody tr.ledger__group td {
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule-dark);
+  font-family: var(--head);
+  font-weight: 700;
+  color: var(--slate);
+}
+.ledger tbody tr.ledger__group--1 td { font-size: 1.02rem; letter-spacing: 0.02em; }
+.ledger tbody tr.ledger__group--2 td { padding-left: 1.6rem; color: var(--leaf-dark); }
+.ledger tbody tr.ledger__group--3 td { padding-left: 2.6rem; font-size: 0.9rem; color: var(--slate); }
+
 .ledger .is-right { text-align: right; }
 
 /* Below this width the table folds into stacked blocks. */
@@ -86,4 +98,16 @@
 
   .ledger .is-wide-only { display: none; }
   .ledger .is-right { text-align: right; }
+
+  /* Group headers stay simple when the table is folded. */
+  .ledger tbody tr.ledger__group { padding: 0.5rem 0.9rem; background: var(--paper); }
+  .ledger tbody tr.ledger__group td {
+    display: block;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .ledger tbody tr.ledger__group--2 td { padding-left: 0.9rem; }
+  .ledger tbody tr.ledger__group--3 td { padding-left: 1.8rem; }
 }
