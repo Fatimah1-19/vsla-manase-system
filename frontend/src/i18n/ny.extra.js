@@ -118,6 +118,13 @@ export default {
     nothingRepaid: 'Palibe chobwezedwa panobe.',
     print: 'Sindikizani kalata iyi', reasonNeeded: 'Lembani chifukwa. Wokongola adzachiona mu uthenga wake.',
     interestWord: 'chiwongola dzanja',
+    repaymentsTitle: 'Mbiri ya kubweza', seeRepayments: 'Onani zobweza',
+    searchMember: 'Fufuzani membala', searchPlaceholder: 'Lembani dzina la membala…',
+    everyone: 'Alionse', showRepayments: 'Onetsani',
+    totalRepaid: 'Zonse zobwezedwa', principalPaid: 'Ndalama zazikulu zolipidwa', interestPaid: 'Chiwongola dzanja cholipidwa',
+    paymentCount: 'Malipiro', noRepayments: 'Palibe zobweza zopezeka.',
+    cycleWord: 'Nyengo yosunga', principalOnly: 'ndalama zazikulu zokha',
+    loanRef: (id) => `Ngongole #${id}`,
   },
 
   fines: {

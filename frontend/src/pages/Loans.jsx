@@ -9,7 +9,8 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate, inputDate } from '../utils/format.js';
+import StatCard from '../components/StatCard.jsx';
+import { money, shortDate, inputDate, monthLong, plainNumber } from '../utils/format.js';
 import './Loans.css';
 
 const STATUS_TAG = {
@@ -17,6 +18,41 @@ const STATUS_TAG = {
 };
 
 const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '', due_date: '' };
+
+/**
+ * A flat list of repayments (newest first) becomes Cycle/Year -> Month -> Date
+ * groups. A repayment inside a saving cycle is filed under that cycle; one
+ * without a cycle falls back to its calendar year. Totals are summed per group.
+ */
+function groupRepayments(rows) {
+  const groups = new Map();
+  for (const r of rows) {
+    const year = String(r.date).slice(0, 4);
+    const gKey = r.cycle_id ? `c${r.cycle_id}` : `y${year}`;
+    let g = groups.get(gKey);
+    if (!g) {
+      g = {
+        key: gKey,
+        label: r.cycle_id ? (r.cycle_name || year) : year,
+        dates: r.cycle_id && r.cycle_start && r.cycle_end
+          ? `${shortDate(r.cycle_start)} – ${shortDate(r.cycle_end)}`
+          : '',
+        total: 0,
+        months: new Map(),
+      };
+      groups.set(gKey, g);
+    }
+    g.total += Number(r.amount || 0);
+    const mKey = String(r.date).slice(0, 7);
+    if (!g.months.has(mKey)) g.months.set(mKey, { key: mKey, label: monthLong(mKey), total: 0, days: new Map() });
+    const month = g.months.get(mKey);
+    month.total += Number(r.amount || 0);
+    const dKey = String(r.date).slice(0, 10);
+    if (!month.days.has(dKey)) month.days.set(dKey, { key: dKey, label: shortDate(dKey), items: [] });
+    month.days.get(dKey).items.push(r);
+  }
+  return [...groups.values()];
+}
 
 export default function Loans() {
   const { t } = useLang();
@@ -33,6 +69,13 @@ export default function Loans() {
   const [detail, setDetail] = useState(null);       // { loan, repayments }
   const [decisionNote, setDecisionNote] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
+
+  // The repayment-history panel: search a member, see their payments grouped.
+  const [rpOpen, setRpOpen] = useState(false);
+  const [rpSearch, setRpSearch] = useState('');
+  const [rpMember, setRpMember] = useState('');
+  const [rpData, setRpData] = useState(null);
+  const [rpLoading, setRpLoading] = useState(false);
 
   const canDecide = ['admin', 'treasurer', 'secretary'].includes(user.role);
   const canRecordRepayment = isRecorder;
@@ -140,10 +183,50 @@ export default function Loans() {
     }
   }
 
+  async function loadRepayments(memberId) {
+    setRpLoading(true);
+    try {
+      const q = memberId ? `?member_id=${memberId}` : '';
+      setRpData(await api.get(`/loans/repayments${q}`));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setRpLoading(false);
+    }
+  }
+
+  function openRepayments() {
+    const own = isCommittee ? '' : (user.member_id || '');
+    setRpSearch('');
+    setRpMember(own ? String(own) : '');
+    setRpOpen(true);
+    setRpData(null);
+    loadRepayments(own);
+  }
+
+  function showEveryone() {
+    setRpSearch('');
+    setRpMember('');
+    loadRepayments('');
+  }
+
+  function pickMember(m) {
+    setRpSearch(m.full_name);
+    setRpMember(String(m.id));
+    loadRepayments(m.id);
+  }
+
   if (!loans) return <Spinner />;
 
   const shown = filter === 'all' ? loans : loans.filter((l) => l.status === filter);
   const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
+
+  const rpGroups = rpData ? groupRepayments(rpData.repayments) : [];
+  const rpQuery = rpSearch.trim().toLowerCase();
+  const rpMatches = rpQuery
+    ? members.filter((m) => m.full_name.toLowerCase().includes(rpQuery)
+        || String(m.membership_number || '').includes(rpQuery)).slice(0, 8)
+    : [];
 
   const columns = [
     { key: 'full_name', label: t('loans.borrower'),
@@ -173,6 +256,9 @@ export default function Loans() {
         title={t('loans.title')}
         action={
           <>
+            <button type="button" className="btn btn--ghost" onClick={openRepayments}>
+              {t('loans.seeRepayments')}
+            </button>
             {isCommittee && (
               <button type="button" className="btn btn--sky" onClick={sendReminders} disabled={busy}>
                 {t('loans.remind')}
@@ -360,6 +446,120 @@ export default function Loans() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ---- repayment history ---- */}
+      <Modal
+        open={rpOpen}
+        title={t('loans.repaymentsTitle')}
+        onClose={() => setRpOpen(false)}
+        wide
+      >
+        <div className="rp">
+          {isCommittee && (
+            <>
+              <div className="toolbar">
+                <input
+                  className="toolbar__grow"
+                  type="search"
+                  placeholder={t('loans.searchPlaceholder')}
+                  aria-label={t('loans.searchMember')}
+                  value={rpSearch}
+                  onChange={(e) => setRpSearch(e.target.value)}
+                />
+                <button type="button" className="btn btn--ghost btn--small" onClick={showEveryone}>
+                  {t('loans.everyone')}
+                </button>
+              </div>
+
+              {rpQuery && (
+                <ul className="rp__results">
+                  {rpMatches.map((m) => (
+                    <li key={m.id}>
+                      <button type="button" className="rp__result" onClick={() => pickMember(m)}>
+                        <MemberAvatar memberId={m.id} hasAvatar={m.has_avatar} name={m.full_name} size={28} />
+                        <span className="rp__resultName">{m.full_name}</span>
+                        <span className="rp__resultNum muted">{m.membership_number}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {!rpMatches.length && <li className="muted rp__none">{t('loans.noRepayments')}</li>}
+                </ul>
+              )}
+            </>
+          )}
+
+          {rpLoading && <Spinner />}
+
+          {!rpLoading && rpData && (
+            <>
+              {rpData.member && (
+                <div className="rp__who">
+                  <MemberAvatar memberId={rpData.member.id} hasAvatar={rpData.member.has_avatar} name={rpData.member.full_name} size={40} />
+                  <div>
+                    <strong>{rpData.member.full_name}</strong>
+                    <span className="muted">{rpData.member.membership_number}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="rp__stats">
+                <StatCard tone="gold" label={t('loans.totalRepaid')} value={money(rpData.summary.total)} />
+                <StatCard label={t('loans.principalPaid')} value={money(rpData.summary.principal)} />
+                <StatCard label={t('loans.interestPaid')} value={money(rpData.summary.interest)} />
+                <StatCard label={t('loans.paymentCount')} value={plainNumber(rpData.summary.count)} />
+              </div>
+
+              {rpData.summary.count > 0 && (
+                <p className="muted rp__period">
+                  {shortDate(rpData.summary.first_date)} – {shortDate(rpData.summary.last_date)}
+                </p>
+              )}
+
+              {rpGroups.length ? (
+                rpGroups.map((g) => (
+                  <section className="rp__group" key={g.key}>
+                    <div className="rp__groupHead">
+                      <h3 className="rp__groupTitle">{g.label}</h3>
+                      <span className="rp__groupTotal money">{money(g.total)}</span>
+                    </div>
+                    {g.dates && <p className="rp__groupDates muted">{g.dates}</p>}
+
+                    {[...g.months.values()].map((m) => (
+                      <div className="rp__month" key={m.key}>
+                        <h4 className="rp__monthTitle">{m.label}</h4>
+                        {[...m.days.values()].map((d) => (
+                          <div className="rp__day" key={d.key}>
+                            <h5 className="rp__dayTitle">{d.label}</h5>
+                            <ul className="rp__list">
+                              {d.items.map((r) => (
+                                <li key={r.id} className="rp__item">
+                                  <span className="rp__itemAmount money">{money(r.amount)}</span>
+                                  <span className="rp__itemSplit">
+                                    {r.interest_part > 0
+                                      ? `${money(r.principal_part)} + ${money(r.interest_part)} ${t('loans.interestWord')}`
+                                      : t('loans.principalOnly')}
+                                  </span>
+                                  <span className="rp__itemMeta">
+                                    {!rpMember && <span className="rp__itemWho">{r.full_name}</span>}
+                                    <span>{t('loans.loanRef', r.loan_id)}</span>
+                                    {r.recorded_by_name && <span className="muted">{r.recorded_by_name}</span>}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </section>
+                ))
+              ) : (
+                <EmptyState title={t('loans.noRepayments')} />
+              )}
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   );

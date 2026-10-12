@@ -6,6 +6,7 @@ router.use(protect);
 router.get('/', c.listLoans);                                   // members see their own
 router.get('/overdue', committee(), c.overdueLoans);
 router.get('/limit', c.borrowingLimit);                         // savings x multiplier
+router.get('/repayments', c.listRepayments);                    // committee: anyone; member: herself
 router.post('/', c.applyLoan);                                  // a member may apply for herself
 router.post('/remind', recorders(), c.sendReminders);
 router.get('/:id', c.getLoan);

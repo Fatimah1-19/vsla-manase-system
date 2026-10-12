@@ -117,6 +117,13 @@ export default {
     nothingRepaid: 'Nothing repaid yet.',
     print: 'Print this statement', reasonNeeded: 'Give a reason. The borrower will see it in their text message.',
     interestWord: 'interest',
+    repaymentsTitle: 'Repayment history', seeRepayments: 'See repayments',
+    searchMember: 'Find a member', searchPlaceholder: 'Type a member name…',
+    everyone: 'Everyone', showRepayments: 'Show',
+    totalRepaid: 'Total repaid', principalPaid: 'Principal paid', interestPaid: 'Interest paid',
+    paymentCount: 'Payments', noRepayments: 'No repayments found.',
+    cycleWord: 'Saving cycle', principalOnly: 'principal only',
+    loanRef: (id) => `Loan #${id}`,
   },
 
   fines: {

@@ -307,6 +307,75 @@ const getLoan = wrap(async (req, res) => {
   res.json({ loan: withBalance(loan), repayments });
 });
 
+// GET /api/loans/repayments?member_id= — every repayment a member has made,
+// newest first, with a running summary. The committee may look at one member
+// or the whole group; a member only ever sees her own.
+const listRepayments = wrap(async (req, res) => {
+  const isMember = req.user.role === 'member';
+  const memberId = isMember
+    ? req.user.member_id
+    : (req.query.member_id ? Number(req.query.member_id) : null);
+
+  // A member account that is not tied to a member row has nothing to show.
+  if (isMember && !memberId) {
+    return res.json({
+      member: null,
+      summary: { total: 0, principal: 0, interest: 0, count: 0, first_date: null, last_date: null },
+      repayments: [],
+    });
+  }
+
+  const where = [];
+  const params = [];
+  if (memberId) { params.push(memberId); where.push(`l.member_id = $${params.length}`); }
+  if (req.query.from) { params.push(req.query.from); where.push(`r.date >= $${params.length}`); }
+  if (req.query.to) { params.push(req.query.to); where.push(`r.date <= $${params.length}`); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const repayments = await query(
+    `SELECT r.id, r.amount::float, r.principal_part::float, r.interest_part::float,
+            to_char(r.date,'YYYY-MM-DD') AS date, r.created_at, l.id AS loan_id, l.cycle_id,
+            c.cycle_name AS cycle_name,
+            to_char(c.start_date,'YYYY-MM-DD') AS cycle_start,
+            to_char(c.end_date,'YYYY-MM-DD') AS cycle_end,
+            m.membership_number, u.full_name, (m.avatar IS NOT NULL) AS has_avatar,
+            rec.full_name AS recorded_by_name
+       FROM loan_repayments r
+       JOIN loans l ON l.id = r.loan_id
+       JOIN members m ON m.id = l.member_id
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN cycles c ON c.id = l.cycle_id
+       LEFT JOIN users rec ON rec.id = r.recorded_by
+      ${whereSql}
+      ORDER BY r.date DESC, r.id DESC`,
+    params
+  );
+
+  const summary = await one(
+    `SELECT COALESCE(SUM(r.amount),0)::float AS total,
+            COALESCE(SUM(r.principal_part),0)::float AS principal,
+            COALESCE(SUM(r.interest_part),0)::float AS interest,
+            COUNT(*)::int AS count,
+            to_char(MIN(r.date),'YYYY-MM-DD') AS first_date,
+            to_char(MAX(r.date),'YYYY-MM-DD') AS last_date
+       FROM loan_repayments r
+       JOIN loans l ON l.id = r.loan_id
+      ${whereSql}`,
+    params
+  );
+
+  let member = null;
+  if (memberId) {
+    member = await one(
+      `SELECT m.id, m.membership_number, u.full_name, (m.avatar IS NOT NULL) AS has_avatar
+         FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`,
+      [memberId]
+    );
+  }
+
+  res.json({ member, summary, repayments });
+});
+
 // GET /api/loans/overdue — who has not paid before the cycle ends
 const overdueLoans = wrap(async (req, res) => {
   const rows = await query(
@@ -348,5 +417,5 @@ const sendReminders = wrap(async (req, res) => {
 });
 
 module.exports = {
-  applyLoan, decideLoan, recordRepayment, listLoans, getLoan, overdueLoans, sendReminders, borrowingLimit,
+  applyLoan, decideLoan, recordRepayment, listLoans, getLoan, listRepayments, overdueLoans, sendReminders, borrowingLimit,
 };
