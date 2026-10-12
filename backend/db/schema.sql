@@ -263,6 +263,20 @@ CREATE TABLE IF NOT EXISTS monthly_contributions (
 );
 CREATE INDEX IF NOT EXISTS idx_monthly_member ON monthly_contributions(member_id, period);
 
+-- The one-off fee a new member pays on joining. Recorded by the treasurer or
+-- the secretary; not savings and never shared out. One row per member, so the
+-- UNIQUE keeps a member from being recorded twice.
+CREATE TABLE IF NOT EXISTS registration_fees (
+  id           SERIAL PRIMARY KEY,
+  member_id    INT NOT NULL UNIQUE REFERENCES members(id) ON DELETE CASCADE,
+  cycle_id     INT REFERENCES cycles(id) ON DELETE SET NULL,
+  amount       NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+  paid_on      DATE NOT NULL DEFAULT CURRENT_DATE,
+  note         TEXT,
+  recorded_by  INT NOT NULL REFERENCES users(id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Scanned IDs, membership forms and similar papers, kept inside the database
 -- so they are never exposed by a public web address.
 CREATE TABLE IF NOT EXISTS member_documents (

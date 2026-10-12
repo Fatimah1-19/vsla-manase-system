@@ -82,6 +82,10 @@ const T = {
     en: (p) => `Hello ${p.name}, we received your monthly contribution of ${money(p.amount)} for ${p.month}. ${Number(p.balance) > 0 ? 'Balance for the month: ' + money(p.balance) + '.' : 'Thank you, you are paid up for the month.'} — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, talandira ndalama zanu za mwezi ${money(p.amount)} za ${p.month}. ${Number(p.balance) > 0 ? 'Zotsala za mwezi: ' + money(p.balance) + '.' : 'Zikomo, mwamaliza mwezi uno.'} — ${GROUP}`,
   },
+  registrationRecorded: {
+    en: (p) => `Hello ${p.name}, your one-off registration fee of ${money(p.amount)} was recorded. Welcome to the group. — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, ndalama zanu zolembetsa za ${money(p.amount)} zalembedwa. Takulandirani ku gulu. — ${GROUP}`,
+  },
   memberApproved: {
     en: (p) => `Welcome ${p.name}! The group has accepted you. Your username is ${p.username} and your temporary password is ${p.password}. Please change it after you log in. — ${GROUP}`,
     ny: (p) => `Takulandirani ${p.name}! Gulu lakuvomerezani. Dzina lanu logwiritsa ntchito ndi ${p.username} ndipo achinsinsi anu a kanthawi ndi ${p.password}. Chonde asinthe mukalowa. — ${GROUP}`,

@@ -46,6 +46,7 @@ app.use('/api/meetings', require('./routes/meetingRoutes'));
 app.use('/api/cycles', require('./routes/cycleRoutes'));
 app.use('/api/shareout', require('./routes/shareOutRoutes'));
 app.use('/api/join-requests', require('./routes/joinRequestRoutes'));
+app.use('/api/registration-fees', require('./routes/registrationRoutes'));
 app.use('/api/cases', require('./routes/memberCaseRoutes'));
 app.use('/api/sms', require('./routes/smsRoutes'));
 app.use('/api/audit', require('./routes/auditRoutes'));

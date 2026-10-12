@@ -12,7 +12,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate } from '../utils/format.js';
+import { money, shortDate, inputDate } from '../utils/format.js';
 import './Members.css';
 
 const blank = {
@@ -66,7 +66,7 @@ function PersonalFields({ values, onChange, t, prefix }) {
 
 export default function Members() {
   const { t } = useLang();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isRecorder } = useAuth();
   const navigate = useNavigate();
   const [editForm, setEditForm] = useState(null);
   const toast = useToast();
@@ -80,9 +80,14 @@ export default function Members() {
   const [busy, setBusy] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [fees, setFees] = useState(null);
+  const [feeForm, setFeeForm] = useState(null);
+  const [feeBusy, setFeeBusy] = useState(false);
 
   const load = useCallback(async () => {
-    setPeople(await api.get('/users'));
+    const [people, reg] = await Promise.all([api.get('/users'), api.get('/registration-fees')]);
+    setPeople(people);
+    setFees(reg);
   }, []);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
@@ -172,6 +177,44 @@ export default function Members() {
     }
   }
 
+  const feeByMember = useMemo(() => {
+    const map = {};
+    (fees?.members || []).forEach((m) => { map[m.member_id] = m; });
+    return map;
+  }, [fees]);
+
+  function startFee(person) {
+    setFeeForm({
+      member_id: person.member_id,
+      full_name: person.full_name,
+      membership_number: person.membership_number || '',
+      amount: String(fees?.fee ?? ''),
+      paid_on: inputDate(),
+      note: '',
+    });
+  }
+
+  async function submitFee(e) {
+    e.preventDefault();
+    setFeeBusy(true);
+    try {
+      const res = await api.post('/registration-fees', {
+        member_id: feeForm.member_id,
+        amount: Number(feeForm.amount),
+        paid_on: feeForm.paid_on,
+        note: feeForm.note || null,
+      });
+      toast.success(res.sms_sent ? `${res.message} ${t('wrappers.texted')}` : res.message);
+      setFeeForm(null);
+      setDetail(null);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setFeeBusy(false);
+    }
+  }
+
   const filtered = useMemo(() => {
     if (!people) return [];
     const q = search.trim().toLowerCase();
@@ -202,6 +245,14 @@ export default function Members() {
         if (!p.is_active) return <span className="tag tag--red">{t('members.inactive')}</span>;
         if (isLocked(p)) return <span className="tag tag--gold">{t('members.locked')}</span>;
         return <span className="tag tag--green">{t('members.active')}</span>;
+      } },
+    { key: 'registration', label: t('members.regFee'), hideOnPhone: true,
+      render: (p) => {
+        const f = feeByMember[p.member_id];
+        if (!f) return <span className="muted">—</span>;
+        return f.paid
+          ? <span className="tag tag--green">{t('members.regFeePaidTag')}</span>
+          : <span className="tag tag--gold">{t('members.regFeeDueTag')}</span>;
       } },
     { key: 'action', label: t('common.actions'),
       render: (p) => {
@@ -470,6 +521,27 @@ export default function Members() {
               <div><dt>{t('members.lastLogin')}</dt><dd>{detail.last_login ? shortDate(detail.last_login) : t('members.never')}</dd></div>
             </dl>
 
+            {detail.member_id && feeByMember[detail.member_id] && (
+              <div className="members__fee">
+                <h3 className="members__feeTitle">{t('members.regFee')}</h3>
+                {feeByMember[detail.member_id]?.paid ? (
+                  <p className="members__feePaid">
+                    {t('members.regFeePaid',
+                      money(feeByMember[detail.member_id].amount),
+                      shortDate(feeByMember[detail.member_id].paid_on))}
+                    {feeByMember[detail.member_id].recorded_by_name
+                      ? ` · ${t('savings.recordedBy')}: ${feeByMember[detail.member_id].recorded_by_name}` : ''}
+                  </p>
+                ) : (
+                  <p className="muted">{t('members.regFeeDue', money(fees?.fee ?? 0))}</p>
+                )}
+                {isRecorder && !feeByMember[detail.member_id]?.paid && (
+                  <button type="button" className="btn btn--small" disabled={feeBusy}
+                    onClick={() => startFee(detail)}>{t('members.recordFee')}</button>
+                )}
+              </div>
+            )}
+
             {isAdmin && (
               <div className="members__actions">
                 <button type="button" className="btn" disabled={busy} onClick={() => startEdit(detail)}>{t('common.edit')}</button>
@@ -486,6 +558,48 @@ export default function Members() {
               </div>
             )}
           </div>
+        )}
+      </Modal>
+
+      {/* ---- record registration fee ---- */}
+      <Modal
+        open={!!feeForm}
+        title={t('members.recordFee')}
+        onClose={() => setFeeForm(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => setFeeForm(null)}>{t('common.cancel')}</button>
+            <button type="submit" form="fee-form" className="btn" disabled={feeBusy}>
+              {feeBusy ? t('common.saving') : t('common.save')}
+            </button>
+          </>
+        }
+      >
+        {feeForm && (
+          <form id="fee-form" onSubmit={submitFee} noValidate>
+            <p className="members__feeFor">
+              {feeForm.full_name}{feeForm.membership_number ? ` · ${feeForm.membership_number}` : ''}
+            </p>
+            <div className="form-row form-row--2">
+              <div>
+                <label className="field-label" htmlFor="fee-amount">{t('common.amount')}</label>
+                <input id="fee-amount" type="number" min="0" step="any"
+                  value={feeForm.amount} onChange={(e) => setFeeForm((f) => ({ ...f, amount: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="field-label" htmlFor="fee-date">{t('common.date')}</label>
+                <input id="fee-date" type="date"
+                  value={feeForm.paid_on} onChange={(e) => setFeeForm((f) => ({ ...f, paid_on: e.target.value }))} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div>
+                <label className="field-label" htmlFor="fee-note">{t('savings.note')}</label>
+                <input id="fee-note" value={feeForm.note}
+                  onChange={(e) => setFeeForm((f) => ({ ...f, note: e.target.value }))} />
+              </div>
+            </div>
+          </form>
         )}
       </Modal>
     </div>

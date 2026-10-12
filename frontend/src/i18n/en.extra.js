@@ -143,6 +143,12 @@ export default {
     bringBack: 'Reactivate',
     confirmReactivate: 'Reactivate this member? They will be able to log in again.',
     dismiss: 'Dismiss',
+    regFee: 'Registration fee',
+    regFeePaidTag: 'Paid',
+    regFeeDueTag: 'Not paid',
+    regFeeDue: (fee) => `Not paid yet. The fee is ${fee}.`,
+    regFeePaid: (amount, date) => `Paid ${amount} on ${date}.`,
+    recordFee: 'Record registration fee',
   },
 
   profile: {

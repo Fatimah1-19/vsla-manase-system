@@ -144,6 +144,12 @@ export default {
     bringBack: 'Yambitsani',
     confirmReactivate: 'Yambitsani membala uyu? Adzatha kulowanso.',
     dismiss: 'Chotsani',
+    regFee: 'Ndalama zolembetsa',
+    regFeePaidTag: 'Zalipidwa',
+    regFeeDueTag: 'Sizinalipidwe',
+    regFeeDue: (fee) => `Sizinathe. Ndalama yake ndi ${fee}.`,
+    regFeePaid: (amount, date) => `Zalipidwa ${amount} pa ${date}.`,
+    recordFee: 'Lembani ndalama zolembetsa',
   },
 
   profile: {

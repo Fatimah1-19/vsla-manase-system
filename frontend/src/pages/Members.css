@@ -33,6 +33,21 @@
 
 .members__actions { display: grid; gap: 0.5rem; }
 
+/* ---- registration fee, inside the member's card ---- */
+.members__fee {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+}
+.members__feeTitle { margin: 0; font-size: 0.95rem; }
+.members__feePaid { margin: 0; font-weight: 600; color: var(--leaf-dark); }
+.members__feeFor { margin: 0 0 0.9rem; font-weight: 700; }
+
 .members__rowActs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 
 /* ---- empty committee office ---- */
