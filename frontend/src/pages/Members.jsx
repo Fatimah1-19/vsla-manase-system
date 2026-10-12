@@ -233,13 +233,9 @@ export default function Members() {
 
   const groupByJoin = (p) => {
     const jd = p.date_joined ? String(p.date_joined).slice(0, 10) : '';
-    if (jd.length !== 10) return [{ key: 'none', label: t('members.noJoinDate') }];
+    if (!jd || jd.length < 10) return [{ key: 'none', label: t('members.noJoinDate') }];
     const [y, m, d] = jd.split('-');
-    return [
-      { key: `y${y}`, label: y },
-      { key: `y${y}-${m}`, label: monthName(Number(m)) },
-      { key: `y${y}-${m}-${d}`, label: String(Number(d)) },
-    ];
+    return [{ key: jd, label: `${monthName(Number(m))} ${Number(d)}, ${y}` }];
   };
 
   if (!people) return <Spinner />;
