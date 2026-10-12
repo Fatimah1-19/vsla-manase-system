@@ -67,7 +67,7 @@
 .reports__scope { display: inline-flex; margin: 0 0 0.85rem; border: 1px solid var(--rule-dark); border-radius: 10px; overflow: hidden; }
 .reports__scopeBtn {
   border: 0; background: transparent; color: var(--slate);
-  min-height: 38px; padding: 0.35rem 1.1rem; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  min-height: 34px; padding: 0.3rem 0.9rem; font-size: 0.85rem; font-weight: 700; cursor: pointer;
 }
 .reports__scopeBtn + .reports__scopeBtn { border-left: 1px solid var(--rule-dark); }
 .reports__scopeBtn.is-on { background: #000; color: #fff; }
@@ -84,9 +84,9 @@
 .reports__field--member { flex: 1 1 220px; }
 .reports__field--member select { border-color: var(--leaf); background: var(--leaf-wash); }
 .reports__field--year { flex: 0 0 auto; }
-.reports__field--year select { min-width: 92px; border-color: var(--maize-deep); background: var(--maize-wash); }
+.reports__field--year select { min-width: 92px; }
 .reports__field--month { flex: 0 0 auto; }
-.reports__field--month select { min-width: 118px; border-color: var(--sky); background: var(--sky-wash); }
+.reports__field--month select { min-width: 118px; }
 .reports__filterBtn, .reports__exportBtn { flex: 0 0 auto; }
 
 .reports__field--period { flex: 0 0 auto; }

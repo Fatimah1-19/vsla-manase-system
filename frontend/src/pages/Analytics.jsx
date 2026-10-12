@@ -181,6 +181,7 @@ export default function Analytics() {
   const { t } = useLang();
   const [tab, setTab] = useState(() =>
     new URLSearchParams(window.location.search).get('tab') === 'reports' ? 'reports' : 'analytics');
+  const [scope, setScope] = useState('group');
 
   return (
     <div className="analytics">
@@ -194,16 +195,29 @@ export default function Analytics() {
         }
       />
 
-      <div className="analytics__tabs no-print" role="tablist" aria-label={t('nav.analyticsReports')}>
-        <button type="button" role="tab" aria-selected={tab === 'analytics'}
-          className={tab === 'analytics' ? 'analytics__tab is-on' : 'analytics__tab'}
-          onClick={() => setTab('analytics')}>{t('analytics.title')}</button>
-        <button type="button" role="tab" aria-selected={tab === 'reports'}
-          className={tab === 'reports' ? 'analytics__tab is-on' : 'analytics__tab'}
-          onClick={() => setTab('reports')}>{t('reports.title')}</button>
+      <div className="analytics__tabRow no-print">
+        <div className="analytics__tabs" role="tablist" aria-label={t('nav.analyticsReports')}>
+          <button type="button" role="tab" aria-selected={tab === 'analytics'}
+            className={tab === 'analytics' ? 'analytics__tab is-on' : 'analytics__tab'}
+            onClick={() => setTab('analytics')}>{t('analytics.title')}</button>
+          <button type="button" role="tab" aria-selected={tab === 'reports'}
+            className={tab === 'reports' ? 'analytics__tab is-on' : 'analytics__tab'}
+            onClick={() => setTab('reports')}>{t('reports.title')}</button>
+        </div>
+
+        {tab === 'reports' && (
+          <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
+            <button type="button" role="tab" aria-selected={scope === 'group'}
+              className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+              onClick={() => setScope('group')}>{t('reports.scopeGroup')}</button>
+            <button type="button" role="tab" aria-selected={scope === 'member'}
+              className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+              onClick={() => setScope('member')}>{t('reports.scopeMember')}</button>
+          </div>
+        )}
       </div>
 
-      {tab === 'analytics' ? <AnalyticsView /> : <Reports embedded />}
+      {tab === 'analytics' ? <AnalyticsView /> : <Reports embedded scope={scope} onScopeChange={setScope} />}
     </div>
   );
 }

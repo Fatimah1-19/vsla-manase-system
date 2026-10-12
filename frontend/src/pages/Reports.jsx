@@ -37,7 +37,7 @@ const dayBefore = (iso) =>
   new Date(new Date(`${iso}T00:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10);
 
 /** A register of who has been missing meetings, by meeting or by member. */
-export default function Reports({ embedded = false } = {}) {
+export default function Reports({ embedded = false, scope: scopeProp, onScopeChange } = {}) {
   const { t } = useLang();
   const toast = useToast();
 
@@ -48,7 +48,9 @@ export default function Reports({ embedded = false } = {}) {
   const [rows, setRows] = useState(null);
 
   // Whose report: the whole group, or one member.
-  const [scope, setScope] = useState('group');
+  const [scopeState, setScopeState] = useState('group');
+  const scope = scopeProp ?? scopeState;
+  const setScope = onScopeChange ?? setScopeState;
   const [members, setMembers] = useState([]);
   const [memberId, setMemberId] = useState('');
   const [year, setYear] = useState('');
@@ -472,15 +474,6 @@ export default function Reports({ embedded = false } = {}) {
         />
       )}
       <div className="reports__rep no-print">
-        <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
-          <button type="button" role="tab" aria-selected={scope === 'group'}
-            className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-            onClick={() => setScope('group')}>{t('reports.scopeGroup')}</button>
-          <button type="button" role="tab" aria-selected={scope === 'member'}
-            className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-            onClick={() => setScope('member')}>{t('reports.scopeMember')}</button>
-        </div>
-
         <div className="reports__controls">
           {scope === 'member' && (
             <label className="reports__field reports__field--member">
