@@ -184,6 +184,11 @@ export default {
     keptTitle: 'Zotsala ku gulu (sizigawidwa)',
     finesKept: 'Zindapusa zolandiridwa', welfareKept: 'Ndalama zili mu thumba la chithandizo', wrappersKept: 'Zovala za mwezi zolandiridwa',
     unrecoveredNote: (x) => `Ena ali ndi ngongole yoposa gawo lawo ndi ${x}. Sizikhululukidwa: zimatsala pa mndandanda kuti komiti ifufuze.`,
+    awaitConfirm: 'Yang\'anani ziwerengero pansipa. Ziyenera kutsimikizidwa ndi membala wa komiti asanagawire ndalama.',
+    confirmFigures: 'Tsimikizani ziwerengero',
+    confirmAsk: 'Mukutsimikiza kuti ziwerengero ndi zolondola? Pambuyo pake ndalama zitha kugawidwa.',
+    confirmedBy: (name) => `Ziwerengero zatsimikizidwa ndi ${name}. Zakonzeka kugawidwa.`,
+    confirmedTag: 'Zatsimikizidwa',
   },
 
   settings: {
@@ -239,7 +244,7 @@ export default {
 
   reports: {
     title: 'Malipoti',
-    subtitle: 'Amene akusowa misonkhano, ndi amene anadziwitsa.',
+    subtitle: 'Malipoti a gulu ndi a membala aliyense — zolipira, ngongole, zindapusa, zosunga, kupezeka ndi mamembala, sabata, mwezi kapena chaka.',
     tab_list: 'Msonkhano ndi msonkhano',
     tab_register: 'Membala ndi membala',
     from: 'Kuyambira', to: 'Kufika', clear: 'Chotsani masiku',

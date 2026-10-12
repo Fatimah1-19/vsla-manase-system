@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import Icon from '../components/Icon.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -72,6 +73,7 @@ export default function Members() {
   const confirm = useConfirm();
 
   const [people, setPeople] = useState(null);
+  const [leadership, setLeadership] = useState(null);
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(blank);
@@ -84,6 +86,12 @@ export default function Members() {
   }, []);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+
+  // Is any committee office empty? If so the chairperson (or, if the chairperson
+  // seat itself is empty, a treasurer or secretary) can start an election from here.
+  useEffect(() => {
+    api.get('/office-votes').then(setLeadership).catch(() => {});
+  }, []);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -236,6 +244,22 @@ export default function Members() {
           <button type="button" className="btn" onClick={() => setAddOpen(true)}>{t('members.addPerson')}</button>
         )}
       />
+
+      {leadership?.can_open && leadership.vacant_offices?.length > 0 && (
+        <div className="members__vacant">
+          <p className="members__vacantTitle">
+            <Icon name="leadership" size={18} /> {t('leaders.vacantTitle')}
+          </p>
+          <div className="members__rowActs">
+            {leadership.vacant_offices.map((o) => (
+              <button key={o} type="button" className="btn btn--gold btn--small"
+                onClick={() => navigate(`/app/leadership?office=${o}`)}>
+                {t('leaders.startElection')} · {t(`leaders.offices.${o}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="toolbar">
         <input

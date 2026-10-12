@@ -183,6 +183,11 @@ export default {
     keptTitle: 'Stays with the group (not shared)',
     finesKept: 'Fines collected', welfareKept: 'Welfare fund balance', wrappersKept: 'Monthly wrappers collected',
     unrecoveredNote: (x) => `Some members owe ${x} more than their payout covers. This is not forgiven: it stays on record for the committee to follow up.`,
+    awaitConfirm: 'Check the figures below. They must be confirmed by a committee member before the money is handed out.',
+    confirmFigures: 'Confirm the figures',
+    confirmAsk: 'Confirm these figures are correct? After this the money can be handed out.',
+    confirmedBy: (name) => `Figures confirmed by ${name}. Ready to hand out.`,
+    confirmedTag: 'Confirmed',
   },
 
   settings: {
@@ -238,7 +243,7 @@ export default {
 
   reports: {
     title: 'Reports',
-    subtitle: 'Who is missing meetings, and who told us in advance.',
+    subtitle: 'Group and per-member reports — contributions, loans, fines, savings, attendance and membership, by week, month or year.',
     tab_list: 'By meeting',
     tab_register: 'By member',
     from: 'From', to: 'To', clear: 'Clear dates',

@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const c = require('../controllers/settingsController');
-const { protect, authorize, committee } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
-router.get('/', committee(), c.listSettings);
+// System settings are the chairperson's alone: only they may read or change them.
+router.get('/', authorize('admin'), c.listSettings);
 router.put('/', authorize('admin'), c.updateSettings);
 
 module.exports = router;

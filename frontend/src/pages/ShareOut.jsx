@@ -77,6 +77,20 @@ export default function ShareOut() {
     }
   }
 
+  async function confirmFigures(id) {
+    if (!(await confirm({ message: t('shareout.confirmAsk') }))) return;
+    setBusy(true);
+    try {
+      const res = await api.post(`/shareout/${id}/confirm`);
+      toast.success(res.message);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) return <Spinner />;
 
   // ---- what a plain member sees ----
@@ -115,6 +129,7 @@ export default function ShareOut() {
   // ---- committee view ----
   const b = preview?.breakdown;
   const draft = history.find((h) => h.status === 'draft');
+  const confirmed = history.find((h) => h.status === 'confirmed');
 
   const columns = [
     { key: 'full_name', label: t('common.name'),
@@ -193,12 +208,25 @@ export default function ShareOut() {
         </section>
       )}
 
-      {draft && canRun && (
+      {draft && (
         <div className="shareout__draft">
-          <p>{t('shareout.draftSaved')}</p>
-          <button type="button" className="btn btn--gold" onClick={() => distribute(draft.id)} disabled={busy}>
-            {busy ? t('common.sending') : t('shareout.distribute')}
+          <p>{t('shareout.awaitConfirm')}</p>
+          <button type="button" className="btn btn--gold" onClick={() => confirmFigures(draft.id)} disabled={busy}>
+            {busy ? t('common.saving') : t('shareout.confirmFigures')}
           </button>
+        </div>
+      )}
+
+      {confirmed && (
+        <div className="shareout__draft shareout__draft--ok">
+          <p>{confirmed.confirmed_by_name
+            ? t('shareout.confirmedBy', confirmed.confirmed_by_name)
+            : t('shareout.confirmedTag')}</p>
+          {canRun && (
+            <button type="button" className="btn btn--gold" onClick={() => distribute(confirmed.id)} disabled={busy}>
+              {busy ? t('common.sending') : t('shareout.distribute')}
+            </button>
+          )}
         </div>
       )}
 
@@ -216,8 +244,12 @@ export default function ShareOut() {
             {history.map((h) => (
               <li key={h.id}>
                 <span>{h.cycle_name || `#${h.id}`}</span>
-                <span className={h.status === 'distributed' ? 'tag tag--green' : 'tag tag--gold'}>
-                  {h.status === 'distributed' ? shortDate(h.date_distributed) : 'draft'}
+                <span className={
+                  h.status === 'distributed' ? 'tag tag--green'
+                    : h.status === 'confirmed' ? 'tag tag--blue' : 'tag tag--gold'
+                }>
+                  {h.status === 'distributed' ? shortDate(h.date_distributed)
+                    : h.status === 'confirmed' ? t('shareout.confirmedTag') : 'draft'}
                 </span>
                 <span className="money">{money(h.total_fund)}</span>
               </li>

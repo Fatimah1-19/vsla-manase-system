@@ -107,6 +107,30 @@ const createShareOut = wrap(async (req, res) => {
 });
 
 /**
+ * POST /api/shareout/:id/confirm
+ * A committee member reviews the figures and confirms them. Only once it is
+ * confirmed can the money be handed out.
+ */
+const confirmShareOut = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+
+  const claimed = await one(
+    `UPDATE share_out SET status = 'confirmed', confirmed_by = $2, confirmed_at = NOW()
+      WHERE id = $1 AND status = 'draft' RETURNING id`,
+    [id, req.user.id]
+  );
+  if (!claimed) {
+    const exists = await one(`SELECT status FROM share_out WHERE id = $1`, [id]);
+    if (!exists) return res.status(404).json({ message: 'That share-out does not exist.' });
+    if (exists.status === 'confirmed') return res.status(400).json({ message: 'These figures are already confirmed.' });
+    return res.status(400).json({ message: 'This share-out has already been handed out.' });
+  }
+
+  await audit(req.user.id, 'CONFIRM_SHAREOUT', 'share_out', id, null);
+  res.json({ message: 'Figures confirmed. Ready to hand out.' });
+});
+
+/**
  * POST /api/shareout/:id/distribute
  * Hand out the money and text every member their own figure.
  */
@@ -114,15 +138,19 @@ const distribute = wrap(async (req, res) => {
   const id = Number(req.params.id);
 
   // Flip the status first and only once, so two people pressing the button
-  // at the same time cannot hand out the money twice.
+  // at the same time cannot hand out the money twice. The figures must have
+  // been confirmed by a committee member first.
   const claimed = await one(
     `UPDATE share_out SET status = 'distributed', date_distributed = CURRENT_DATE, distributed_by = $2
-      WHERE id = $1 AND status = 'draft' RETURNING id`,
+      WHERE id = $1 AND status = 'confirmed' RETURNING id`,
     [id, req.user.id]
   );
   if (!claimed) {
     const exists = await one(`SELECT status FROM share_out WHERE id = $1`, [id]);
     if (!exists) return res.status(404).json({ message: 'That share-out does not exist.' });
+    if (exists.status === 'draft') {
+      return res.status(400).json({ message: 'The figures must be confirmed before the money is handed out.' });
+    }
     return res.status(400).json({ message: 'This share-out has already been handed out.' });
   }
 
@@ -167,10 +195,11 @@ const listShareOuts = wrap(async (req, res) => {
   const rows = await query(
     `SELECT so.*, so.total_fund::float AS total_fund, so.total_savings::float AS total_savings,
             so.total_interest::float AS total_interest,
-            c.cycle_name, u.full_name AS distributed_by_name
+            c.cycle_name, u.full_name AS distributed_by_name, cu.full_name AS confirmed_by_name
        FROM share_out so
        LEFT JOIN cycles c ON c.id = so.cycle_id
        LEFT JOIN users u ON u.id = so.distributed_by
+       LEFT JOIN users cu ON cu.id = so.confirmed_by
       ORDER BY so.id DESC`
   );
   res.json(rows);
@@ -184,9 +213,10 @@ const DETAIL_COLUMNS = `d.id, d.member_id, d.notified,
 const getShareOut = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const shareOut = await one(
-    `SELECT so.*, c.cycle_name, u.full_name AS distributed_by_name
+    `SELECT so.*, c.cycle_name, u.full_name AS distributed_by_name, cu.full_name AS confirmed_by_name
        FROM share_out so LEFT JOIN cycles c ON c.id = so.cycle_id
-       LEFT JOIN users u ON u.id = so.distributed_by WHERE so.id = $1`, [id]
+       LEFT JOIN users u ON u.id = so.distributed_by
+       LEFT JOIN users cu ON cu.id = so.confirmed_by WHERE so.id = $1`, [id]
   );
   if (!shareOut) return res.status(404).json({ message: 'That share-out does not exist.' });
 
@@ -221,4 +251,4 @@ const myShare = wrap(async (req, res) => {
   res.json(row);
 });
 
-module.exports = { computeShareOut, preview, createShareOut, distribute, listShareOuts, getShareOut, myShare };
+module.exports = { computeShareOut, preview, createShareOut, confirmShareOut, distribute, listShareOuts, getShareOut, myShare };

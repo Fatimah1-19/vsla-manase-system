@@ -13,11 +13,14 @@ const EDITABLE = {
   case_voting_days: 'How many days a vote about a member stays open',
   case_quorum_percent: 'Share of members who must vote for the result to count (%)',
   case_dismiss_percent: 'Share of yes votes needed to dismiss a member (%)',
+  office_voting_days: 'How many days an election to fill an office stays open',
+  office_quorum_percent: 'Share of members who must vote in an office election for the result to count (%)',
 };
 
 const NUMERIC = [
   'loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution',
   'monthly_levy', 'absence_fine', 'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
+  'office_voting_days', 'office_quorum_percent',
 ];
 
 // GET /api/settings

@@ -17,10 +17,11 @@ export const NAV_ITEMS = [
   { to: '/app/shareout',   key: 'nav.shareout',  icon: 'shareout',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/requests',   key: 'nav.requests',  icon: 'requests',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',     roles: ['admin', 'treasurer', 'secretary', 'member'] },
+  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['admin', 'treasurer', 'secretary', 'member'] },
   { to: '/app/messages',   key: 'nav.messages',  icon: 'messages',  roles: ['admin', 'treasurer', 'secretary'] },
   { to: '/app/cycles',     key: 'nav.cycles',    icon: 'cycles',    roles: ['admin'] },
   { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['admin', 'treasurer', 'secretary'] },
-  { to: '/app/settings',   key: 'nav.settings',  icon: 'settings',  roles: ['admin', 'treasurer', 'secretary'] },
+  { to: '/app/settings',   key: 'nav.settings',  icon: 'settings',  roles: ['admin'] },
   { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',   roles: ['admin', 'treasurer', 'secretary', 'member'], phone: true },
 ];
 

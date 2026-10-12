@@ -34,3 +34,24 @@
 .members__actions { display: grid; gap: 0.5rem; }
 
 .members__rowActs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+/* ---- empty committee office ---- */
+.members__vacant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--maize-wash);
+  border: 1px solid var(--maize);
+  border-radius: var(--radius);
+}
+.members__vacantTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-weight: 700;
+  margin-right: auto;
+}

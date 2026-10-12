@@ -220,4 +220,5 @@ const base = {
 }
 
 import votes from './ny.votes.js';
-export default deepMerge(deepMerge(base, extra), votes);
+import leaders from './ny.leaders.js';
+export default deepMerge(deepMerge(deepMerge(base, extra), votes), leaders);

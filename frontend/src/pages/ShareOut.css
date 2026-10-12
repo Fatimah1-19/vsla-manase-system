@@ -71,6 +71,12 @@
 }
 .shareout__draft p { margin: 0; font-weight: 600; color: #6B4A0E; }
 
+.shareout__draft--ok {
+  background: var(--leaf-wash);
+  border-color: #BBD8C7;
+}
+.shareout__draft--ok p { color: var(--leaf-dark); }
+
 /* ---- what one member sees ---- */
 .shareout__mine {
   background: var(--card);

@@ -83,10 +83,10 @@
 }
 .reports__field--member { flex: 1 1 220px; }
 .reports__field--member select { border-color: var(--leaf); background: var(--leaf-wash); }
-.reports__field--year { flex: 1 1 140px; }
-.reports__field--year select { border-color: var(--maize-deep); background: var(--maize-wash); }
-.reports__field--month { flex: 1 1 150px; }
-.reports__field--month select { border-color: var(--sky); background: var(--sky-wash); }
+.reports__field--year { flex: 0 0 auto; }
+.reports__field--year select { min-width: 92px; border-color: var(--maize-deep); background: var(--maize-wash); }
+.reports__field--month { flex: 0 0 auto; }
+.reports__field--month select { min-width: 118px; border-color: var(--sky); background: var(--sky-wash); }
 .reports__filterBtn, .reports__exportBtn { flex: 0 0 auto; }
 
 .reports__field--period { flex: 0 0 auto; }

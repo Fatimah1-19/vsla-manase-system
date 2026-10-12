@@ -95,6 +95,12 @@ const SHAPES = {
       <path d="m21 11-8-8" />
     </>
   ),
+  leadership: (
+    <>
+      <circle cx="12" cy="8" r="6" />
+      <path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12" />
+    </>
+  ),
   messages: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
   cycles: (
     <>

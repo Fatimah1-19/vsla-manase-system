@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS share_out (
   total_welfare     NUMERIC(14,2) NOT NULL DEFAULT 0,
   total_fund        NUMERIC(14,2) NOT NULL DEFAULT 0,
   total_members     INT NOT NULL DEFAULT 0,
-  status            VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','distributed')),
+  status            VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','confirmed','distributed')),
   date_distributed  DATE,
   distributed_by    INT REFERENCES users(id),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -357,4 +357,77 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('case_voting_days', '1'),        -- how long a vote stays open
   ('case_quorum_percent', '50'),    -- at least this % of members must vote
   ('case_dismiss_percent', '67')    -- a dismissal needs at least this % of "yes" among the votes
+ON CONFLICT (setting_key) DO NOTHING;
+
+-- =====================================================================
+--  SHARE-OUT REVIEW
+--  Before any money is handed out, a committee member reviews the
+--  calculated figures and confirms them. Nothing is paid until then.
+-- =====================================================================
+
+-- A share-out now has a step between 'draft' and 'distributed'.
+ALTER TABLE share_out DROP CONSTRAINT IF EXISTS share_out_status_check;
+ALTER TABLE share_out ADD CONSTRAINT share_out_status_check
+  CHECK (status IN ('draft','confirmed','distributed'));
+
+-- Who confirmed the figures, and when.
+ALTER TABLE share_out ADD COLUMN IF NOT EXISTS confirmed_by INT REFERENCES users(id);
+ALTER TABLE share_out ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ;
+
+-- =====================================================================
+--  DELEGATION OF OFFICE
+--  When an official (secretary, treasurer or chairperson) is suspended
+--  or dismissed, the office is filled by a vote of all the members. The
+--  chairperson opens the election and carries out the result.
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS office_votes (
+  id                SERIAL PRIMARY KEY,
+  office            VARCHAR(12) NOT NULL CHECK (office IN ('admin','treasurer','secretary')),
+  reason            TEXT NOT NULL,
+  status            VARCHAR(10) NOT NULL DEFAULT 'open'
+                    CHECK (status IN ('open','passed','lapsed','tie','withdrawn')),
+  opened_by         INT NOT NULL REFERENCES users(id),
+  opened_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  closes_at         TIMESTAMPTZ NOT NULL,
+  decided_at        TIMESTAMPTZ,
+  eligible_voters   INT NOT NULL DEFAULT 0,      -- how many members could vote when it opened
+  winner_user_id    INT REFERENCES users(id),
+  winner_ballots    INT NOT NULL DEFAULT 0,
+  round             SMALLINT NOT NULL DEFAULT 1, -- 1 = first ballot, 2 = run-off among ties
+  run_off_from      INT REFERENCES office_votes(id), -- the tied round this run-off came from
+  executed_by       INT REFERENCES users(id),
+  executed_at       TIMESTAMPTZ
+);
+
+-- The people standing for the office.
+CREATE TABLE IF NOT EXISTS office_vote_candidates (
+  id                SERIAL PRIMARY KEY,
+  vote_id           INT NOT NULL REFERENCES office_votes(id) ON DELETE CASCADE,
+  candidate_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nominated_by      INT REFERENCES users(id),
+  nominated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (vote_id, candidate_user_id)
+);
+
+-- One secret ballot per member per election. Only totals are ever shown.
+CREATE TABLE IF NOT EXISTS office_vote_ballots (
+  id                SERIAL PRIMARY KEY,
+  vote_id           INT NOT NULL REFERENCES office_votes(id) ON DELETE CASCADE,
+  voter_member_id   INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  candidate_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  voted_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (vote_id, voter_member_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_office_vote_candidates ON office_vote_candidates(vote_id);
+CREATE INDEX IF NOT EXISTS idx_office_vote_ballots ON office_vote_ballots(vote_id);
+CREATE INDEX IF NOT EXISTS idx_office_votes_status ON office_votes(status, closes_at);
+-- Only one open election for the same office at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS one_open_office_vote ON office_votes (office) WHERE status = 'open';
+
+-- Voting rules for office elections (change them on the Settings page).
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('office_voting_days', '2'),      -- how long an election stays open
+  ('office_quorum_percent', '50')   -- at least this % of members must vote for it to count
 ON CONFLICT (setting_key) DO NOTHING;
