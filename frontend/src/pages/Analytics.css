@@ -27,3 +27,25 @@
 .analytics__facts .is-kept dt, .analytics__facts .is-kept dd { color: var(--slate); }
 .analytics__wrapTop { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; }
 .analytics__wrapTop .analytics__facts { flex: 1; min-width: 200px; margin: 0; }
+
+.analytics__tabs {
+  display: inline-flex;
+  margin: 0 0 1.1rem;
+  border: 1px solid var(--rule-dark);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.analytics__tab {
+  border: 0;
+  background: var(--card);
+  color: var(--slate);
+  min-height: 42px;
+  padding: 0.4rem 1.3rem;
+  font-family: var(--head);
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.analytics__tab + .analytics__tab { border-left: 1px solid var(--rule-dark); }
+.analytics__tab.is-on { background: var(--leaf); color: #fff; }
+.analytics__viewNote { margin: 0 0 0.9rem; font-size: 0.88rem; }

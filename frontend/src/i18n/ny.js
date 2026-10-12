@@ -17,6 +17,9 @@ const base = {
     cycles: 'Nyengo zosunga', logout: 'Tulukani', menu: 'Menyu', more: 'Zina',
     savingsManagement: 'Kusamalira zosunga', loanManagement: 'Kusamalira ngongole',
     memberManagement: 'Kusamalira mamembala', welfareManagement: 'Kusamalira thumba la chithandizo',
+    analyticsReports: 'Ziwerengero & Malipoti', meetingsManagement: 'Kusamalira misonkhano',
+    finesManagement: 'Kusamalira zindapusa', shareoutManagement: 'Kusamalira kugawana',
+    requestsManagement: 'Kusamalira opempha kulowa',
   },
 
   roles: { admin: 'Mtsogoleri', treasurer: 'Wosunga ndalama', secretary: 'Mlembi', member: 'Membala' },

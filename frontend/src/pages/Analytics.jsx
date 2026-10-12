@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { BarChart, LineChart, HBars, Ring } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLabel } from '../utils/format.js';
+import Reports from './Reports.jsx';
 import './Analytics.css';
 
 const LOAN_TONE = { pending: 'maize', approved: 'sky', repaid: 'leaf', rejected: 'flame', defaulted: 'flame' };
@@ -23,7 +24,7 @@ function Panel({ title, note, children }) {
   );
 }
 
-export default function Analytics() {
+function AnalyticsView() {
   const { t } = useLang();
   const toast = useToast();
   const [d, setD] = useState(null);
@@ -42,16 +43,12 @@ export default function Analytics() {
   const p = d.projection;
 
   return (
-    <div className="analytics">
-      <PageHeader
-        title={t('analytics.title')}
-        subtitle={`${d.cycle.cycle_name} · ${t('analytics.updated')} ${shortDate(d.generated_at)}`}
-        action={<button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>{t('analytics.print')}</button>}
-      />
-
-      <div className="print-area">
-        <div className="page-grid page-grid--stat">
-          <StatCard label={t('dashboard.cashInBox')} value={money(d.cash_in_box)} tone="gold" big />
+    <div className="print-area">
+      <p className="analytics__viewNote muted">
+        {d.cycle.cycle_name} · {t('analytics.updated')} {shortDate(d.generated_at)}
+      </p>
+      <div className="page-grid page-grid--stat">
+        <StatCard label={t('dashboard.cashInBox')} value={money(d.cash_in_box)} tone="gold" big />
           <StatCard label={t('dashboard.totalSavings')} value={money(d.savings.total)} tone="green" />
           <StatCard label={t('analytics.lentOut')} value={money(d.loans.outstanding)} hint={t('analytics.ofBox', d.loans.box_in_use)} tone="blue" />
           <StatCard label={t('dashboard.interestEarned')} value={money(d.loans.interest_earned)} hint={t('analytics.interestNote')} />
@@ -177,6 +174,36 @@ export default function Analytics() {
           </Panel>
         )}
       </div>
+  );
+}
+
+export default function Analytics() {
+  const { t } = useLang();
+  const [tab, setTab] = useState(() =>
+    new URLSearchParams(window.location.search).get('tab') === 'reports' ? 'reports' : 'analytics');
+
+  return (
+    <div className="analytics">
+      <PageHeader
+        title={t('nav.analyticsReports')}
+        subtitle={tab === 'reports' ? t('reports.subtitle') : undefined}
+        action={
+          <button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>
+            {t('loans.print')}
+          </button>
+        }
+      />
+
+      <div className="analytics__tabs no-print" role="tablist" aria-label={t('nav.analyticsReports')}>
+        <button type="button" role="tab" aria-selected={tab === 'analytics'}
+          className={tab === 'analytics' ? 'analytics__tab is-on' : 'analytics__tab'}
+          onClick={() => setTab('analytics')}>{t('analytics.title')}</button>
+        <button type="button" role="tab" aria-selected={tab === 'reports'}
+          className={tab === 'reports' ? 'analytics__tab is-on' : 'analytics__tab'}
+          onClick={() => setTab('reports')}>{t('reports.title')}</button>
+      </div>
+
+      {tab === 'analytics' ? <AnalyticsView /> : <Reports embedded />}
     </div>
   );
 }

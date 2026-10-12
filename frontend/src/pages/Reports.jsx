@@ -37,7 +37,7 @@ const dayBefore = (iso) =>
   new Date(new Date(`${iso}T00:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10);
 
 /** A register of who has been missing meetings, by meeting or by member. */
-export default function Reports() {
+export default function Reports({ embedded = false } = {}) {
   const { t } = useLang();
   const toast = useToast();
 
@@ -460,16 +460,17 @@ export default function Reports() {
 
   return (
     <div className="reports">
-      <PageHeader
-        title={t('reports.title')}
-        subtitle={t('reports.subtitle')}
-        action={
-          <button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>
-            {t('reports.print')}
-          </button>
-        }
-      />
-
+      {!embedded && (
+        <PageHeader
+          title={t('reports.title')}
+          subtitle={t('reports.subtitle')}
+          action={
+            <button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>
+              {t('reports.print')}
+            </button>
+          }
+        />
+      )}
       <div className="reports__rep no-print">
         <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
           <button type="button" role="tab" aria-selected={scope === 'group'}
@@ -527,7 +528,7 @@ export default function Reports() {
               {t('reports.reportFilter')}
             </button>
           )}
-          <button type="button" className="btn btn--sky btn--small reports__exportBtn" onClick={() => window.print()}>
+          <button type="button" className="btn btn--danger btn--small reports__exportBtn" onClick={() => window.print()}>
             {t('reports.reportExport')}
           </button>
         </div>

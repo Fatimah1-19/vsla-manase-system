@@ -15,6 +15,9 @@ const base = {
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
     savingsManagement: 'Savings management', loanManagement: 'Loan management',
     memberManagement: 'Member management', welfareManagement: 'Welfare fund management',
+    analyticsReports: 'Analytics & Reports', meetingsManagement: 'Meetings management',
+    finesManagement: 'Fines management', shareoutManagement: 'Share-out management',
+    requestsManagement: 'Join request management',
   },
 
   roles: { admin: 'Chairperson', treasurer: 'Treasurer', secretary: 'Secretary', member: 'Member' },

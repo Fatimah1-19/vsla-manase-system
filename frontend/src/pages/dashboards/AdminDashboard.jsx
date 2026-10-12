@@ -54,7 +54,7 @@ export default function AdminDashboard({ data }) {
         <section className="dash__card adash__pieCard">
           <div className="adash__activityHead">
             <h2 className="dash__sectionTitle">{t('dashboard.contributionOverview')}</h2>
-            <Link to="/app/reports" className="adash__viewAll">{t('dashboard.viewAllReports')}</Link>
+            <Link to="/app/analytics?tab=reports" className="adash__viewAll">{t('dashboard.viewAllReports')}</Link>
           </div>
           {contributed > 0 ? (
             <Pie items={contributions} showValues={false} />
