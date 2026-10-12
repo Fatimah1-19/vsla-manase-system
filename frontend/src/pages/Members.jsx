@@ -527,6 +527,16 @@ export default function Members() {
               <div><dt>{t('profile.occupation')}</dt><dd>{detail.occupation || '—'}</dd></div>
               <div><dt>{t('profile.address')}</dt><dd>{detail.address || '—'}</dd></div>
               <div><dt>{t('members.nextOfKin')}</dt><dd>{detail.next_of_kin ? `${detail.next_of_kin}${detail.next_of_kin_phone ? ' · ' + detail.next_of_kin_phone : ''}` : '—'}</dd></div>
+              {detail.date_joined && (() => {
+                const [y, m, d] = String(detail.date_joined).slice(0, 10).split('-');
+                return (
+                  <>
+                    <div><dt>{t('members.joinedYear')}</dt><dd>{Number(y)}</dd></div>
+                    <div><dt>{t('members.joinedMonth')}</dt><dd>{Number(m)}</dd></div>
+                    <div><dt>{t('members.joinedDay')}</dt><dd>{Number(d)}</dd></div>
+                  </>
+                );
+              })()}
               <div><dt>{t('members.lastLogin')}</dt><dd>{detail.last_login ? shortDate(detail.last_login) : t('members.never')}</dd></div>
             </dl>
 

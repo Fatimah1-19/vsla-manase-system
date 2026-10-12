@@ -151,6 +151,9 @@ export default {
     regFeePaid: (amount, date) => `Zalipidwa ${amount} pa ${date}.`,
     regFeeRecordShort: 'Lembani',
     recordFee: 'Lembani ndalama zolembetsa',
+    joinedYear: 'Chaka adalowa',
+    joinedMonth: 'Mwezi adalowa',
+    joinedDay: 'Tsiku adalowa',
   },
 
   profile: {
