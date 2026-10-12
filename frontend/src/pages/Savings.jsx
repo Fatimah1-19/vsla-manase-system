@@ -11,6 +11,7 @@ import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
+import Icon from '../components/Icon.jsx';
 import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
 import './Savings.css';
 
@@ -165,6 +166,17 @@ export default function Savings() {
         subtitle={t('savings.smsNote')}
         action={isRecorder && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
       />
+
+      {summary?.cycle && (
+        <div className="savings__cycle">
+          <Icon name="cycles" size={18} />
+          <span className="savings__cycleLabel">{t('savings.cycle')}</span>
+          <strong className="savings__cycleName">{summary.cycle.cycle_name}</strong>
+          <span className="savings__cycleDates">
+            {shortDate(summary.cycle.start_date)} - {shortDate(summary.cycle.end_date)}
+          </span>
+        </div>
+      )}
 
       {summary && (
         <div className="page-grid page-grid--stat">
