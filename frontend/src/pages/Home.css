@@ -180,6 +180,16 @@
 }
 
 .home__joinLead { color: var(--slate); font-size: 0.94rem; margin-bottom: 1.1rem; }
+.home__joinFee {
+  margin: -0.4rem 0 1.1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--maize-wash);
+  border-left: 3px solid var(--maize-deep);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6B4A12;
+}
 .home__field { margin-bottom: 0.9rem; }
 
 

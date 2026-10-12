@@ -318,7 +318,7 @@ let impactCache = { at: 0, data: null };
 const publicImpact = wrap(async (req, res) => {
   if (impactCache.data && Date.now() - impactCache.at < 30 * 1000) return res.json(impactCache.data);
 
-  const [members, loans, meetings, cycle, multiplier, rate, levy] = await Promise.all([
+  const [members, loans, meetings, cycle, multiplier, rate, levy, fee] = await Promise.all([
     one(`SELECT COUNT(*)::int AS total FROM members WHERE status = 'active'`),
     one(
       `SELECT COUNT(*) FILTER (WHERE status='approved')::int AS approved,
@@ -330,6 +330,7 @@ const publicImpact = wrap(async (req, res) => {
     getSetting('loan_multiplier', '2'),
     getSetting('default_interest_rate', '10'),
     getSetting('monthly_levy', '3000'),
+    getSetting('registration_fee', '1000'),
   ]);
 
   const completed = loans.approved + loans.repaid;
@@ -353,6 +354,7 @@ const publicImpact = wrap(async (req, res) => {
     loan_multiplier: Number(multiplier),
     interest_rate: Number(rate),
     monthly_levy: Number(levy),
+    registration_fee: Number(fee),
     cycle_name: cycle ? cycle.cycle_name : null,
     weeks_elapsed: weeksElapsed,
     weeks_total: weeksTotal,

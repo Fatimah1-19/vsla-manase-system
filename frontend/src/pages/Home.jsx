@@ -44,6 +44,7 @@ export default function Home() {
   const multiplier = stats?.loan_multiplier ?? 2;
   const rate = stats?.interest_rate ?? 10;
   const levy = money(stats?.monthly_levy ?? 3000);
+  const fee = money(stats?.registration_fee ?? 1000);
 
   const weeks = stats?.weeks_total || 52;
   const done = stats?.weeks_elapsed || 0;
@@ -207,6 +208,7 @@ export default function Home() {
           <div className="home__joinInner">
             <h2 className="home__h2">{t('home.joinTitle')}</h2>
             <p className="home__joinLead">{t('home.joinBody')}</p>
+            <p className="home__joinFee">{t('home.joinFeeNote', fee)}</p>
 
             {sent ? (
               <p className="notice notice--good">{t('home.joinDone')}</p>

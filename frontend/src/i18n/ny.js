@@ -209,6 +209,7 @@ const base = {
     step3Body: 'Kumapeto kwa nyengo bokosi limatsegulidwa. Membala aliyense amalandira zomwe anasunga kuphatikiza gawo lake la phindu, ndipo aliyense amauzidwa ndalama zake.',
     joinTitle: 'Pemphani kulowa',
     joinBody: 'Lembani apa ndipo gulu likambirana pa msonkhano wotsatira. Wina adzakutumizirani uthenga.',
+    joinFeeNote: (fee) => `Membala watsopano amalipira ndalama zolembetsa za ${fee}.`,
     joinName: 'Dzina lanu lonse', joinPhone: 'Nambala yanu ya foni',
     joinVillage: 'Mudzi wanu', joinReason: 'Mukufuna kulowa chifukwa chiyani?',
     joinSubmit: 'Tumizani pempho langa',

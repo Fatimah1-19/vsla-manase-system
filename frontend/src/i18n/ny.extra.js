@@ -208,6 +208,9 @@ export default {
     caseVotingDays: 'Masiku omwe voti imakhala yotseguka',
     caseQuorum: 'Gawo la mamembala liyenera kuvota kuti zotsatira ziwerengedwe (%)',
     caseDismiss: 'Gawo la mavoti akuti "inde" ofunika kuchotsa membala (%)',
+    membershipTitle: 'Umembala',
+    membershipNote: 'Ndalama zolembetsa zomwe membala watsopano amalipira kuti alowe. Zimaonekera pa fomu yopempha kulowa, kotero zimagwirizana ndi ndalama imeneyi.',
+    registrationFee: 'Ndalama zolembetsa za membala watsopano (MWK)',
   },
 
   wrappers: {

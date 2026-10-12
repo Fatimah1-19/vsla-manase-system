@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner.jsx';
 import './Settings.css';
 
 const NUMBERS = ['loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution', 'monthly_levy'];
+const MEMBERSHIP = ['registration_fee'];
 const FINE_RULES = ['absence_fine'];
 const CASE_RULES = ['case_voting_days', 'case_quorum_percent', 'case_dismiss_percent'];
 const OFFICE_RULES = ['office_voting_days', 'office_quorum_percent'];
@@ -17,6 +18,7 @@ const LABELS = {
   weekly_share_value: 'settings.shareValue',
   welfare_contribution: 'settings.welfarePerMeeting',
   monthly_levy: 'settings.monthlyLevy',
+  registration_fee: 'settings.registrationFee',
   absence_fine: 'settings.absenceFine',
   case_voting_days: 'settings.caseVotingDays',
   case_quorum_percent: 'settings.caseQuorum',
@@ -69,6 +71,25 @@ export default function Settings() {
         <section className="settings__group">
           <h2 className="settings__h2">{t('loans.title')}</h2>
           {NUMBERS.filter((k) => k in values).map((k) => (
+            <div className="settings__row" key={k}>
+              <label className="field-label" htmlFor={`set-${k}`}>{t(LABELS[k])}</label>
+              <input
+                id={`set-${k}`}
+                type="number"
+                min="0"
+                step="any"
+                value={values[k]}
+                onChange={(e) => set(k, e.target.value)}
+                disabled={!isAdmin}
+              />
+            </div>
+          ))}
+        </section>
+
+        <section className="settings__group">
+          <h2 className="settings__h2">{t('settings.membershipTitle')}</h2>
+          <p className="settings__note">{t('settings.membershipNote')}</p>
+          {MEMBERSHIP.filter((k) => k in values).map((k) => (
             <div className="settings__row" key={k}>
               <label className="field-label" htmlFor={`set-${k}`}>{t(LABELS[k])}</label>
               <input

@@ -200,6 +200,7 @@ const base = {
     step3Body: 'At the end of the cycle the box is opened. Each member gets back what they saved, and each borrower gets back the interest they paid. Everyone is texted their amount.',
     joinTitle: 'Ask to join',
     joinBody: 'Fill this in and the group will talk about it at the next meeting. Someone will text you either way.',
+    joinFeeNote: (fee) => `A one-off registration fee of ${fee} is paid when you join the group.`,
     joinName: 'Your full name', joinPhone: 'Your phone number',
     joinVillage: 'Your village', joinReason: 'Why do you want to join?',
     joinSubmit: 'Send my request',

@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = [
   ['default_interest_rate', '10'],
   ['weekly_share_value', '1000'],
   ['welfare_contribution', '200'],
+  ['registration_fee', '1000'],      // one-off fee a new member pays to join
   ['monthly_levy', '3000'],          // every member, every month, for the group's wrappers
   ['absence_fine', '0'],             // fine for missing a meeting without a reason (0 = off)
 ];

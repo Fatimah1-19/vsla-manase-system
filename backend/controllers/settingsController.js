@@ -8,6 +8,7 @@ const EDITABLE = {
   default_interest_rate: 'Interest rate offered on loans (%)',
   weekly_share_value: 'Value of one share',
   welfare_contribution: 'Welfare contribution per meeting',
+  registration_fee: 'One-off registration fee paid when a new member joins (MWK)',
   monthly_levy: 'Monthly contribution every member pays for the group wrappers (MWK)',
   absence_fine: 'Fine for missing a meeting without a reason (MWK)',
   case_voting_days: 'How many days a vote about a member stays open',
@@ -19,7 +20,7 @@ const EDITABLE = {
 
 const NUMERIC = [
   'loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution',
-  'monthly_levy', 'absence_fine', 'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
+  'registration_fee', 'monthly_levy', 'absence_fine', 'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
   'office_voting_days', 'office_quorum_percent',
 ];
 

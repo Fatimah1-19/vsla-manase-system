@@ -207,6 +207,9 @@ export default {
     caseVotingDays: 'How many days a vote stays open',
     caseQuorum: 'Share of members who must vote for a result to count (%)',
     caseDismiss: 'Share of yes votes needed to dismiss a member (%)',
+    membershipTitle: 'Membership',
+    membershipNote: 'The one-off fee a new member pays to join. It is shown on the join request form, so the note there always matches this amount.',
+    registrationFee: 'Registration fee for a new member (MWK)',
   },
 
   wrappers: {

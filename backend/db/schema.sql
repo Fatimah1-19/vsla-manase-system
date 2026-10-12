@@ -284,6 +284,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('default_interest_rate', '10'),
   ('weekly_share_value', '1000'),
   ('welfare_contribution', '200'),
+  ('registration_fee', '1000'),
   ('monthly_levy', '3000'),
   ('absence_fine', '0')
 ON CONFLICT (setting_key) DO NOTHING;
