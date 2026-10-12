@@ -250,9 +250,18 @@ export default function Members() {
       render: (p) => {
         const f = feeByMember[p.member_id];
         if (!f) return <span className="muted">—</span>;
-        return f.paid
-          ? <span className="tag tag--green">{t('members.regFeePaidTag')}</span>
-          : <span className="tag tag--gold">{t('members.regFeeDueTag')}</span>;
+        if (f.paid) return <span className="tag tag--green">{t('members.regFeePaidTag')}</span>;
+        return (
+          <span className="members__regCell">
+            <span className="tag tag--gold">{t('members.regFeeDueTag')}</span>
+            {isRecorder && (
+              <button type="button" className="btn btn--small" disabled={feeBusy}
+                onClick={(e) => { e.stopPropagation(); startFee(p); }}>
+                {t('members.regFeeRecordShort')}
+              </button>
+            )}
+          </span>
+        );
       } },
     { key: 'action', label: t('common.actions'),
       render: (p) => {

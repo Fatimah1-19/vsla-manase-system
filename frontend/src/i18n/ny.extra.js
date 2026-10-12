@@ -149,6 +149,7 @@ export default {
     regFeeDueTag: 'Sizinalipidwe',
     regFeeDue: (fee) => `Sizinathe. Ndalama yake ndi ${fee}.`,
     regFeePaid: (amount, date) => `Zalipidwa ${amount} pa ${date}.`,
+    regFeeRecordShort: 'Lembani',
     recordFee: 'Lembani ndalama zolembetsa',
   },
 

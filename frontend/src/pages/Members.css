@@ -47,6 +47,7 @@
 .members__feeTitle { margin: 0; font-size: 0.95rem; }
 .members__feePaid { margin: 0; font-weight: 600; color: var(--leaf-dark); }
 .members__feeFor { margin: 0 0 0.9rem; font-weight: 700; }
+.members__regCell { display: inline-flex; align-items: center; gap: 0.45rem; }
 
 .members__rowActs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 

@@ -148,6 +148,7 @@ export default {
     regFeeDueTag: 'Not paid',
     regFeeDue: (fee) => `Not paid yet. The fee is ${fee}.`,
     regFeePaid: (amount, date) => `Paid ${amount} on ${date}.`,
+    regFeeRecordShort: 'Record',
     recordFee: 'Record registration fee',
   },
 
