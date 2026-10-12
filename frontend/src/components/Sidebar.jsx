@@ -30,7 +30,7 @@ export default function Sidebar({ open, onNavigate }) {
               className={({ isActive }) => (isActive ? 'sidebar__link is-on' : 'sidebar__link')}
             >
               <Icon name={item.icon} size={22} className="sidebar__icon" />
-              <span>{t(item.key)}</span>
+              <span>{t(item.label || item.key)}</span>
             </NavLink>
           </li>
         ))}

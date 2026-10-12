@@ -24,7 +24,7 @@ export default function QuickSearch() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items
-      .map((i) => ({ ...i, label: t(i.key) }))
+      .map((i) => ({ ...i, label: t(i.label || i.key) }))
       .filter((i) => !q || i.label.toLowerCase().includes(q));
   }, [items, query, t]);
 

@@ -13,6 +13,8 @@ const base = {
     shareout: 'Share-out', requests: 'Join requests', messages: 'Messages',
     activity: 'Activity log', settings: 'Settings', profile: 'My account',
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
+    savingsManagement: 'Savings management', loanManagement: 'Loan management',
+    memberManagement: 'Member management', welfareManagement: 'Welfare fund management',
   },
 
   roles: { admin: 'Chairperson', treasurer: 'Treasurer', secretary: 'Secretary', member: 'Member' },

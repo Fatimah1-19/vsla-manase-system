@@ -15,6 +15,8 @@ const base = {
     shareout: 'Kugawana', requests: 'Opempha kulowa', messages: 'Mauthenga',
     activity: 'Zomwe zachitika', settings: 'Malamulo', profile: 'Akaunti yanga',
     cycles: 'Nyengo zosunga', logout: 'Tulukani', menu: 'Menyu', more: 'Zina',
+    savingsManagement: 'Kusamalira zosunga', loanManagement: 'Kusamalira ngongole',
+    memberManagement: 'Kusamalira mamembala', welfareManagement: 'Kusamalira thumba la chithandizo',
   },
 
   roles: { admin: 'Mtsogoleri', treasurer: 'Wosunga ndalama', secretary: 'Mlembi', member: 'Membala' },
