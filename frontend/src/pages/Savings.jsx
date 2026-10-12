@@ -74,7 +74,8 @@ export default function Savings() {
     setBusy(true);
     try {
       const res = await api.patch(`/savings/${editing.id}`, {
-        amount: Number(editing.amount), date: editing.date, note: editing.note || null,
+        amount: Number(editing.amount), shares: Number(editing.shares) || 1,
+        date: editing.date, note: editing.note || null,
       });
       toast.success(res.message);
       setEditing(null);
@@ -142,7 +143,7 @@ export default function Savings() {
         <span className="row-actions">
           {isRecorder && (
             <button type="button" className="btn btn--small btn--ghost"
-              onClick={() => setEditing({ id: r.id, amount: r.amount, date: String(r.date).slice(0, 10), note: r.note || '', full_name: r.full_name })}>
+              onClick={() => setEditing({ id: r.id, amount: r.amount, shares: r.shares, date: String(r.date).slice(0, 10), note: r.note || '', full_name: r.full_name })}>
               {t('common.edit')}
             </button>
           )}
@@ -227,6 +228,13 @@ export default function Savings() {
                 <input id="se-amount" type="number" inputMode="decimal" min="1" step="any" value={editing.amount}
                   onChange={(e) => setEditing((x) => ({ ...x, amount: e.target.value }))} required />
               </div>
+              <div>
+                <label className="field-label" htmlFor="se-shares">{t('savings.shares')}</label>
+                <input id="se-shares" type="number" inputMode="numeric" min="1" step="1" value={editing.shares}
+                  onChange={(e) => setEditing((x) => ({ ...x, shares: e.target.value }))} />
+              </div>
+            </div>
+            <div className="form-row">
               <div>
                 <label className="field-label" htmlFor="se-date">{t('common.date')}</label>
                 <input id="se-date" type="date" value={editing.date}

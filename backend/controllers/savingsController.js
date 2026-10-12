@@ -101,23 +101,27 @@ const savingsSummary = wrap(async (req, res) => {
 // PATCH /api/savings/:id — corrections, admin and treasurer only
 const updateSaving = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { amount, date, note } = req.body;
+  const { amount, date, note, shares } = req.body;
 
   if (amount !== undefined && Number(amount) <= 0) {
     return res.status(400).json({ message: 'The amount must be above zero.' });
+  }
+  if (shares !== undefined && Number(shares) < 1) {
+    return res.status(400).json({ message: 'Shares must be at least one.' });
   }
 
   const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
   await query(
-    `UPDATE savings SET amount = COALESCE($2, amount), date = COALESCE($3, date), note = COALESCE($4, note)
+    `UPDATE savings SET amount = COALESCE($2, amount), date = COALESCE($3, date), note = COALESCE($4, note),
+            shares = COALESCE($5, shares)
       WHERE id = $1`,
-    [id, amount ?? null, date ?? null, note ?? null]
+    [id, amount ?? null, date ?? null, note ?? null, shares ?? null]
   );
 
   await audit(req.user.id, 'UPDATE_SAVING', 'savings', id,
-    `was ${existing.amount}, now ${amount ?? existing.amount}`);
+    `was ${existing.amount} (${existing.shares} shares), now ${amount ?? existing.amount} (${shares ?? existing.shares} shares)`);
   res.json({ message: 'Entry corrected.' });
 });
 
