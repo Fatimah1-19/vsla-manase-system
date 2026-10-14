@@ -11,6 +11,7 @@ import '../styles.css';
 
 const asList = (v) => (Array.isArray(v) ? v : []);
 const FEATURE_ICONS = ['savings', 'loans', 'cycles', 'cases', 'welfare', 'members', 'wrappers', 'meetings', 'requests', 'profile', 'analytics', 'audit', 'messages'];
+const ROLE_ICONS = ['leadership', 'savings', 'reports', 'members'];
 
 export default function Home() {
   const { t } = useLang();
@@ -143,15 +144,17 @@ export default function Home() {
       <section className="home__section" id="rules">
         <h2 className="home__h2">{t('home.rulesTitle')}</h2>
         <p className="home__sub">{t('home.rulesSub')}</p>
-        <div className="home__cards">
+        <ul className="home__rules">
           {rules.map((r) => (
-            <article key={r.title} className="home__card home__card--rule">
-              <span className="home__cardBig">{r.big}</span>
-              <h3>{r.title}</h3>
-              <p>{r.body}</p>
-            </article>
+            <li key={r.title} className="home__rule">
+              <span className="home__ruleBadge">{r.big}</span>
+              <div>
+                <h3>{r.title}</h3>
+                <p>{r.body}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="home__section home__section--tint" id="meeting">
@@ -182,14 +185,17 @@ export default function Home() {
 
       <section className="home__section home__section--tint" id="roles">
         <h2 className="home__h2">{t('home.rolesTitle')}</h2>
-        <div className="home__cards home__cards--small">
-          {roles.map((r) => (
-            <article key={r.title} className="home__card">
-              <h3>{r.title}</h3>
-              <p>{r.body}</p>
-            </article>
+        <ul className="home__features">
+          {roles.map((r, i) => (
+            <li key={r.title} className="home__feat">
+              <span className="home__featIcon"><Icon name={ROLE_ICONS[i]} size={22} /></span>
+              <div>
+                <h3>{r.title}</h3>
+                <p>{r.body}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="home__section" id="faq">

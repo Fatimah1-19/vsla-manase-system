@@ -2736,6 +2736,18 @@ section[id] { scroll-margin-top: 4.5rem; }
 .home__feat h3 { margin: 0 0 0.15rem; font-size: 1rem; }
 .home__feat p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
 
+.home__rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; }
+@media (min-width: 680px) { .home__rules { grid-template-columns: 1fr 1fr; column-gap: var(--space-xl); } }
+.home__rule { display: flex; gap: var(--space-sm); align-items: flex-start; padding: var(--space-md) 0; border-top: 1px solid var(--rule); }
+.home__ruleBadge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 3.2rem; height: 2.6rem; padding: 0 0.55rem; flex: 0 0 auto;
+  font-family: var(--head); font-weight: 800; font-size: 1.05rem;
+  color: var(--leaf-dark); background: var(--leaf-wash); border-radius: var(--radius-sm);
+}
+.home__rule h3 { margin: 0 0 0.15rem; font-size: 1rem; }
+.home__rule p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+
 .home__agenda {
   list-style: none; counter-reset: agenda; margin: 0 auto; padding: 0;
   display: grid; gap: var(--space-md); grid-auto-rows: 1fr;
