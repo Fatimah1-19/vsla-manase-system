@@ -321,7 +321,7 @@ export default {
     navAbout: 'Za ife', navRules: 'Malamulo athu', navFeatures: 'Zomwe mungachite', navFaq: 'Mafunso', navJoin: 'Lowani',
     eyebrow: 'Gulu losunga ndi kukongozana · Manase, Blantyre',
     heroBody:
-      'Sabata iliyonse timaika zomwe tingathe. Wina akafuna ndalama za mbewu, sukulu kapena mankhwala, amakongola m\u2019bokosi ndi kubweza. Kumapeto kwa chaka timatsegula bokosi: aliyense amalandira zosunga zake, ndipo wokongola aliyense amalandira chiwongola dzanja chomwe analipira.',
+      'Pulogalamu yotetezeka ya digito yoyang\u2019anira zosunga, ngongole, kubweza, zopereka za chithandizo, zindapusa, misonkhano ndi zolemba za mamembala a Manase VSLA. Dongosolo limasunga zochitika za gulu mwadongosolo, limapereka zolemba za ndalama zomveka bwino ndipo limatumiza uthenga wotsimikizira kwa mamembala.',
     photoAlt: 'Mamembala a gulu atakhala mozungulira bokosi losungira pa msonkhano',
     weeksOf: (n) => `pa masabata ${n}`, statsLabel: 'Gulu mu manambala',
     aboutTitle: 'Ife ndife ndani',

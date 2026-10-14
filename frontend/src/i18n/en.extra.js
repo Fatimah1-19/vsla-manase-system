@@ -320,7 +320,7 @@ export default {
     navAbout: 'About', navRules: 'Our rules', navFeatures: 'What you can do', navFaq: 'Questions', navJoin: 'Join',
     eyebrow: 'Village savings and loan group · Manase, Blantyre',
     heroBody:
-      'Every week we put in what we can. When someone needs money for seed, school fees or medicine, they borrow from the box and pay it back. At the end of the year we open the box: everyone gets their savings back, and each borrower gets back the interest they paid.',
+      'A secure digital platform for managing Manase VSLA\'s savings, loans, repayments, welfare contribution, fines, meetings and member records. The system keeps group transactions organized, provides clear financial records and sends SMS confirmation to members.',
     photoAlt: 'Members of the group sitting around the savings box at a meeting',
     weeksOf: (n) => `of ${n} weeks`, statsLabel: 'The group in numbers',
     aboutTitle: 'Who we are',
