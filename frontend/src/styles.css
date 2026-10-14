@@ -5,7 +5,7 @@
    Colours come from the Malawi flag and from maize.
    --------------------------------------------------------------- */
 :root {
-  --ink:        #12261F;   /* almost-black green, the "ink" of the ledger */
+  --ink:        #EB7100;   /* almost-black green, the "ink" of the ledger */
   --ink-soft:   #35483F;
   --slate:      #667972;   /* secondary text */
   --paper:      #F2F5EF;   /* cool pale green page, not cream */
