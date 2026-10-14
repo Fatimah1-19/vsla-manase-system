@@ -2557,7 +2557,8 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   padding: 0 var(--gutter) var(--space-lg);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-sm);
+  grid-auto-rows: 1fr;
+  gap: var(--space-md);
 }
 @media (min-width: 600px) { .home__stats { grid-template-columns: repeat(4, 1fr); } }
 
@@ -2565,25 +2566,35 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 0.75rem 0.9rem;
+  padding: var(--card-pad);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.25rem;
-  min-height: 3.75rem;
+  gap: var(--space-xs);
+  min-height: 4.75rem;
+  box-shadow: var(--shadow);
 }
 
 .home__statNum {
   display: block;
   font-family: var(--head);
-  font-size: 1.8rem;
+  font-size: 2.1rem;
   font-weight: 800;
+  letter-spacing: -0.01em;
   line-height: 1;
   color: var(--leaf-dark);
   font-variant-numeric: tabular-nums;
 }
 
-.home__statLabel { display: block; font-size: 0.82rem; color: var(--slate); margin-top: 0; }
+.home__statLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+  margin-top: 0;
+}
 
 /* ---- how it works ---- */
 .home__how {
