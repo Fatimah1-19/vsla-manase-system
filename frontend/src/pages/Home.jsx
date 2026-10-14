@@ -22,7 +22,17 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.get('/public/impact', { auth: false }).then(setStats).catch(() => setStats(null));
+    let alive = true;
+    let tries = 0;
+    // The hosted backend wakes slowly after a rest, so try a few times before
+    // giving up rather than leaving the page without its numbers.
+    const load = () => {
+      api.get('/public/impact', { auth: false })
+        .then((d) => { if (alive) setStats(d); })
+        .catch(() => { if (alive && tries++ < 5) setTimeout(load, 4000); });
+    };
+    load();
+    return () => { alive = false; };
   }, []);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -104,14 +114,12 @@ export default function Home() {
         </div>
       </section>
 
-      {stats && (
-        <section className="home__stats" aria-label={t('home.statsLabel')}>
-          <div className="home__stat"><span className="home__statNum">{plainNumber(stats.active_members)}</span><span className="home__statLabel">{t('home.statMembers')}</span></div>
-          <div className="home__stat"><span className="home__statNum">{plainNumber(stats.loans_given)}</span><span className="home__statLabel">{t('home.statLoans')}</span></div>
-          <div className="home__stat"><span className="home__statNum">{stats.recovery_rate}%</span><span className="home__statLabel">{t('home.statRepaid')}</span></div>
-          <div className="home__stat"><span className="home__statNum">{plainNumber(stats.meetings_held)}</span><span className="home__statLabel">{t('home.statMeetings')}</span></div>
-        </section>
-      )}
+      <section className="home__stats" aria-label={t('home.statsLabel')}>
+        <div className="home__stat"><span className="home__statNum">{stats ? plainNumber(stats.active_members) : '—'}</span><span className="home__statLabel">{t('home.statMembers')}</span></div>
+        <div className="home__stat"><span className="home__statNum">{stats ? plainNumber(stats.loans_given) : '—'}</span><span className="home__statLabel">{t('home.statLoans')}</span></div>
+        <div className="home__stat"><span className="home__statNum">{stats ? `${stats.recovery_rate}%` : '—'}</span><span className="home__statLabel">{t('home.statRepaid')}</span></div>
+        <div className="home__stat"><span className="home__statNum">{stats ? plainNumber(stats.meetings_held) : '—'}</span><span className="home__statLabel">{t('home.statMeetings')}</span></div>
+      </section>
 
       <section className="home__section" id="about">
         <h2 className="home__h2">{t('home.aboutTitle')}</h2>
@@ -147,7 +155,7 @@ export default function Home() {
         <ul className="home__rules">
           {rules.map((r) => (
             <li key={r.title} className="home__rule">
-              <span className="home__ruleBadge">{r.big}</span>
+              <span className="home__ruleBadge">{r.icon ? <Icon name={r.icon} size={20} /> : r.big}</span>
               <div>
                 <h3>{r.title}</h3>
                 <p>{r.body}</p>

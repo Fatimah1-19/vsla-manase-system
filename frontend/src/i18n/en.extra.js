@@ -340,7 +340,7 @@ export default {
       { big: `${r}%`, title: 'Interest on loans', body: `Interest is ${r}% of the amount borrowed. You may choose to borrow without interest.` },
       { big: '↩', title: 'Loan interest and share-out', body: 'At the end of the cycle the interest is not shared among everyone. It goes back only to the member who paid it.' },
       { big: '✕', title: 'Fines and welfare fund', body: 'Fines and the welfare fund are not shared out. They stay with the group.' },
-      { big: levy, title: 'Monthly welfare contribution', body: `Every member pays ${levy} each month for the group's wrappers. It is not savings and is not shared out.` },
+      { big: levy, icon: 'welfare', title: 'Monthly welfare contribution', body: `Every member pays a monthly contribution for the group's wrappers. It is not savings and is not shared out.` },
       { big: '2', title: 'Committee manages the records', body: 'The secretary and the treasurer record everything. The chairperson leads the group, decides loans with the committee and manages members.' },
     ],
     meetingTitle: 'What happens at a meeting',

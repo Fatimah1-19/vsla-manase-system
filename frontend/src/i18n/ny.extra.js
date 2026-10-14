@@ -341,7 +341,7 @@ export default {
       { big: `${r}%`, title: 'Chiwongola dzanja', body: `Chiwongola dzanja ndi ${r}% ya ndalama zokongola. Mutha kusankha kukongola popanda chiwongola dzanja.` },
       { big: '↩', title: 'Chiwongola dzanja chanu chimabwerera kwa inu', body: 'Kumapeto kwa nyengo chiwongola dzanja sichigawidwa kwa onse. Chimabwerera kwa membala amene analipira yekha.' },
       { big: '✕', title: 'Zindapusa ndi chithandizo zimatsala', body: 'Zindapusa ndi thumba la chithandizo sizigawidwa. Zimatsala ku gulu.' },
-      { big: levy, title: 'Zovala za mwezi', body: `Membala aliyense amalipira ${levy} pa mwezi pa zovala za gulu. Si zosunga ndipo sizigawidwa.` },
+      { big: levy, icon: 'welfare', title: 'Zovala za mwezi', body: `Membala aliyense amalipira ndalama ya mwezi pa zovala za gulu. Si zosunga ndipo sizigawidwa.` },
       { big: '2', title: 'Akuluakulu awiri amasunga mabuku', body: 'Mlembi ndi wosunga ndalama amalemba chilichonse. Mtsogoleri amatsogolera gulu, amagamula ngongole ndi komiti, ndi kusamalira mamembala.' },
     ],
     meetingTitle: 'Zomwe zimachitika pa msonkhano',
