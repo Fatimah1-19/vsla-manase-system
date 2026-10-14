@@ -2725,6 +2725,17 @@ section[id] { scroll-margin-top: 4.5rem; }
   color: var(--leaf-dark); margin-bottom: 0.4rem; font-variant-numeric: tabular-nums;
 }
 
+.home__features { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; }
+@media (min-width: 680px) { .home__features { grid-template-columns: 1fr 1fr; column-gap: var(--space-xl); } }
+.home__feat { display: flex; gap: var(--space-sm); align-items: flex-start; padding: var(--space-md) 0; border-top: 1px solid var(--rule); }
+.home__featIcon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.4rem; height: 2.4rem; flex: 0 0 auto;
+  border-radius: var(--radius-sm); background: var(--leaf-wash); color: var(--leaf-dark);
+}
+.home__feat h3 { margin: 0 0 0.15rem; font-size: 1rem; }
+.home__feat p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+
 .home__agenda {
   list-style: none; counter-reset: agenda; margin: 0 auto; padding: 0;
   display: grid; gap: var(--space-md); grid-auto-rows: 1fr;

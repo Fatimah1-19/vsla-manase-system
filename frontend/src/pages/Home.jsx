@@ -10,6 +10,7 @@ import { plainNumber, money } from '../utils/format.js';
 import '../styles.css';
 
 const asList = (v) => (Array.isArray(v) ? v : []);
+const FEATURE_ICONS = ['savings', 'loans', 'cycles', 'cases', 'welfare', 'members', 'wrappers', 'meetings', 'requests', 'profile', 'analytics', 'audit', 'messages'];
 
 export default function Home() {
   const { t } = useLang();
@@ -166,14 +167,17 @@ export default function Home() {
       <section className="home__section" id="features">
         <h2 className="home__h2">{t('home.featuresTitle')}</h2>
         <p className="home__sub">{t('home.featuresSub')}</p>
-        <div className="home__cards home__cards--small">
-          {features.map((f) => (
-            <article key={f.title} className="home__card">
-              <h3>{f.title}</h3>
-              <p>{f.body}</p>
-            </article>
+        <ul className="home__features">
+          {features.map((f, i) => (
+            <li key={f.title} className="home__feat">
+              <span className="home__featIcon"><Icon name={FEATURE_ICONS[i]} size={22} /></span>
+              <div>
+                <h3>{f.title}</h3>
+                <p>{f.body}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="home__section home__section--tint" id="roles">
