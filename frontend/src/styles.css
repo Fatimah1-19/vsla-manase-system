@@ -2731,7 +2731,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 .home__featIcon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 2.4rem; height: 2.4rem; flex: 0 0 auto;
-  border-radius: var(--radius-sm); background: var(--leaf-wash); color: var(--leaf-dark);
+  border-radius: var(--radius-sm); background: var(--leaf-wash); color: var(--maize);
 }
 .home__feat h3 { margin: 0 0 0.15rem; font-size: 1rem; }
 .home__feat p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
@@ -2766,7 +2766,8 @@ section[id] { scroll-margin-top: 4.5rem; }
 .home__agenda span { color: var(--ink-soft); font-size: 0.94rem; }
 
 /* ---- FAQ ---- */
-.home__faq { max-width: 860px !important; display: grid; gap: 0.6rem; }
+.home__faq { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+@media (min-width: 760px) { .home__faq { grid-template-columns: 1fr 1fr; gap: 0.5rem var(--space-md); align-items: start; } }
 .home__qa { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius-sm); }
 .home__qa summary {
   cursor: pointer; padding: 0.9rem 2.6rem 0.9rem 1rem; font-weight: 600; list-style: none;
