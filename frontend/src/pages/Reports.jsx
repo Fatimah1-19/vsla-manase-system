@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -9,7 +9,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { MultiLineChart, LineChart, BarChart } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLong } from '../utils/format.js';
-import './Reports.css';
+import '../styles.css';
 
 const STATUSES = ['absent', 'excused'];
 

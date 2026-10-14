@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import './Charts.css';
+import '../styles.css';
 
 /**
  * Small, dependency-free charts drawn with SVG and CSS.

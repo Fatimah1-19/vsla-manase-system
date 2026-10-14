@@ -1,5 +1,5 @@
 import Icon from './Icon.jsx';
-import './StatCard.css';
+import '../styles.css';
 
 /**
  * One figure with its label. `tone` tints the rule above the number:

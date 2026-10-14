@@ -1,4 +1,4 @@
-import './Toast.css';
+import '../styles.css';
 
 /** Messages that slide in at the bottom on a phone, top-right on a laptop. */
 export default function Toast({ toasts, onDismiss }) {

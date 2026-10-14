@@ -5,7 +5,7 @@ import LanguageToggle from './LanguageToggle.jsx';
 import Avatar from './Avatar.jsx';
 import Icon from './Icon.jsx';
 import Brand from './Brand.jsx';
-import './Topbar.css';
+import '../styles.css';
 
 export default function Topbar({ onMenu }) {
   const { user, avatar } = useAuth();

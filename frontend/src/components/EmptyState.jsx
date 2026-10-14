@@ -1,4 +1,4 @@
-import './EmptyState.css';
+import '../styles.css';
 
 /** An empty screen is an invitation to do the thing, not an apology. */
 export default function EmptyState({ title, body, action }) {

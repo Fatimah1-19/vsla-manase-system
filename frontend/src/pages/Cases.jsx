@@ -10,7 +10,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate } from '../utils/format.js';
-import './Cases.css';
+import '../styles.css';
 
 const OUTCOME_TAG = { passed: 'tag--green', rejected: 'tag--red', lapsed: 'tag--gold' };
 

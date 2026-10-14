@@ -9,7 +9,7 @@ import TreasurerDashboard from './dashboards/TreasurerDashboard.jsx';
 import SecretaryDashboard from './dashboards/SecretaryDashboard.jsx';
 import AdminDashboard from './dashboards/AdminDashboard.jsx';
 import CycleBar from './dashboards/CycleBar.jsx';
-import './Dashboard.css';
+import '../styles.css';
 
 /** Sends each role to her own board. They show genuinely different things. */
 export default function Dashboard() {

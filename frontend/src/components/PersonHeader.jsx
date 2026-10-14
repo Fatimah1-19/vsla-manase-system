@@ -1,5 +1,5 @@
 import Avatar from './Avatar.jsx';
-import './PersonHeader.css';
+import '../styles.css';
 
 /** The person at the top of "My account": a big avatar, the name, the role. */
 export default function PersonHeader({ name, role, detail, photo }) {

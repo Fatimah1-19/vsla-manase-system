@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext.jsx';
-import './Brand.css';
+import '../styles.css';
 
 /**
  * The group's logo and name. One place, so it looks the same everywhere.

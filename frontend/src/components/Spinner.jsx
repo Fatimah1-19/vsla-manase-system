@@ -1,5 +1,5 @@
 import { useLang } from '../context/LangContext.jsx';
-import './Spinner.css';
+import '../styles.css';
 
 export default function Spinner({ label, inline = false }) {
   const { t } = useLang();

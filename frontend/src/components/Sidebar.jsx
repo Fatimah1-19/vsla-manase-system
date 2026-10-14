@@ -5,7 +5,7 @@ import { navFor } from './navItems.js';
 import Brand from './Brand.jsx';
 import Icon from './Icon.jsx';
 import Avatar from './Avatar.jsx';
-import './Sidebar.css';
+import '../styles.css';
 
 export default function Sidebar({ open, onNavigate }) {
   const { user, logout, avatar } = useAuth();

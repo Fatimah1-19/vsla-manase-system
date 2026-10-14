@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext.jsx';
 import Icon from './Icon.jsx';
 import Brand from './Brand.jsx';
-import './Footer.css';
+import '../styles.css';
 
 const PHONE = '+265 987 150 466';
 const EMAIL = 'info@manasevsla.org';

@@ -3,7 +3,7 @@ import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart, Pie } from '../../components/Charts.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
-import './AdminDashboard.css';
+import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 

@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { api } from '../api/client.js';
-import './LanguageToggle.css';
+import '../styles.css';
 
 /**
  * Chichewa / English. For a logged-in member the choice is saved on her

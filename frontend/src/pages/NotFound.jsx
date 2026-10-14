@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext.jsx';
-import './NotFound.css';
+import '../styles.css';
 
 export default function NotFound() {
   const { t } = useLang();

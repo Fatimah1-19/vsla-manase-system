@@ -1,5 +1,5 @@
 import { monthLong, shortDate } from '../utils/format.js';
-import './GroupedList.css';
+import '../styles.css';
 
 /**
  * Turn a flat list of dated rows into Month -> Date -> rows, with the names

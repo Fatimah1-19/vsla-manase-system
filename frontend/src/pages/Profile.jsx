@@ -14,7 +14,7 @@ import StatCard from '../components/StatCard.jsx';
 import Ledger from '../components/Ledger.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
-import './Profile.css';
+import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const MAX_BYTES = 2 * 1024 * 1024;

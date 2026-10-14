@@ -13,7 +13,7 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate, inputDate, monthName } from '../utils/format.js';
-import './Members.css';
+import '../styles.css';
 
 const blank = {
   full_name: '', phone: '', role: 'member', language: 'ny',

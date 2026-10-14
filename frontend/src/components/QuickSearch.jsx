@@ -5,7 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { navFor } from './navItems.js';
 import Icon from './Icon.jsx';
 import Modal from './Modal.jsx';
-import './QuickSearch.css';
+import '../styles.css';
 
 /**
  * A quick-find button. It lists the pages this person is allowed to open, lets

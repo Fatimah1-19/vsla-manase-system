@@ -5,8 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import Icon from '../components/Icon.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
-import './Login.css';
-import './LoginTop.css';
+import '../styles.css';
 
 export default function Login() {
   const [username, setUsername] = useState('');

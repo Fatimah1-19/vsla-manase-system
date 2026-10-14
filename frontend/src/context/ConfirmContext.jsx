@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import { useLang } from './LangContext.jsx';
-import './Confirm.css';
+import '../styles.css';
 
 const ConfirmContext = createContext(null);
 

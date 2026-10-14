@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Icon from './Icon.jsx';
 import { useLang } from '../context/LangContext.jsx';
-import './PasswordInput.css';
+import '../styles.css';
 
 /**
  * A password box with an eye button, so anyone can check what they typed

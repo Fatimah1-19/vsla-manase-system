@@ -11,7 +11,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { money, shortDate, inputDate, monthLong, plainNumber } from '../utils/format.js';
-import './Loans.css';
+import '../styles.css';
 
 const STATUS_TAG = {
   pending: 'gold', approved: 'green', rejected: 'grey', repaid: 'blue', defaulted: 'red',

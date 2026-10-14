@@ -9,7 +9,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import { BarChart, LineChart, HBars, Ring } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLabel } from '../utils/format.js';
 import Reports from './Reports.jsx';
-import './Analytics.css';
+import '../styles.css';
 
 const LOAN_TONE = { pending: 'maize', approved: 'sky', repaid: 'leaf', rejected: 'flame', defaulted: 'flame' };
 

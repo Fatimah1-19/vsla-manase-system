@@ -13,7 +13,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import { Ring } from '../components/Charts.jsx';
 import { money, shortDate, inputDate, monthLong, thisMonth } from '../utils/format.js';
-import './Wrappers.css';
+import '../styles.css';
 
 const STATUS_TAG = { paid: 'green', partial: 'gold', unpaid: 'red' };
 

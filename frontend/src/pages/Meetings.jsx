@@ -11,7 +11,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import Icon from '../components/Icon.jsx';
 import { shortDate, inputDate } from '../utils/format.js';
-import './Meetings.css';
+import '../styles.css';
 
 const blank = { meeting_date: inputDate(), meeting_time: '', location: '', agenda: '', notify: true };
 

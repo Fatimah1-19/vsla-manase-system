@@ -1,6 +1,6 @@
 import { useLang } from '../context/LangContext.jsx';
 import EmptyState from './EmptyState.jsx';
-import './Ledger.css';
+import '../styles.css';
 
 /**
  * The ruled table the whole app reads from.

@@ -13,7 +13,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import Icon from '../components/Icon.jsx';
 import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
-import './Savings.css';
+import '../styles.css';
 
 const blank = { member_id: '', amount: '', shares: '1', date: inputDate(), note: '' };
 

@@ -3,7 +3,7 @@ import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
-import './SecretaryDashboard.css';
+import '../../styles.css';
 
 /**
  * The secretary keeps the record of people: who came, who wants to join,

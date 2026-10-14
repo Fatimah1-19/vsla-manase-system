@@ -6,7 +6,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { LangProvider } from './context/LangContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { ConfirmProvider } from './context/ConfirmContext.jsx';
-import './index.css';
+import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

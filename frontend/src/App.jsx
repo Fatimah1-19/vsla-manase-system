@@ -24,7 +24,7 @@ import Profile from './pages/Profile.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Wrappers from './pages/Wrappers.jsx';
 import NotFound from './pages/NotFound.jsx';
-import './App.css';
+import './styles.css';
 
 const COMMITTEE = ['admin', 'treasurer', 'secretary'];
 const EVERYONE = ['admin', 'treasurer', 'secretary', 'member'];

@@ -11,7 +11,7 @@ import StatCard from '../components/StatCard.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import './Welfare.css';
+import '../styles.css';
 
 const blankPayout = {
   member_id: '', amount: '', category: 'sickness', notes: '',

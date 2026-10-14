@@ -1,6 +1,6 @@
 import { initials } from '../utils/format.js';
 import Icon from './Icon.jsx';
-import './Avatar.css';
+import '../styles.css';
 
 // Soft background / strong text pairs, taken from the app's own colours.
 const COLOURS = [

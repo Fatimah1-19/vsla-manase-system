@@ -5,7 +5,7 @@ import Topbar from './Topbar.jsx';
 import TabBar from './TabBar.jsx';
 import IdleDialog from './IdleDialog.jsx';
 import Footer from './Footer.jsx';
-import './Layout.css';
+import '../styles.css';
 
 export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);

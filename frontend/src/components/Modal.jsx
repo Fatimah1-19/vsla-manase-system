@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLang } from '../context/LangContext.jsx';
-import './Modal.css';
+import '../styles.css';
 
 /** A sheet that slides up from the bottom on a phone, centres on a laptop. */
 export default function Modal({ open, title, onClose, children, footer, wide = false }) {

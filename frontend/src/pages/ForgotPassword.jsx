@@ -5,7 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import Brand from '../components/Brand.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
-import './ForgotPassword.css';
+import '../styles.css';
 
 /** Two steps: ask for a code by SMS, then use it to set a new password. */
 export default function ForgotPassword() {

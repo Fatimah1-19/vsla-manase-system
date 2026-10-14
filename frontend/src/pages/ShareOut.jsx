@@ -10,7 +10,7 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate } from '../utils/format.js';
-import './ShareOut.css';
+import '../styles.css';
 
 /**
  * The end of the year: work out what everyone is owed, check it, then

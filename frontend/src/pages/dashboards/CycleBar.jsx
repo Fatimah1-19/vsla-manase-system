@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import { money, shortDate } from '../../utils/format.js';
-import './CycleBar.css';
+import '../../styles.css';
 
 /** How far through the year the group is, and when the box gets opened. */
 export default function CycleBar({ cycle }) {

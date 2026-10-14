@@ -9,7 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { shortDate } from '../utils/format.js';
-import './JoinRequests.css';
+import '../styles.css';
 
 /** Every member votes; a committee member records what the group decided. */
 export default function JoinRequests() {

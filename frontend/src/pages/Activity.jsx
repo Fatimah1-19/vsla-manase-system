@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { dateTime, humanAction } from '../utils/format.js';
-import './Activity.css';
+import '../styles.css';
 
 /** Every money action leaves a trace here. Both writers are named. */
 export default function Activity() {

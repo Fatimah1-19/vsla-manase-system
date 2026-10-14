@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { dateTime } from '../utils/format.js';
-import './Messages.css';
+import '../styles.css';
 
 const MAX_LEN = 320;
 

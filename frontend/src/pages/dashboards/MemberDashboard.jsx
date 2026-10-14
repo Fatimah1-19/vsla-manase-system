@@ -5,7 +5,7 @@ import Icon from '../../components/Icon.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
 import { LineChart, HBars, Ring } from '../../components/Charts.jsx';
 import { money, shortDate } from '../../utils/format.js';
-import './MemberDashboard.css';
+import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 

@@ -7,8 +7,7 @@ import Footer from '../components/Footer.jsx';
 import Brand from '../components/Brand.jsx';
 import Icon from '../components/Icon.jsx';
 import { plainNumber, money } from '../utils/format.js';
-import './Home.css';
-import './HomeNav.css';
+import '../styles.css';
 
 const asList = (v) => (Array.isArray(v) ? v : []);
 

@@ -5,7 +5,7 @@ import { BarChart } from '../../components/Charts.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
 import { money, plainNumber } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
-import './TreasurerDashboard.css';
+import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 

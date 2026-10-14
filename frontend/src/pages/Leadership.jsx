@@ -12,7 +12,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import Icon from '../components/Icon.jsx';
 import { shortDate } from '../utils/format.js';
-import './Leadership.css';
+import '../styles.css';
 
 const STATUS_TAG = { open: 'tag--green', passed: 'tag--gold', lapsed: 'tag--grey', tie: 'tag--red', withdrawn: 'tag--grey' };
 const daysTo = (date) => Math.ceil((new Date(date) - Date.now()) / 86400000);

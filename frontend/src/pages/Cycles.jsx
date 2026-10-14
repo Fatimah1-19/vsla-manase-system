@@ -8,7 +8,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
-import './Cycles.css';
+import '../styles.css';
 
 export default function Cycles() {
   const { t } = useLang();

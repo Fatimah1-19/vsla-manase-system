@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
-import './IdleDialog.css';
+import '../styles.css';
 
 /** Shown a minute before the automatic log-out. */
 export default function IdleDialog() {

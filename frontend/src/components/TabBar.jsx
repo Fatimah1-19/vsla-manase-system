@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { navFor } from './navItems.js';
 import Icon from './Icon.jsx';
-import './TabBar.css';
+import '../styles.css';
 
 /** The bottom bar on a phone: the handful of things used at every meeting. */
 export default function TabBar({ onMore }) {

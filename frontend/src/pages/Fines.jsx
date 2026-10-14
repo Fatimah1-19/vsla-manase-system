@@ -11,7 +11,7 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import { money, shortDate, inputDate } from '../utils/format.js';
-import './Fines.css';
+import '../styles.css';
 
 const blank = { member_id: '', amount: '', reason: '', date: inputDate(), paid: false };
 
