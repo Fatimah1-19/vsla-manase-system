@@ -5,7 +5,7 @@ const base = {
   code: 'en',
   name: 'English',
 
-  app: { name: 'Manase Village Bank', tagline: 'Saving together, lending to each other' },
+  app: { name: 'Manase Village Savings and Loan Association', tagline: 'Saving together, lending to each other' },
 
   nav: {
     dashboard: 'Dashboard', savings: 'Savings', loans: 'Loans', members: 'Members',
@@ -140,13 +140,29 @@ const base = {
     empty: 'No share-out has been done yet.',
   },
 
-  requests: {
-    title: 'People waiting to join', vote: 'Your vote', voteYes: 'Accept',
-    voteNo: 'Not this cycle', tally: 'Group votes', accept: 'Record: the group accepted',
-    decline: 'Record: the group declined', whyJoin: 'Why they want to join',
-    empty: 'No one is waiting to join.', decided: 'Decided',
-    groupDecides: 'Every member can vote. A committee member records what the group decided.',
-  },
+    requests: {
+      title: 'People waiting to join', vote: 'Your vote', voteYes: 'Accept',
+      voteNo: 'Not this cycle', tally: 'Group votes', accept: 'Record: the group accepted',
+      decline: 'Record: the group declined', whyJoin: 'Why they want to join',
+      empty: 'No one is waiting to join.', decided: 'Decided',
+      groupDecides: 'Every member can vote. A committee member records what the group decided.',
+      background: 'Applicant background',
+      backgroundHint: 'Tick what the group knows about this person, then vote. You can vote as soon as the request arrives.',
+      backgroundGroup: 'What the group says so far',
+      backgroundEmpty: 'No one has answered these yet.',
+      screening: [
+        { key: 'resident', good: 'yes', q: 'Is the applicant a resident of this area?' },
+        { key: 'goodCharacter', good: 'yes', q: 'Does the applicant have good character?' },
+        { key: 'trustworthy', good: 'yes', q: 'Is the applicant trustworthy?' },
+        { key: 'honest', good: 'yes', q: 'Is the applicant honest in their dealings?' },
+        { key: 'repaysLoans', good: 'yes', q: 'Does the applicant repay loans on time without trouble?' },
+        { key: 'formerMember', good: 'yes', q: 'If the applicant belonged to another group, were they a good member there?' },
+        { key: 'followsRules', good: 'yes', q: 'Is the applicant willing to follow the group\'s rules?' },
+        { key: 'reliableIncome', good: 'yes', q: 'Does the applicant have a reliable source of income for regular savings?' },
+        { key: 'noDebt', good: 'no', q: 'Does the applicant have any unpaid loan or debt elsewhere?' },
+        { key: 'notExpelled', good: 'no', q: 'Has the applicant ever been expelled for dishonesty or default?' },
+      ],
+    },
 
   messages: {
     title: 'Messages', send: 'Send a message', to: 'Send to',
@@ -185,26 +201,26 @@ const base = {
   },
 
   home: {
-    heroTitle: 'The box belongs to all of us',
+    heroTitle: 'Manase VSLA Management System',
     heroBody:
-      'Every week we put in what we can. When someone needs money for seed, school fees or medicine, they borrow from the box and pay it back. At the end of the year we open the box and share everything out.',
+      'Manase Village Savings and Loan Association — Every week we put in what we can. When someone needs money for seed, school fees or medicine, they borrow from the box and pay it back. At the end of the year we open the box and share everything out.',
     join: 'Ask to join the group', login: 'Log in',
-    statMembers: 'members saving', statLoans: 'loans given', statRepaid: 'repaid on time',
+    statMembers: 'Active members', statLoans: 'Loans issued', statRepaid: 'loans repaid',
     statMeetings: 'meetings held',
-    howTitle: 'How the year works',
+    howTitle: 'How the VSLA works',
     step1Title: 'We save every week',
-    step1Body: 'Each member buys shares at every meeting. The secretary and the treasurer both write it down, and you get a text message the same day.',
+    step1Body: "Members contribute their savings at each weekly meeting. The committee records each contribution and member's savings balance is updated.",
     step2Title: 'We lend to each other',
-    step2Body: 'A member may borrow up to two times what they have saved. They choose whether to pay interest, and agree a date to pay it back before the year ends.',
-    step3Title: 'We share everything out',
-    step3Body: 'At the end of the cycle the box is opened. Each member gets back what they saved, and each borrower gets back the interest they paid. Everyone is texted their amount.',
-    joinTitle: 'Ask to join',
-    joinBody: 'Fill this in and the group will talk about it at the next meeting. Someone will text you either way.',
+    step2Body: "Members can apply for loans according to the group's rules. The committee records the loan, interest, repayment periods and repayments.",
+    step3Title: 'We share out at the end of the cycle',
+    step3Body: "At the end of the savings cycle, each member's share-out amount is calculated according to the VSLA's agreed rules.",
+    joinTitle: 'How can I become a member',
+    joinBody: 'Submit a request to join. The VSLA committee and members will assess the application. Approval is based on factors such as good character, being a trustworthy citizen of the area, repaying loans reliably, and a positive history if previously in another group. If approved, you must pay the agreed registration fee before the committee records you in the system and provides account access.',
     joinFeeNote: (fee) => `A one-off registration fee of ${fee} is paid when you join the group.`,
     joinName: 'Your full name', joinPhone: 'Your phone number',
     joinVillage: 'Your village', joinReason: 'Why do you want to join?',
     joinSubmit: 'Send my request',
-    joinDone: 'Your request has been sent. The group will talk about it at the next meeting.',
+    joinDone: 'Your request has been sent. The committee and members will review it at the next meeting.',
   },
 
   errors: {

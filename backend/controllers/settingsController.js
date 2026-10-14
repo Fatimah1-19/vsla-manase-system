@@ -2,6 +2,7 @@ const { query } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { setSetting } = require('../utils/helpers');
 const { audit } = require('../utils/audit');
+const { DEFAULT_QUESTIONS, SETTING_KEY, serialise } = require('../utils/screening');
 
 const EDITABLE = {
   loan_multiplier: 'How many times their savings a member may borrow',
@@ -16,6 +17,7 @@ const EDITABLE = {
   case_dismiss_percent: 'Share of yes votes needed to dismiss a member (%)',
   office_voting_days: 'How many days an election to fill an office stays open',
   office_quorum_percent: 'Share of members who must vote in an office election for the result to count (%)',
+  [SETTING_KEY]: 'Background questions members answer about a person asking to join',
 };
 
 const NUMERIC = [
@@ -27,6 +29,17 @@ const NUMERIC = [
 // GET /api/settings
 const listSettings = wrap(async (req, res) => {
   const rows = await query(`SELECT setting_key, setting_value, updated_at FROM settings ORDER BY setting_key`);
+
+  // A group that has never touched the screening questions still gets the
+  // defaults, so the Settings page always shows what is actually asked.
+  if (!rows.some((r) => r.setting_key === SETTING_KEY)) {
+    rows.push({
+      setting_key: SETTING_KEY,
+      setting_value: JSON.stringify(DEFAULT_QUESTIONS),
+      updated_at: null,
+    });
+  }
+
   res.json(rows.filter((r) => r.setting_key in EDITABLE).map((r) => ({ ...r, label: EDITABLE[r.setting_key] })));
 });
 
@@ -38,6 +51,20 @@ const updateSettings = wrap(async (req, res) => {
   if (!keys.length) return res.status(400).json({ message: 'Nothing to change.' });
 
   for (const key of keys) {
+    if (key === SETTING_KEY) {
+      let parsed;
+      try {
+        parsed = JSON.parse(String(updates[key]));
+      } catch {
+        return res.status(400).json({ message: 'The background questions were not valid.' });
+      }
+      if (!Array.isArray(parsed)) {
+        return res.status(400).json({ message: 'The background questions were not valid.' });
+      }
+      await setSetting(key, serialise(parsed));
+      continue;
+    }
+
     let value = String(updates[key]).trim();
     if (NUMERIC.includes(key)) {
       if (Number.isNaN(Number(value)) || Number(value) < 0) {

@@ -34,11 +34,24 @@ export default function Settings() {
   const toast = useToast();
 
   const [values, setValues] = useState(null);
+  const [questions, setQuestions] = useState([]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const rows = await api.get('/settings');
-    setValues(Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value])));
+    const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
+    setValues(map);
+    let parsed = [];
+    try {
+      const p = JSON.parse(map.join_screening_questions || '[]');
+      if (Array.isArray(p)) parsed = p;
+    } catch { parsed = []; }
+    setQuestions(parsed.map((q) => ({
+      id: q.id || '',
+      good: q.good === 'no' ? 'no' : 'yes',
+      en: q.en || '',
+      ny: q.ny || '',
+    })));
   }, []);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
@@ -47,13 +60,23 @@ export default function Settings() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.put('/settings', values);
+      await api.put('/settings', { ...values, join_screening_questions: JSON.stringify(questions) });
       toast.success(t('settings.saved'));
     } catch (err) {
       toast.error(err.message);
     } finally {
       setBusy(false);
     }
+  }
+
+  function addQuestion() {
+    setQuestions((qs) => [...qs, { id: '', good: 'yes', en: '', ny: '' }]);
+  }
+  function updateQuestion(i, patch) {
+    setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  }
+  function removeQuestion(i) {
+    setQuestions((qs) => qs.filter((_, idx) => idx !== i));
   }
 
   if (!values) return <Spinner />;
@@ -160,6 +183,41 @@ export default function Settings() {
               />
             </div>
           ))}
+        </section>
+
+        <section className="settings__group">
+          <h2 className="settings__h2">{t('settings.screeningTitle')}</h2>
+          <p className="settings__note">{t('settings.screeningNote')}</p>
+          {questions.length === 0 && <p className="settings__note">{t('settings.screeningEmpty')}</p>}
+          <ul className="settings__questions">
+            {questions.map((q, i) => (
+              <li key={i} className="settings__question">
+                <div className="settings__qRow">
+                  <label className="field-label">{t('settings.screeningEn')}</label>
+                  <input value={q.en} onChange={(e) => updateQuestion(i, { en: e.target.value })} disabled={!isAdmin} />
+                </div>
+                <div className="settings__qRow">
+                  <label className="field-label">{t('settings.screeningNy')}</label>
+                  <input value={q.ny} onChange={(e) => updateQuestion(i, { ny: e.target.value })} disabled={!isAdmin} />
+                </div>
+                <div className="settings__qRow settings__qGood">
+                  <label className="field-label">{t('settings.screeningGood')}</label>
+                  <select value={q.good} onChange={(e) => updateQuestion(i, { good: e.target.value })} disabled={!isAdmin}>
+                    <option value="yes">{t('common.yes')}</option>
+                    <option value="no">{t('common.no')}</option>
+                  </select>
+                  {isAdmin && (
+                    <button type="button" className="btn btn--danger btn--small" onClick={() => removeQuestion(i)}>
+                      {t('common.del')}
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {isAdmin && (
+            <button type="button" className="btn btn--ghost" onClick={addQuestion}>{t('settings.screeningAdd')}</button>
+          )}
         </section>
 
         <section className="settings__group">

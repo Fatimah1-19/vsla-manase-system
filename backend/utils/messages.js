@@ -2,7 +2,7 @@
 // Each member gets texted in the language on her own profile.
 require('dotenv').config();
 
-const GROUP = process.env.GROUP_NAME || 'Manase Village Bank';
+const GROUP = process.env.GROUP_NAME || 'Manase Village Savings and Loan Association';
 const CUR = process.env.CURRENCY || 'MWK';
 
 const money = (n) =>

@@ -8,7 +8,7 @@ if not exist backend\.env (
   pause
   exit /b 1
 )
-echo Starting Manase Village Bank...
+echo Starting Manase VSLA Management System...
 start "Manase API" cmd /k "cd backend && npm install && npm start"
 timeout /t 6 /nobreak >nul
 start "Manase Web" cmd /k "cd frontend && npm install && npm run dev"

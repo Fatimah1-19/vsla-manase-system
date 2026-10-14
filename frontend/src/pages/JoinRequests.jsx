@@ -21,14 +21,31 @@ export default function JoinRequests() {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [credentials, setCredentials] = useState(null);
+  const [ticks, setTicks] = useState({});
 
   const load = useCallback(async () => { setData(await api.get('/join-requests')); }, []);
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
+  // Start each applicant's background ticks from what this member saved before.
+  useEffect(() => {
+    if (!data) return;
+    const seed = {};
+    for (const r of data.requests) seed[r.id] = r.my_screening || {};
+    setTicks(seed);
+  }, [data]);
+
+  const questions = data?.screening_questions?.length
+    ? data.screening_questions
+    : (Array.isArray(t('requests.screening')) ? t('requests.screening') : []);
+
+  function setTick(requestId, key, value) {
+    setTicks((all) => ({ ...all, [requestId]: { ...(all[requestId] || {}), [key]: value } }));
+  }
+
   async function vote(id, choice) {
     setBusy(true);
     try {
-      await api.post(`/join-requests/${id}/vote`, { vote: choice });
+      await api.post(`/join-requests/${id}/vote`, { vote: choice, screening: ticks[id] || {} });
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -94,6 +111,48 @@ export default function JoinRequests() {
                     {r.reason}
                   </p>
                 )}
+
+                <section className="joinreq__bg">
+                  <h3 className="joinreq__bgTitle">{t('requests.background')}</h3>
+                  <p className="joinreq__bgHint">{t('requests.backgroundHint')}</p>
+                  <ul className="joinreq__bgList">
+                    {questions.map((qq) => {
+                      const mine = (ticks[r.id] || {})[qq.key];
+                      const sum = (r.screening_summary || {})[qq.key] || { yes: 0, no: 0 };
+                      return (
+                        <li key={qq.key} className="joinreq__bgItem">
+                          <span className="joinreq__bgQ">{qq.q}</span>
+                          <div className="joinreq__bgBtns" role="group" aria-label={qq.q}>
+                            <button
+                              type="button"
+                              className={mine === 'yes' ? 'joinreq__tick is-on' : 'joinreq__tick'}
+                              onClick={() => setTick(r.id, qq.key, 'yes')}
+                              disabled={busy}
+                              aria-pressed={mine === 'yes'}
+                            >
+                              {t('common.yes')}
+                            </button>
+                            <button
+                              type="button"
+                              className={mine === 'no' ? 'joinreq__tick is-on' : 'joinreq__tick'}
+                              onClick={() => setTick(r.id, qq.key, 'no')}
+                              disabled={busy}
+                              aria-pressed={mine === 'no'}
+                            >
+                              {t('common.no')}
+                            </button>
+                          </div>
+                          <span
+                            className="joinreq__bgCount"
+                            title={`${t('requests.backgroundGroup')}: ${sum.yes} ${t('common.yes').toLowerCase()} / ${sum.no} ${t('common.no').toLowerCase()}`}
+                          >
+                            {sum.yes}·{sum.no}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
 
                 <div className="joinreq__tally">
                   <div className="joinreq__bar">

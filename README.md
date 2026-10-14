@@ -1,4 +1,4 @@
-# Manase Village Bank
+# Manase VSLA Management System (Manase Village Savings and Loan Association)
 
 A village savings and loan (VSLA) system for the Manase group: weekly savings, loans, monthly wrappers, welfare fund, fines, meetings, new-member voting, share-out, analytics, and text-message confirmations. Works in Chichewa and English.
 

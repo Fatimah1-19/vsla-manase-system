@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS join_request_votes (
   request_id  INT NOT NULL REFERENCES join_requests(id) ON DELETE CASCADE,
   user_id     INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   vote        VARCHAR(7) NOT NULL CHECK (vote IN ('yes','no')),
+  screening   JSONB NOT NULL DEFAULT '{}'::jsonb,
   comment     TEXT,
   voted_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (request_id, user_id)
@@ -446,3 +447,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('office_voting_days', '2'),      -- how long an election stays open
   ('office_quorum_percent', '50')   -- at least this % of members must vote for it to count
 ON CONFLICT (setting_key) DO NOTHING;
+
+-- Members record an applicant's background when they vote on a join request.
+-- Added after the first release, so bring older databases up to date too.
+ALTER TABLE join_request_votes ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;

@@ -5,7 +5,7 @@ import Brand from './Brand.jsx';
 import '../styles.css';
 
 const PHONE = '+265 987 150 466';
-const EMAIL = 'info@manasevsla.org';
+const EMAIL = 'husseinfatima271@gmail.com';
 const TEL = `tel:${PHONE.replace(/\s/g, '')}`;
 
 /**
