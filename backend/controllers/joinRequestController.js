@@ -10,7 +10,7 @@ const { getScreeningQuestions } = require('../utils/screening');
 
 // POST /api/join-requests — public, no login
 const submitRequest = wrap(async (req, res) => {
-  const { full_name, phone, village, reason } = req.body;
+  const { full_name, phone, village, reason, screening } = req.body;
   if (!full_name || !phone) {
     return res.status(400).json({ message: 'Enter your name and phone number.' });
   }
@@ -25,9 +25,14 @@ const submitRequest = wrap(async (req, res) => {
     return res.status(409).json({ message: 'A request from this number is already waiting for the group.' });
   }
 
+  // The applicant answers the background questions in the join form. Keep only
+  // answers to the questions that are actually in force right now.
+  const questions = await getScreeningQuestions();
+  const answers = cleanScreening(screening, questions.map((q) => q.id));
+
   const row = await one(
-    `INSERT INTO join_requests (full_name, phone, village, reason) VALUES ($1,$2,$3,$4) RETURNING id`,
-    [String(full_name).trim(), phone, village || null, reason || null]
+    `INSERT INTO join_requests (full_name, phone, village, reason, screening) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING id`,
+    [String(full_name).trim(), phone, village || null, reason || null, JSON.stringify(answers)]
   );
 
   res.status(201).json({
@@ -46,42 +51,29 @@ function cleanScreening(input, keys) {
   return out;
 }
 
+// GET /api/public/join-questions — the questions an applicant answers. No login.
+const publicQuestions = wrap(async (req, res) => {
+  const questions = await getScreeningQuestions();
+  // Which answer counts in favour is hidden here, so answers are given honestly.
+  res.json(questions.map((q) => ({ key: q.id, en: q.en, ny: q.ny })));
+});
+
 // GET /api/join-requests — with the group's votes so far
 const listRequests = wrap(async (req, res) => {
   const questions = await getScreeningQuestions();
-  const keys = questions.map((q) => q.id);
 
   const rows = await query(
     `SELECT jr.*, u.full_name AS decided_by_name,
             (SELECT COUNT(*)::int FROM join_request_votes v WHERE v.request_id = jr.id AND v.vote = 'yes') AS yes_votes,
             (SELECT COUNT(*)::int FROM join_request_votes v WHERE v.request_id = jr.id AND v.vote = 'no')  AS no_votes,
-            (SELECT v.vote FROM join_request_votes v WHERE v.request_id = jr.id AND v.user_id = $1) AS my_vote,
-            (SELECT v.screening FROM join_request_votes v WHERE v.request_id = jr.id AND v.user_id = $1) AS my_screening
+            (SELECT v.vote FROM join_request_votes v WHERE v.request_id = jr.id AND v.user_id = $1) AS my_vote
        FROM join_requests jr
        LEFT JOIN users u ON u.id = jr.decided_by
       ORDER BY CASE jr.status WHEN 'pending' THEN 0 ELSE 1 END, jr.created_at DESC`,
     [req.user.id]
   );
 
-  // What the group as a whole has said about each applicant's background.
-  const ids = rows.map((r) => r.id);
-  const summaries = {};
-  if (ids.length && keys.length) {
-    const votes = await query(
-      `SELECT request_id, screening FROM join_request_votes WHERE request_id = ANY($1::int[])`,
-      [ids]
-    );
-    for (const v of votes) {
-      const s = v.screening || {};
-      summaries[v.request_id] = summaries[v.request_id] || {};
-      for (const key of keys) {
-        if (s[key] !== 'yes' && s[key] !== 'no') continue;
-        const cell = summaries[v.request_id][key] || (summaries[v.request_id][key] = { yes: 0, no: 0 });
-        cell[s[key]] += 1;
-      }
-    }
-  }
-  for (const r of rows) r.screening_summary = summaries[r.id] || {};
+  // Each request already carries the applicant's own answers in jr.screening.
 
   const voters = await one(
     `SELECT COUNT(*)::int AS c FROM users WHERE is_active = TRUE`
@@ -97,7 +89,7 @@ const listRequests = wrap(async (req, res) => {
 // POST /api/join-requests/:id/vote — the group decides, not one person
 const vote = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { vote: choice, comment, screening } = req.body;
+  const { vote: choice, comment } = req.body;
 
   if (!['yes', 'no'].includes(choice)) {
     return res.status(400).json({ message: 'Vote yes or no.' });
@@ -107,13 +99,10 @@ const vote = wrap(async (req, res) => {
   if (!request) return res.status(404).json({ message: 'That request does not exist.' });
   if (request.status !== 'pending') return res.status(400).json({ message: 'The group has already decided this one.' });
 
-  const questions = await getScreeningQuestions();
-  const answers = cleanScreening(screening, questions.map((q) => q.id));
-
   await query(
-    `INSERT INTO join_request_votes (request_id, user_id, vote, screening, comment) VALUES ($1,$2,$3,$4::jsonb,$5)
-     ON CONFLICT (request_id, user_id) DO UPDATE SET vote = EXCLUDED.vote, screening = EXCLUDED.screening, comment = EXCLUDED.comment, voted_at = NOW()`,
-    [id, req.user.id, choice, JSON.stringify(answers), comment || null]
+    `INSERT INTO join_request_votes (request_id, user_id, vote, comment) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (request_id, user_id) DO UPDATE SET vote = EXCLUDED.vote, comment = EXCLUDED.comment, voted_at = NOW()`,
+    [id, req.user.id, choice, comment || null]
   );
 
   const tally = await one(
@@ -123,7 +112,7 @@ const vote = wrap(async (req, res) => {
   );
 
   await audit(req.user.id, 'VOTE_JOIN_REQUEST', 'join_requests', id, request.full_name);
-  res.json({ message: 'Your vote has been recorded.', tally, screening: answers });
+  res.json({ message: 'Your vote has been recorded.', tally });
 });
 
 /**
@@ -200,4 +189,4 @@ const decideRequest = wrap(async (req, res) => {
   });
 });
 
-module.exports = { submitRequest, listRequests, vote, decideRequest };
+module.exports = { submitRequest, publicQuestions, listRequests, vote, decideRequest };

@@ -4,6 +4,7 @@ const cors = require('cors');
 const { pool, warmUp } = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { publicImpact } = require('./controllers/dashboardController');
+const { publicQuestions } = require('./controllers/joinRequestController');
 const { registerDomainListeners } = require('./events/listeners');
 
 const app = express();
@@ -60,6 +61,9 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Counts only, no money — this is what the public front page shows.
 app.get('/api/public/impact', publicImpact);
+
+// The background questions a person answers when they ask to join. No login.
+app.get('/api/public/join-questions', publicQuestions);
 
 // Wire the domain listeners (SMS, audit trail, automatic absence fines) onto the
 // event bus. Done once, here, so every controller only has to say what happened.

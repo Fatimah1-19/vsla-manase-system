@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS join_requests (
   phone         VARCHAR(20) NOT NULL,
   village       VARCHAR(120),
   reason        TEXT,
+  screening     JSONB NOT NULL DEFAULT '{}'::jsonb,
   status        VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
   decided_by    INT REFERENCES users(id),
   decided_at    TIMESTAMPTZ,
@@ -448,6 +449,11 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('office_quorum_percent', '50')   -- at least this % of members must vote for it to count
 ON CONFLICT (setting_key) DO NOTHING;
 
--- Members record an applicant's background when they vote on a join request.
--- Added after the first release, so bring older databases up to date too.
+-- The applicant answers the background questions in the join form and the
+-- answers are kept on the request. Added after the first release, so bring
+-- older databases up to date too.
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Older databases collected the background per member vote; that column is no
+-- longer written, but it is left in place so nothing is lost.
 ALTER TABLE join_request_votes ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;

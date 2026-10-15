@@ -14,9 +14,11 @@ const FEATURE_ICONS = ['savings', 'loans', 'cycles', 'cases', 'welfare', 'member
 const ROLE_ICONS = ['leadership', 'savings', 'reports', 'members'];
 
 export default function Home() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [stats, setStats] = useState(null);
   const [form, setForm] = useState({ full_name: '', phone: '', village: '', reason: '' });
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -35,13 +37,32 @@ export default function Home() {
     return () => { alive = false; };
   }, []);
 
+  // The background questions the person answers when asking to join. These come
+  // from the Settings page, so the public form always matches what the group set.
+  useEffect(() => {
+    let alive = true;
+    let tries = 0;
+    const ask = () => {
+      api.get('/public/join-questions', { auth: false })
+        .then((qs) => { if (alive) setQuestions(Array.isArray(qs) ? qs : []); })
+        .catch(() => { if (alive && tries++ < 12) setTimeout(ask, 8000); });
+    };
+    ask();
+    return () => { alive = false; };
+  }, []);
+
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setAnswer = (key, value) => setAnswers((a) => ({ ...a, [key]: value }));
 
   async function submit(e) {
     e.preventDefault();
+    if (questions.length && questions.some((q) => !answers[q.key])) {
+      setError(t('home.joinBackgroundRequired'));
+      return;
+    }
     setError(''); setBusy(true);
     try {
-      await api.post('/join-requests', form, { auth: false });
+      await api.post('/join-requests', { ...form, screening: answers }, { auth: false });
       setSent(true);
     } catch (err) {
       setError(err.message);
@@ -251,6 +272,34 @@ export default function Home() {
                   <label className="field-label" htmlFor="jreason">{t('home.joinReason')}</label>
                   <textarea id="jreason" rows={3} value={form.reason} onChange={change('reason')} disabled={busy} />
                 </div>
+
+                {questions.length > 0 && (
+                  <div className="home__field home__bg">
+                    <span className="field-label">{t('home.joinBackground')}</span>
+                    <span className="field-hint">{t('home.joinBackgroundHint')}</span>
+                    <ul className="home__bgList">
+                      {questions.map((qq) => {
+                        const qtext = lang === 'en' ? qq.en : qq.ny;
+                        return (
+                          <li key={qq.key} className="home__bgItem">
+                            <span className="home__bgQ">{qtext}</span>
+                            <div className="home__bgBtns" role="group" aria-label={qtext}>
+                              <button type="button"
+                                className={answers[qq.key] === 'yes' ? 'home__bgBtn is-on' : 'home__bgBtn'}
+                                onClick={() => setAnswer(qq.key, 'yes')} disabled={busy}
+                                aria-pressed={answers[qq.key] === 'yes'}>{t('common.yes')}</button>
+                              <button type="button"
+                                className={answers[qq.key] === 'no' ? 'home__bgBtn is-on' : 'home__bgBtn'}
+                                onClick={() => setAnswer(qq.key, 'no')} disabled={busy}
+                                aria-pressed={answers[qq.key] === 'no'}>{t('common.no')}</button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+
                 <button type="submit" className="btn btn--full" disabled={busy}>
                   {busy ? t('common.sending') : t('home.joinSubmit')}
                 </button>
