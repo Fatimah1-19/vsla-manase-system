@@ -52,6 +52,21 @@ async function request(method, path, body, { auth = true } = {}) {
   return data;
 }
 
+/** Tell the server a sign-out is happening, so the log records it. Best effort:
+ * it never throws and never triggers the session-end handler. */
+export function logoutBeacon() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    fetch(`${BASE}/api/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: '{}',
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* nothing more we can do */ }
+}
+
 /** Fetch a protected file (a member's document) and hand back a temporary link to it. */
 export async function fetchFile(path) {
   const token = getToken();

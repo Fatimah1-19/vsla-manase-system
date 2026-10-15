@@ -230,4 +230,11 @@ const setLanguage = wrap(async (req, res) => {
   res.json({ message: 'Language saved.', language });
 });
 
-module.exports = { login, me, forgotPassword, resetPassword, changePassword, setLanguage };
+// POST /api/auth/logout — the browser tells us when someone is leaving, so the
+// log can show the end of each sitting.
+const logout = wrap(async (req, res) => {
+  await audit(req.user.id, 'LOGOUT', 'users', req.user.id, null);
+  res.json({ message: 'Signed out.' });
+});
+
+module.exports = { login, me, logout, forgotPassword, resetPassword, changePassword, setLanguage };

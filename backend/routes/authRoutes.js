@@ -16,6 +16,7 @@ router.post('/login', tight, c.login);
 router.post('/forgot', tight, c.forgotPassword);
 router.post('/reset', tight, c.resetPassword);
 router.get('/me', protect, c.me);
+router.post('/logout', protect, c.logout);
 router.post('/change-password', protect, c.changePassword);
 router.patch('/language', protect, c.setLanguage);
 

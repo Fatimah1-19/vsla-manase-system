@@ -20,6 +20,17 @@ const base = {
     requestsManagement: 'Join request management',
   },
 
+  activity: {
+    subtitle: 'Who signed in, when they left, and everything they did in between.',
+    signedIn: 'Signed in',
+    signedOut: 'Signed out',
+    noSignOut: 'No sign-out was recorded',
+    actionCount: (n) => `${n} ${n === 1 ? 'action' : 'actions'}`,
+    noActions: 'Nothing else was done in this sitting.',
+    otherTitle: 'Other events',
+    system: 'System',
+  },
+
   roles: { admin: 'Chairperson', treasurer: 'Treasurer', secretary: 'Secretary', member: 'Member' },
 
   common: {

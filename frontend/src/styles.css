@@ -1408,6 +1408,90 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 }
 
 .activity__meta { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--slate); }
+
+.activity__sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.activity__session {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.activity__sessionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.activity__who {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.activity__role {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--leaf-dark);
+  background: var(--leaf-wash);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+.activity__times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.activity__time { display: inline-flex; gap: 0.4rem; }
+.activity__timeLabel { color: var(--slate); }
+.activity__muted { color: var(--slate); }
+
+.activity__count {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  background: var(--maize-wash);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  white-space: nowrap;
+}
+
+.activity__noneList {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  color: var(--slate);
+}
+
+.activity__other { margin-top: 1.4rem; }
+.activity__otherTitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--slate);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .analytics { max-width: none; }
 .analytics__panel { margin-bottom: 1.1rem; }
 .analytics__note { margin: -0.3rem 0 0.8rem; font-size: 0.88rem; color: var(--slate); }

@@ -22,6 +22,17 @@ const base = {
     requestsManagement: 'Kusamalira opempha kulowa',
   },
 
+  activity: {
+    subtitle: 'Amene analowa, nthawi yomwe anatuluka, ndi zomwe anachita.',
+    signedIn: 'Analowa',
+    signedOut: 'Anatuluka',
+    noSignOut: 'Sanalembedwe kutuluka',
+    actionCount: (n) => `${n} ${n === 1 ? 'chochita' : 'zochita'}`,
+    noActions: 'Palibe zina zomwe anachita.',
+    otherTitle: 'Zochitika zina',
+    system: 'Dongosolo',
+  },
+
   roles: { admin: 'Mtsogoleri', treasurer: 'Wosunga ndalama', secretary: 'Mlembi', member: 'Membala' },
 
   common: {

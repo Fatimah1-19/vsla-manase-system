@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { api, fetchFile, getToken, setToken, setSessionEndHandler } from '../api/client.js';
+import { api, fetchFile, getToken, setToken, setSessionEndHandler, logoutBeacon } from '../api/client.js';
 import { useLang } from './LangContext.jsx';
 import { useToast } from './ToastContext.jsx';
 
@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback((message) => {
     clearTimers();
+    logoutBeacon();   // best effort: let the log record the sign-out time
     setToken(null);
     setUser(null);
     showWarning(false);
