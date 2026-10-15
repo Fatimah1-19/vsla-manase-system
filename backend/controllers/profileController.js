@@ -30,7 +30,13 @@ const getMyProfile = wrap(async (req, res) => {
     query(`SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
                   COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
              FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [memberId]),
-    query(`SELECT id, amount::float, reason, paid, date FROM fines WHERE member_id = $1 ORDER BY date DESC`, [memberId]),
+    query(
+      `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
+              to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
+         FROM fines f
+         LEFT JOIN cycles c ON c.id = f.cycle_id
+         LEFT JOIN meetings mt ON mt.id = f.meeting_id
+        WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC`, [memberId]),
     query(`SELECT id, document_type, original_name, mime_type, size_bytes, uploaded_at
              FROM member_documents WHERE member_id = $1 ORDER BY id DESC`, [memberId]),
     one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares

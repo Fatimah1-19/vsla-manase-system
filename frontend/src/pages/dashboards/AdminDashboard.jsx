@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart, Pie } from '../../components/Charts.jsx';
+import ExpectedFines from '../../components/ExpectedFines.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
 import '../../styles.css';
 
@@ -109,6 +110,8 @@ export default function AdminDashboard({ data }) {
           />
         </section>
       )}
+
+      <ExpectedFines fines={data.expected_fines} />
 
       <section className="adash__system">
         <h2 className="dash__sectionTitle">{t('dashboard.system')}</h2>

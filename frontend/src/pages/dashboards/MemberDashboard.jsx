@@ -4,7 +4,7 @@ import StatCard from '../../components/StatCard.jsx';
 import Icon from '../../components/Icon.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
 import { LineChart, HBars, Ring } from '../../components/Charts.jsx';
-import { money, shortDate } from '../../utils/format.js';
+import { money, shortDate, monthLong } from '../../utils/format.js';
 import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
@@ -20,6 +20,7 @@ export default function MemberDashboard({ data }) {
   const trend = data.savings_trend || [];
   const entries = data.recent_savings || [];
   const hasTrend = trend.some((d) => d.amount > 0);
+  const myFines = (data.my_fines || []).filter((f) => !f.paid);
 
   const shares = Number(savings?.shares || 0);
   const shareValue = data.cycle ? Number(data.cycle.share_value) : 0;
@@ -79,6 +80,27 @@ export default function MemberDashboard({ data }) {
           icon="fines"
         />
       </div>
+
+      {myFines.length > 0 && (
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('fines.myFinesTitle')}</h2>
+          <ul className="expect__list">
+            {myFines.map((f) => (
+              <li key={f.id} className="expect__item">
+                <span className="expect__meta">
+                  <span className="expect__tag">
+                    {f.meeting_id ? t('fines.meetingRef', f.meeting_id) : t('fines.noMeeting')}
+                  </span>
+                  <span className="expect__tag">{f.cycle_name || '—'}</span>
+                  <span className="expect__tag">{f.month ? monthLong(f.month) : '—'}</span>
+                  <span className="expect__date">{shortDate(f.meeting_date || f.date)}</span>
+                </span>
+                <span className="expect__amount money">{money(f.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {data.money && (
         <section className="dash__card">

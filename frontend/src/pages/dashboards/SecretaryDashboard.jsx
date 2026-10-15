@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
+import ExpectedFines from '../../components/ExpectedFines.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
 import '../../styles.css';
 
@@ -115,6 +116,8 @@ export default function SecretaryDashboard({ data }) {
           <Link to="/app/activity" className="btn btn--gold btn--small">{t('nav.activity')}</Link>
         </div>
       </section>
+
+      <ExpectedFines fines={data.expected_fines} />
     </>
   );
 }

@@ -135,6 +135,15 @@ export default {
     reasonExample: 'Late to the meeting', reasonHint: 'The reason is texted to them, so write it plainly.',
     alreadyPaid: 'Already paid',
     keptNote: 'Fines belong to the group. They are not shared out at the end of the cycle.',
+    meeting: 'Meeting', meetingRef: (id) => `Meeting #${id}`, noMeeting: 'No meeting',
+    cycle: 'Cycle', month: 'Month',
+    collected: 'Collected', toPay: 'To pay', count: 'Fines',
+    meetingDate: 'Meeting date',
+    expectedTitle: 'Absence fines to collect',
+    expectedNote: 'Members who missed a meeting and still have to pay.',
+    noExpected: 'No fines are waiting to be paid.',
+    myFinesTitle: 'My fines to pay',
+    allPaid: 'You have no fines to pay.',
   },
 
   members: {

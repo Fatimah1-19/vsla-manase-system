@@ -249,6 +249,11 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_mime   VARCHAR(12);
 -- (she owed more than her savings and returned interest together).
 ALTER TABLE share_out_details ADD COLUMN IF NOT EXISTS unrecovered NUMERIC(12,2) NOT NULL DEFAULT 0;
 
+-- A fine can now point at the meeting it came from (the automatic absence fine),
+-- so the records can show which meeting and cycle a member has to pay for.
+ALTER TABLE fines ADD COLUMN IF NOT EXISTS meeting_id INT REFERENCES meetings(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_fines_member ON fines(member_id);
+
 -- The fixed monthly contribution every member pays for the group's wrappers.
 -- Not savings, not shared out: it is spent on the group's own needs.
 -- One row per payment; a month is "paid" when the payments add up to the monthly amount.

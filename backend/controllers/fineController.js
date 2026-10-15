@@ -21,24 +21,59 @@ const createAbsenceFine = async ({ member_id, reason = null, date = null, record
   );
   if (!member) return null;
   const fineDate = date || new Date().toISOString().slice(0, 10);
-  const fineReason = reason || `Absence (meeting ${meeting_id || ''})`;
+  const fineReason = reason || 'Unexcused absence';
 
-  // One fine per member, date and reason: re-saving attendance must not stack them up.
-  const existing = await one(
-    `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND paid=FALSE LIMIT 1`,
-    [member_id, fineDate, fineReason]
-  );
+  // One fine per member per meeting, so re-saving attendance never stacks them up.
+  const existing = meeting_id
+    ? await one(`SELECT id FROM fines WHERE member_id=$1 AND meeting_id=$2 LIMIT 1`, [member_id, meeting_id])
+    : await one(
+        `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND paid=FALSE LIMIT 1`,
+        [member_id, fineDate, fineReason]
+      );
   if (existing) return existing;
 
   const fine = await one(
-    `INSERT INTO fines (member_id, cycle_id, amount, reason, paid, date, recorded_by)
-     VALUES ($1,$2,$3,$4,FALSE,$5,$6) RETURNING id, amount::float, date`,
-    [member_id, cycle ? cycle.id : null, amount, fineReason, fineDate, recorded_by || null]
+    `INSERT INTO fines (member_id, cycle_id, meeting_id, amount, reason, paid, date, recorded_by)
+     VALUES ($1,$2,$3,$4,$5,FALSE,$6,$7) RETURNING id, amount::float, date`,
+    [member_id, cycle ? cycle.id : null, meeting_id, amount, fineReason, fineDate, recorded_by || null]
   );
 
   await emit(EVENTS.FINE_RECORDED, { recordedBy: recorded_by, member, fine, reason: fineReason });
 
   return fine;
+};
+
+/**
+ * Charge every unexcused absence that has not been charged yet.
+ * Used when the group switches the absence fine on, so the people who already
+ * missed a meeting are not forgotten. Safe to call again and again.
+ */
+const backfillAbsenceFines = async ({ recorded_by = null } = {}) => {
+  const amount = Number(await getSetting('absence_fine', '0'));
+  if (!(amount > 0)) return { created: 0 };
+
+  const rows = await query(
+    `SELECT a.member_id, a.meeting_id, mt.meeting_date, mt.cycle_id
+       FROM attendance a
+       JOIN meetings mt ON mt.id = a.meeting_id
+      WHERE a.status = 'absent'
+        AND NOT EXISTS (
+          SELECT 1 FROM fines f WHERE f.member_id = a.member_id AND f.meeting_id = a.meeting_id
+        )`
+  );
+
+  let created = 0;
+  for (const r of rows) {
+    const fine = await createAbsenceFine({
+      member_id: r.member_id,
+      meeting_id: r.meeting_id,
+      cycle_id: r.cycle_id,
+      date: r.meeting_date,
+      recorded_by,
+    });
+    if (fine) created += 1;
+  }
+  return { created };
 };
 
 // POST /api/fines
@@ -80,8 +115,12 @@ const listFines = wrap(async (req, res) => {
 
   const rows = await query(
     `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.member_id,
+            f.meeting_id, f.cycle_id, to_char(f.date,'YYYY-MM') AS month,
+            c.cycle_name, mt.meeting_date,
             m.membership_number, u.full_name, (m.avatar IS NOT NULL) AS has_avatar
        FROM fines f JOIN members m ON m.id = f.member_id JOIN users u ON u.id = m.user_id
+       LEFT JOIN cycles c ON c.id = f.cycle_id
+       LEFT JOIN meetings mt ON mt.id = f.meeting_id
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
       ORDER BY f.date DESC, f.id DESC`,
     params
@@ -120,4 +159,4 @@ const finesSummary = wrap(async (req, res) => {
   res.json(row);
 });
 
-module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary, createAbsenceFine };
+module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary, createAbsenceFine, backfillAbsenceFines };

@@ -136,6 +136,15 @@ export default {
     reasonExample: 'Anachedwa ku msonkhano', reasonHint: 'Amatumizidwa chifukwa mu uthenga, choncho lembani momveka.',
     alreadyPaid: 'Walipira kale',
     keptNote: 'Zindapusa ndi za gulu. Sizigawidwa kumapeto kwa nyengo.',
+    meeting: 'Msonkhano', meetingRef: (id) => `Msonkhano #${id}`, noMeeting: 'Palibe msonkhano',
+    cycle: 'Nyengo', month: 'Mwezi',
+    collected: 'Zalipidwa', toPay: 'Zolipira', count: 'Zindapusa',
+    meetingDate: 'Tsiku la msonkhano',
+    expectedTitle: 'Zindapusa zoti zisonkhanitsidwe',
+    expectedNote: 'Mamembala omwe sanabwere ku msonkhano ndipo ayenera kulipira.',
+    noExpected: 'Palibe zindapusa zomwe zikudikira kulipidwa.',
+    myFinesTitle: 'Zindapusa zanga zolipira',
+    allPaid: 'Mulibe zindapusa zolipira.',
   },
 
   members: {

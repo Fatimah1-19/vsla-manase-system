@@ -1829,6 +1829,40 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 }
 .dash__card > h2.dash__sectionTitle { margin-bottom: 0.85rem; }
 
+/* ---- fines still to be paid (committee dashboards + member's own list) ---- */
+.expect__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+.expect__head .dash__sectionTitle { margin-bottom: 0.35rem; }
+.expect__total { font-size: 1.05rem; font-weight: 700; color: #9A2E24; }
+.expect__note { margin: 0 0 0.6rem; font-size: 0.85rem; }
+.expect__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.expect__item {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1.2fr) 2fr auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm, 7px);
+  background: var(--card, #fff);
+}
+.expect__who { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.expect__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.expect__meta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.78rem; }
+.expect__tag {
+  background: var(--maize-wash, #FBF4E4);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+  color: var(--ink, #1f2a24);
+  white-space: nowrap;
+}
+.expect__date { color: var(--slate, #667972); }
+.expect__amount { font-weight: 700; text-align: right; white-space: nowrap; }
+@media (max-width: 620px) {
+  .expect__item { grid-template-columns: 1fr auto; }
+  .expect__meta { grid-column: 1 / -1; order: 3; }
+}
+
 .dash__cols {
   display: grid;
   gap: 1.1rem;

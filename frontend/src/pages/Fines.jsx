@@ -10,7 +10,8 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate, inputDate } from '../utils/format.js';
+import StatCard from '../components/StatCard.jsx';
+import { money, shortDate, inputDate, plainNumber, monthLong } from '../utils/format.js';
 import '../styles.css';
 
 const blank = { member_id: '', amount: '', reason: '', date: inputDate(), paid: false };
@@ -73,6 +74,9 @@ export default function Fines() {
 
   if (!rows) return <Spinner />;
 
+  const outstanding = rows.filter((r) => !r.paid).reduce((s, r) => s + r.amount, 0);
+  const collected = rows.filter((r) => r.paid).reduce((s, r) => s + r.amount, 0);
+
   const columns = [
     { key: 'full_name', label: t('common.name'),
       render: (r) => (
@@ -83,8 +87,16 @@ export default function Fines() {
       ) },
     { key: 'reason', label: t('common.reason'), hideOnPhone: true,
       render: (r) => r.reason || <span className="muted">—</span> },
+    { key: 'meeting', label: t('fines.meeting'), hideOnPhone: true,
+      render: (r) => (r.meeting_id
+        ? t('fines.meetingRef', r.meeting_id)
+        : <span className="muted">{t('fines.noMeeting')}</span>) },
+    { key: 'cycle', label: t('fines.cycle'), hideOnPhone: true,
+      render: (r) => r.cycle_name || <span className="muted">—</span> },
+    { key: 'month', label: t('fines.month'), hideOnPhone: true,
+      render: (r) => (r.month ? monthLong(r.month) : <span className="muted">—</span>) },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
-    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.meeting_date || r.date) },
     { key: 'paid', label: t('common.status'),
       render: (r) => (
         r.paid
@@ -112,6 +124,13 @@ export default function Fines() {
       />
 
       <p className="notice">{t('fines.keptNote')}</p>
+
+      <div className="page-grid page-grid--stat">
+        <StatCard label={isCommittee ? t('dashboard.finesOutstanding') : t('fines.toPay')}
+          value={money(outstanding)} tone={outstanding > 0 ? 'red' : 'plain'} icon="fines" />
+        <StatCard label={t('fines.collected')} value={money(collected)} tone="green" icon="fines" />
+        <StatCard label={t('fines.count')} value={plainNumber(rows.length)} icon="fines" />
+      </div>
 
       <Ledger columns={columns} rows={rows} empty={<EmptyState title={t('fines.empty')} />} />
 

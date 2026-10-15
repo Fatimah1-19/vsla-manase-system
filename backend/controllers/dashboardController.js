@@ -46,7 +46,7 @@ const getDashboard = wrap(async (req, res) => {
     if (!memberId) return res.json({ ...base, member: null });
 
     // Everything the member board needs, asked together instead of one by one.
-    const [savings, loans, fines, share, nextMeeting, multiplierSetting, levySetting, owing,
+    const [savings, loans, fines, finesList, share, nextMeeting, multiplierSetting, levySetting, owing,
            groupMoney, groupLoans, groupCash, recentContrib] = await Promise.all([
       one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares,
                   COUNT(*)::int AS entries, MAX(date) AS last_date
@@ -55,6 +55,13 @@ const getDashboard = wrap(async (req, res) => {
       query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
                FROM loans l WHERE l.member_id = $1 AND l.status IN ('pending','approved') ORDER BY l.id DESC`, [memberId]),
       one(`SELECT COALESCE(SUM(amount),0)::float AS unpaid FROM fines WHERE member_id = $1 AND paid = FALSE`, [memberId]),
+      query(
+        `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
+                to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
+           FROM fines f
+           LEFT JOIN cycles c ON c.id = f.cycle_id
+           LEFT JOIN meetings mt ON mt.id = f.meeting_id
+          WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC LIMIT 20`, [memberId]),
       one(`SELECT d.share_amount::float AS share_amount, d.profit_share::float AS profit_share,
                   d.member_savings::float AS member_savings, so.status, so.date_distributed
              FROM share_out_details d JOIN share_out so ON so.id = d.share_out_id
@@ -119,6 +126,7 @@ const getDashboard = wrap(async (req, res) => {
       savings: { ...savings, total: Number(savings.total) },
       active_loan: activeLoan,
       unpaid_fines: fines.unpaid,
+      my_fines: finesList,
       my_share: share,
       next_meeting: nextMeeting,
       savings_trend,
@@ -146,7 +154,7 @@ const getDashboard = wrap(async (req, res) => {
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
     recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
-    monthlyFlow, todayTick, contribMonthly,
+    monthlyFlow, todayTick, contribMonthly, expectedFines,
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
                 COALESCE((SELECT SUM(amount) FROM loans WHERE status = 'approved'),0)::float AS loans_out,
@@ -245,6 +253,21 @@ const getDashboard = wrap(async (req, res) => {
         WHERE period >= $1::date AND period < ($1::date + interval '1 year')
         GROUP BY 1`, [`${currentMonth().slice(0, 4)}-01-01`]
     ) : null,
+
+    // Fines still waiting to be paid, with the meeting and cycle they belong to.
+    query(
+      `SELECT f.id, f.amount::float, f.date, f.meeting_id, f.member_id,
+              to_char(f.date,'YYYY-MM') AS month,
+              u.full_name, (m.avatar IS NOT NULL) AS has_avatar,
+              c.cycle_name, mt.meeting_date
+         FROM fines f
+         JOIN members m ON m.id = f.member_id
+         JOIN users u ON u.id = m.user_id
+         LEFT JOIN cycles c ON c.id = f.cycle_id
+         LEFT JOIN meetings mt ON mt.id = f.meeting_id
+        WHERE f.paid = FALSE
+        ORDER BY f.date DESC, f.id DESC LIMIT 25`
+    ),
   ]);
 
   const outstanding = outstandingRows.reduce((sum, l) => {
@@ -269,6 +292,7 @@ const getDashboard = wrap(async (req, res) => {
       fines_outstanding: fines.outstanding,
     },
     pending_join_requests: pendingJoins.c,
+    expected_fines: expectedFines,
     next_meeting: nextMeeting,
     wrappers: {
       month: currentMonth(), monthly: owing.levy,

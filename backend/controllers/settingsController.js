@@ -3,6 +3,7 @@ const { wrap } = require('../middleware/errorHandler');
 const { setSetting } = require('../utils/helpers');
 const { audit } = require('../utils/audit');
 const { DEFAULT_QUESTIONS, SETTING_KEY, serialise } = require('../utils/screening');
+const { backfillAbsenceFines } = require('./fineController');
 
 const EDITABLE = {
   loan_multiplier: 'How many times their savings a member may borrow',
@@ -75,7 +76,19 @@ const updateSettings = wrap(async (req, res) => {
   }
 
   await audit(req.user.id, 'UPDATE_SETTINGS', 'settings', null, keys.join(', '));
-  res.json({ message: 'Settings saved.', updated: keys });
+
+  // Switching the absence fine on must not forget the people who already missed
+  // a meeting: charge every unexcused absence that has no fine yet. Safe to repeat.
+  let finesCreated = 0;
+  if ('absence_fine' in updates) {
+    try {
+      finesCreated = (await backfillAbsenceFines({ recorded_by: req.user.id })).created;
+    } catch {
+      // never fail the settings save because an absence fine could not be written
+    }
+  }
+
+  res.json({ message: 'Settings saved.', updated: keys, fines_created: finesCreated });
 });
 
 module.exports = { listSettings, updateSettings };

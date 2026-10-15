@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
+import ExpectedFines from '../../components/ExpectedFines.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
 import { money, plainNumber } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -146,6 +147,8 @@ export default function TreasurerDashboard({ data }) {
             : <Link to="/app/analytics" className="btn btn--sky btn--small">{t('nav.analytics')}</Link>}
         </div>
       </section>
+
+      <ExpectedFines fines={data.expected_fines} />
     </>
   );
 }

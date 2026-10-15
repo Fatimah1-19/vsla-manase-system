@@ -41,7 +41,13 @@ const getMember = wrap(async (req, res) => {
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id), 0)::float AS total_repaid
          FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [id]),
-    query(`SELECT id, amount::float, reason, paid, date FROM fines WHERE member_id = $1 ORDER BY date DESC`, [id]),
+    query(
+      `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
+              to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
+         FROM fines f
+         LEFT JOIN cycles c ON c.id = f.cycle_id
+         LEFT JOIN meetings mt ON mt.id = f.meeting_id
+        WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC`, [id]),
     query(
       `SELECT a.status, mt.meeting_date FROM attendance a
          JOIN meetings mt ON mt.id = a.meeting_id

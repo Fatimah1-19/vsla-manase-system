@@ -13,7 +13,7 @@ import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Ledger from '../components/Ledger.jsx';
 import EmptyState from '../components/EmptyState.jsx';
-import { money, shortDate, inputDate } from '../utils/format.js';
+import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
 import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
@@ -182,6 +182,12 @@ export default function Profile() {
   const finesColumns = [
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
     { key: 'reason', label: t('common.reason'), render: (r) => r.reason || '—' },
+    { key: 'meeting', label: t('fines.meeting'), hideOnPhone: true,
+      render: (r) => (r.meeting_id ? t('fines.meetingRef', r.meeting_id) : <span className="muted">—</span>) },
+    { key: 'cycle', label: t('fines.cycle'), hideOnPhone: true,
+      render: (r) => r.cycle_name || <span className="muted">—</span> },
+    { key: 'month', label: t('fines.month'), hideOnPhone: true,
+      render: (r) => (r.month ? monthLong(r.month) : '—') },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'paid', label: t('common.status'),
       render: (r) => <span className={r.paid ? 'tag tag--green' : 'tag tag--red'}>{r.paid ? t('fines.paid') : t('fines.unpaid')}</span> },
