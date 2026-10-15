@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import Spinner from '../components/Spinner.jsx';
 import QuickSearch from '../components/QuickSearch.jsx';
+import LiveClock from '../components/LiveClock.jsx';
 import MemberDashboard from './dashboards/MemberDashboard.jsx';
 import TreasurerDashboard from './dashboards/TreasurerDashboard.jsx';
 import SecretaryDashboard from './dashboards/SecretaryDashboard.jsx';
@@ -55,9 +56,12 @@ export default function Dashboard() {
           <span className="dash__roleChip">{t(`roles.${user.role}`)}</span>
           <QuickSearch />
         </div>
-        <p className="dash__today">
-          {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+        <div className="dash__meta">
+          <p className="dash__today">
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+          <LiveClock />
+        </div>
       </header>
 
       <CycleBar cycle={data.cycle} />
