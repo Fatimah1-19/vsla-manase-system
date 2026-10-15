@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -77,19 +77,17 @@ export default function Fines() {
   const outstanding = rows.filter((r) => !r.paid).reduce((s, r) => s + r.amount, 0);
   const collected = rows.filter((r) => r.paid).reduce((s, r) => s + r.amount, 0);
 
-  const due = useMemo(() => {
-    const byMember = new Map();
-    for (const r of rows) {
-      if (r.paid) continue;
-      if (!byMember.has(r.member_id)) {
-        byMember.set(r.member_id, { member_id: r.member_id, full_name: r.full_name, has_avatar: r.has_avatar, total: 0, items: [] });
-      }
-      const g = byMember.get(r.member_id);
-      g.total += r.amount;
-      g.items.push(r);
+  const byMember = new Map();
+  for (const r of rows) {
+    if (r.paid) continue;
+    if (!byMember.has(r.member_id)) {
+      byMember.set(r.member_id, { member_id: r.member_id, full_name: r.full_name, has_avatar: r.has_avatar, total: 0, items: [] });
     }
-    return [...byMember.values()].sort((a, b) => b.total - a.total);
-  }, [rows]);
+    const g = byMember.get(r.member_id);
+    g.total += r.amount;
+    g.items.push(r);
+  }
+  const due = [...byMember.values()].sort((a, b) => b.total - a.total);
 
   const columns = [
     { key: 'full_name', label: t('common.name'),
