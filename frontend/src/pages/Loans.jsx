@@ -70,8 +70,7 @@ export default function Loans() {
   const [decisionNote, setDecisionNote] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
 
-  // The repayment-history panel: search a member, see their payments grouped.
-  const [rpOpen, setRpOpen] = useState(false);
+  // The repayment-history view: search a member, see their payments grouped.
   const [rpSearch, setRpSearch] = useState('');
   const [rpMember, setRpMember] = useState('');
   const [rpData, setRpData] = useState(null);
@@ -209,7 +208,7 @@ export default function Loans() {
     const own = isCommittee ? '' : (user.member_id || '');
     setRpSearch('');
     setRpMember(own ? String(own) : '');
-    setRpOpen(true);
+    setFilter('repayments');
     setRpData(null);
     loadRepayments(own);
   }
@@ -260,7 +259,7 @@ export default function Loans() {
       setRecAmount('');
       setRecDate('');
       await load();
-      if (rpOpen) loadRepayments(rpMember);
+      if (filter === 'repayments') loadRepayments(rpMember);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -338,40 +337,149 @@ export default function Loans() {
       />
 
       <div className="loans__filters" role="group" aria-label={t('common.status')}>
-        {['all', 'pending', 'approved', 'repaid', 'rejected'].map((f) => (
+        {['all', 'pending', 'approved', 'repaid', 'rejected', 'repayments'].map((f) => (
           <button
             key={f}
             type="button"
             className={filter === f ? 'loans__filter is-on' : 'loans__filter'}
-            onClick={() => setFilter(f)}
+            onClick={() => (f === 'repayments' ? openRepayments() : setFilter(f))}
           >
-            {f === 'all' ? t('common.all') : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
+            {f === 'all' ? t('common.all')
+              : f === 'repayments' ? t('loans.viewRepayments')
+              : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
           </button>
         ))}
-        <button type="button" className="loans__filter loans__filter--action" onClick={openRepayments}>
-          {t('loans.viewRepayments')}
-        </button>
       </div>
 
-      {isCommittee && (
-        <div className="toolbar">
-          <input
-            className="toolbar__grow"
-            type="search"
-            value={listSearch}
-            placeholder={t('loans.searchPlaceholder')}
-            aria-label={t('loans.searchMember')}
-            onChange={(e) => setListSearch(e.target.value)}
-          />
-        </div>
-      )}
+      {filter === 'repayments' ? (
+        <section className="rp rp--inline">
+          {isCommittee && (
+            <>
+              <div className="toolbar">
+                <input
+                  className="toolbar__grow"
+                  type="search"
+                  placeholder={t('loans.searchPlaceholder')}
+                  aria-label={t('loans.searchMember')}
+                  value={rpSearch}
+                  onChange={(e) => setRpSearch(e.target.value)}
+                />
+                <button type="button" className="btn btn--ghost btn--small" onClick={showEveryone}>
+                  {t('loans.everyone')}
+                </button>
+              </div>
 
-      <Ledger
-        columns={columns}
-        rows={shown}
-        onRowClick={openDetail}
-        empty={<EmptyState title={t('loans.empty')} />}
-      />
+              {rpQuery && (
+                <ul className="rp__results">
+                  {rpMatches.map((m) => (
+                    <li key={m.id}>
+                      <button type="button" className="rp__result" onClick={() => pickMember(m)}>
+                        <MemberAvatar memberId={m.id} hasAvatar={m.has_avatar} name={m.full_name} size={28} />
+                        <span className="rp__resultName">{m.full_name}</span>
+                        <span className="rp__resultNum muted">{m.membership_number}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {!rpMatches.length && <li className="muted rp__none">{t('loans.noRepayments')}</li>}
+                </ul>
+              )}
+            </>
+          )}
+
+          {rpLoading && <Spinner />}
+
+          {!rpLoading && rpData && (
+            <>
+              {rpData.member && (
+                <div className="rp__who">
+                  <MemberAvatar memberId={rpData.member.id} hasAvatar={rpData.member.has_avatar} name={rpData.member.full_name} size={40} />
+                  <div>
+                    <strong>{rpData.member.full_name}</strong>
+                    <span className="muted">{rpData.member.membership_number}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="rp__stats">
+                <StatCard tone="gold" label={t('loans.totalRepaid')} value={money(rpData.summary.total)} />
+                <StatCard label={t('loans.principalPaid')} value={money(rpData.summary.principal)} />
+                <StatCard label={t('loans.interestPaid')} value={money(rpData.summary.interest)} />
+                <StatCard label={t('loans.paymentCount')} value={plainNumber(rpData.summary.count)} />
+              </div>
+
+              {rpData.summary.count > 0 && (
+                <p className="muted rp__period">
+                  {shortDate(rpData.summary.first_date)} – {shortDate(rpData.summary.last_date)}
+                </p>
+              )}
+
+              {rpGroups.length ? (
+                rpGroups.map((g) => (
+                  <section className="rp__group" key={g.key}>
+                    <div className="rp__groupHead">
+                      <h3 className="rp__groupTitle">{g.label}</h3>
+                      <span className="rp__groupTotal money">{money(g.total)}</span>
+                    </div>
+                    {g.dates && <p className="rp__groupDates muted">{g.dates}</p>}
+
+                    {[...g.months.values()].map((m) => (
+                      <div className="rp__month" key={m.key}>
+                        <h4 className="rp__monthTitle">{m.label}</h4>
+                        {[...m.days.values()].map((d) => (
+                          <div className="rp__day" key={d.key}>
+                            <h5 className="rp__dayTitle">{d.label}</h5>
+                            <ul className="rp__list">
+                              {d.items.map((r) => (
+                                <li key={r.id} className="rp__item">
+                                  <span className="rp__itemAmount money">{money(r.amount)}</span>
+                                  <span className="rp__itemSplit">
+                                    {r.interest_part > 0
+                                      ? `${money(r.principal_part)} + ${money(r.interest_part)} ${t('loans.interestWord')}`
+                                      : t('loans.principalOnly')}
+                                  </span>
+                                  <span className="rp__itemMeta">
+                                    {!rpMember && <span className="rp__itemWho">{r.full_name}</span>}
+                                    <span>{t('loans.loanRef', r.loan_id)}</span>
+                                    {r.recorded_by_name && <span className="muted">{r.recorded_by_name}</span>}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </section>
+                ))
+              ) : (
+                <EmptyState title={t('loans.noRepayments')} />
+              )}
+            </>
+          )}
+        </section>
+      ) : (
+        <>
+          {isCommittee && (
+            <div className="toolbar">
+              <input
+                className="toolbar__grow"
+                type="search"
+                value={listSearch}
+                placeholder={t('loans.searchPlaceholder')}
+                aria-label={t('loans.searchMember')}
+                onChange={(e) => setListSearch(e.target.value)}
+              />
+            </div>
+          )}
+
+          <Ledger
+            columns={columns}
+            rows={shown}
+            onRowClick={openDetail}
+            empty={<EmptyState title={t('loans.empty')} />}
+          />
+        </>
+      )}
 
       {/* ---- apply ---- */}
       <Modal
@@ -523,120 +631,6 @@ export default function Loans() {
             </div>
           </div>
         )}
-      </Modal>
-
-      {/* ---- repayment history ---- */}
-      <Modal
-        open={rpOpen}
-        title={t('loans.repaymentsTitle')}
-        onClose={() => setRpOpen(false)}
-        wide
-      >
-        <div className="rp">
-          {isCommittee && (
-            <>
-              <div className="toolbar">
-                <input
-                  className="toolbar__grow"
-                  type="search"
-                  placeholder={t('loans.searchPlaceholder')}
-                  aria-label={t('loans.searchMember')}
-                  value={rpSearch}
-                  onChange={(e) => setRpSearch(e.target.value)}
-                />
-                <button type="button" className="btn btn--ghost btn--small" onClick={showEveryone}>
-                  {t('loans.everyone')}
-                </button>
-              </div>
-
-              {rpQuery && (
-                <ul className="rp__results">
-                  {rpMatches.map((m) => (
-                    <li key={m.id}>
-                      <button type="button" className="rp__result" onClick={() => pickMember(m)}>
-                        <MemberAvatar memberId={m.id} hasAvatar={m.has_avatar} name={m.full_name} size={28} />
-                        <span className="rp__resultName">{m.full_name}</span>
-                        <span className="rp__resultNum muted">{m.membership_number}</span>
-                      </button>
-                    </li>
-                  ))}
-                  {!rpMatches.length && <li className="muted rp__none">{t('loans.noRepayments')}</li>}
-                </ul>
-              )}
-            </>
-          )}
-
-          {rpLoading && <Spinner />}
-
-          {!rpLoading && rpData && (
-            <>
-              {rpData.member && (
-                <div className="rp__who">
-                  <MemberAvatar memberId={rpData.member.id} hasAvatar={rpData.member.has_avatar} name={rpData.member.full_name} size={40} />
-                  <div>
-                    <strong>{rpData.member.full_name}</strong>
-                    <span className="muted">{rpData.member.membership_number}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="rp__stats">
-                <StatCard tone="gold" label={t('loans.totalRepaid')} value={money(rpData.summary.total)} />
-                <StatCard label={t('loans.principalPaid')} value={money(rpData.summary.principal)} />
-                <StatCard label={t('loans.interestPaid')} value={money(rpData.summary.interest)} />
-                <StatCard label={t('loans.paymentCount')} value={plainNumber(rpData.summary.count)} />
-              </div>
-
-              {rpData.summary.count > 0 && (
-                <p className="muted rp__period">
-                  {shortDate(rpData.summary.first_date)} – {shortDate(rpData.summary.last_date)}
-                </p>
-              )}
-
-              {rpGroups.length ? (
-                rpGroups.map((g) => (
-                  <section className="rp__group" key={g.key}>
-                    <div className="rp__groupHead">
-                      <h3 className="rp__groupTitle">{g.label}</h3>
-                      <span className="rp__groupTotal money">{money(g.total)}</span>
-                    </div>
-                    {g.dates && <p className="rp__groupDates muted">{g.dates}</p>}
-
-                    {[...g.months.values()].map((m) => (
-                      <div className="rp__month" key={m.key}>
-                        <h4 className="rp__monthTitle">{m.label}</h4>
-                        {[...m.days.values()].map((d) => (
-                          <div className="rp__day" key={d.key}>
-                            <h5 className="rp__dayTitle">{d.label}</h5>
-                            <ul className="rp__list">
-                              {d.items.map((r) => (
-                                <li key={r.id} className="rp__item">
-                                  <span className="rp__itemAmount money">{money(r.amount)}</span>
-                                  <span className="rp__itemSplit">
-                                    {r.interest_part > 0
-                                      ? `${money(r.principal_part)} + ${money(r.interest_part)} ${t('loans.interestWord')}`
-                                      : t('loans.principalOnly')}
-                                  </span>
-                                  <span className="rp__itemMeta">
-                                    {!rpMember && <span className="rp__itemWho">{r.full_name}</span>}
-                                    <span>{t('loans.loanRef', r.loan_id)}</span>
-                                    {r.recorded_by_name && <span className="muted">{r.recorded_by_name}</span>}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </section>
-                ))
-              ) : (
-                <EmptyState title={t('loans.noRepayments')} />
-              )}
-            </>
-          )}
-        </div>
       </Modal>
 
       {/* ---- record a repayment ---- */}

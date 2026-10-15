@@ -3357,9 +3357,6 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .loans__filter.is-on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
-/* "View repayments" sits at the end of the filter row like the other chips. */
-.loans__filter--action { margin-left: auto; }
-
 .loans__late { color: var(--flame); font-weight: 600; }
 
 /* The interest choice is the most important decision on this form,
@@ -3453,6 +3450,13 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 /* ---- repayment history panel ---- */
 .rp { display: block; }
+
+.rp--inline {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1rem 1.05rem 1.1rem;
+}
 
 .rp__results {
   list-style: none;
