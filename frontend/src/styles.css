@@ -3305,6 +3305,9 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .loans__filter.is-on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
+/* "View repayments" sits at the end of the filter row like the other chips. */
+.loans__filter--action { margin-left: auto; }
+
 .loans__late { color: var(--flame); font-weight: 600; }
 
 /* The interest choice is the most important decision on this form,
@@ -3437,6 +3440,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .rp__who > div { display: flex; flex-direction: column; }
 .rp__who .muted { font-size: 0.86rem; }
+.rp__whoChange { margin-left: auto; }
 
 .rp__stats {
   display: grid;

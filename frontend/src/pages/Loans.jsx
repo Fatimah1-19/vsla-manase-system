@@ -77,6 +77,17 @@ export default function Loans() {
   const [rpData, setRpData] = useState(null);
   const [rpLoading, setRpLoading] = useState(false);
 
+  // The record-repayment panel: find a member, pick their running loan, save it.
+  const [recOpen, setRecOpen] = useState(false);
+  const [recSearch, setRecSearch] = useState('');
+  const [recMember, setRecMember] = useState(null);
+  const [recLoanId, setRecLoanId] = useState('');
+  const [recAmount, setRecAmount] = useState('');
+  const [recDate, setRecDate] = useState('');
+
+  // A search over the loan list, so one member's history can be found quickly.
+  const [listSearch, setListSearch] = useState('');
+
   const canDecide = ['admin', 'treasurer', 'secretary'].includes(user.role);
   const canRecordRepayment = isRecorder;
 
@@ -215,9 +226,53 @@ export default function Loans() {
     loadRepayments(m.id);
   }
 
+  function openRecord() {
+    setRecSearch('');
+    setRecMember(null);
+    setRecLoanId('');
+    setRecAmount('');
+    setRecDate('');
+    setRecOpen(true);
+  }
+
+  function pickRecMember(m) {
+    setRecMember(m);
+    setRecSearch(m.full_name);
+    const open = loans.filter((l) => l.member_id === m.id && l.status === 'approved');
+    setRecLoanId(open.length === 1 ? String(open[0].id) : '');
+    setRecAmount('');
+  }
+
+  async function recordFromPanel(e) {
+    e.preventDefault();
+    const loan = loans.find((l) => String(l.id) === recLoanId && l.status === 'approved');
+    if (!loan) { toast.error(t('loans.pickLoan')); return; }
+    setBusy(true);
+    try {
+      const res = await api.post(`/loans/${loan.id}/repayments`, {
+        amount: Number(recAmount),
+        date: recDate || null,
+      });
+      toast.success(res.message);
+      setRecSearch('');
+      setRecMember(null);
+      setRecLoanId('');
+      setRecAmount('');
+      setRecDate('');
+      await load();
+      if (rpOpen) loadRepayments(rpMember);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!loans) return <Spinner />;
 
-  const shown = filter === 'all' ? loans : loans.filter((l) => l.status === filter);
+  const listQuery = listSearch.trim().toLowerCase();
+  const shown = (filter === 'all' ? loans : loans.filter((l) => l.status === filter))
+    .filter((l) => !listQuery || l.full_name.toLowerCase().includes(listQuery));
   const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
 
   const rpGroups = rpData ? groupRepayments(rpData.repayments) : [];
@@ -226,6 +281,14 @@ export default function Loans() {
     ? members.filter((m) => m.full_name.toLowerCase().includes(rpQuery)
         || String(m.membership_number || '').includes(rpQuery)).slice(0, 8)
     : [];
+
+  const recQuery = recSearch.trim().toLowerCase();
+  const recMatches = (recQuery && !recMember)
+    ? members.filter((m) => m.full_name.toLowerCase().includes(recQuery)
+        || String(m.membership_number || '').includes(recQuery)).slice(0, 8)
+    : [];
+  const recLoans = recMember ? loans.filter((l) => l.member_id === recMember.id && l.status === 'approved') : [];
+  const recLoan = recLoans.find((l) => String(l.id) === recLoanId) || null;
 
   const columns = [
     { key: 'full_name', label: t('loans.borrower'),
@@ -255,9 +318,11 @@ export default function Loans() {
         title={t('loans.title')}
         action={
           <>
-            <button type="button" className="btn btn--ghost" onClick={openRepayments}>
-              {t('loans.seeRepayments')}
-            </button>
+            {canRecordRepayment && (
+              <button type="button" className="btn btn--ghost" onClick={openRecord}>
+                {t('loans.recordRepayments')}
+              </button>
+            )}
             {isCommittee && (
               <button type="button" className="btn btn--sky" onClick={sendReminders} disabled={busy}>
                 {t('loans.remind')}
@@ -283,7 +348,23 @@ export default function Loans() {
             {f === 'all' ? t('common.all') : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
           </button>
         ))}
+        <button type="button" className="loans__filter loans__filter--action" onClick={openRepayments}>
+          {t('loans.viewRepayments')}
+        </button>
       </div>
+
+      {isCommittee && (
+        <div className="toolbar">
+          <input
+            className="toolbar__grow"
+            type="search"
+            value={listSearch}
+            placeholder={t('loans.searchPlaceholder')}
+            aria-label={t('loans.searchMember')}
+            onChange={(e) => setListSearch(e.target.value)}
+          />
+        </div>
+      )}
 
       <Ledger
         columns={columns}
@@ -556,6 +637,114 @@ export default function Loans() {
             </>
           )}
         </div>
+      </Modal>
+
+      {/* ---- record a repayment ---- */}
+      <Modal
+        open={recOpen}
+        title={t('loans.recordRepayments')}
+        onClose={() => setRecOpen(false)}
+        footer={
+          <button type="button" className="btn btn--ghost" onClick={() => setRecOpen(false)}>
+            {t('common.close')}
+          </button>
+        }
+      >
+        {!recMember ? (
+          <>
+            <div className="toolbar">
+              <input
+                className="toolbar__grow"
+                type="search"
+                value={recSearch}
+                placeholder={t('loans.searchPlaceholder')}
+                aria-label={t('loans.searchMember')}
+                onChange={(e) => setRecSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+            {recQuery && (
+              <ul className="rp__results">
+                {recMatches.map((m) => (
+                  <li key={m.id}>
+                    <button type="button" className="rp__result" onClick={() => pickRecMember(m)}>
+                      <MemberAvatar memberId={m.id} hasAvatar={m.has_avatar} name={m.full_name} size={28} />
+                      <span className="rp__resultName">{m.full_name}</span>
+                      <span className="rp__resultNum muted">{m.membership_number}</span>
+                    </button>
+                  </li>
+                ))}
+                {!recMatches.length && <li className="muted rp__none">{t('loans.noMemberFound')}</li>}
+              </ul>
+            )}
+          </>
+        ) : (
+          <form onSubmit={recordFromPanel}>
+            <div className="rp__who">
+              <MemberAvatar memberId={recMember.id} hasAvatar={recMember.has_avatar} name={recMember.full_name} size={40} />
+              <div>
+                <strong>{recMember.full_name}</strong>
+                <span className="muted">{recMember.membership_number}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn--ghost btn--small rp__whoChange"
+                onClick={() => { setRecMember(null); setRecLoanId(''); setRecAmount(''); }}
+              >
+                {t('loans.changeMember')}
+              </button>
+            </div>
+
+            {recLoans.length === 0 ? (
+              <p className="muted">{t('loans.noRunningLoan')}</p>
+            ) : (
+              <>
+                {recLoans.length > 1 && (
+                  <div className="form-row">
+                    <div>
+                      <label className="field-label" htmlFor="rec-loan">{t('loans.pickLoan')}</label>
+                      <select id="rec-loan" value={recLoanId} onChange={(e) => setRecLoanId(e.target.value)} required>
+                        <option value="">—</option>
+                        {recLoans.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {t('loans.loanRef', l.id)} · {money(l.outstanding)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {recLoan && (
+                  <p className="notice">
+                    {t('loans.outstanding')}: <strong>{money(recLoan.outstanding)}</strong>
+                  </p>
+                )}
+
+                <div className="form-row">
+                  <div>
+                    <label className="field-label" htmlFor="rec-amount">{t('common.amount')}</label>
+                    <input id="rec-amount" type="number" inputMode="decimal" min="1" step="any"
+                      max={recLoan ? recLoan.outstanding : undefined}
+                      value={recAmount} onChange={(e) => setRecAmount(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="rec-date">{t('loans.date')}</label>
+                    <input id="rec-date" type="date" value={recDate} onChange={(e) => setRecDate(e.target.value)} />
+                  </div>
+                </div>
+
+                <p className="notice notice--good">{t('loans.interestFirstNote')}</p>
+
+                <div className="no-print loans__printRow">
+                  <button type="submit" className="btn" disabled={busy}>
+                    {busy ? t('common.saving') : t('common.save')}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
       </Modal>
     </div>
   );

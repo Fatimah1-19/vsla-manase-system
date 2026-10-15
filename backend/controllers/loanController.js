@@ -225,12 +225,13 @@ const recordRepayment = wrap(async (req, res) => {
 
   const paidRow = await one(
     `SELECT COALESCE(SUM(amount),0)::float AS paid,
-            COALESCE(SUM(principal_part),0)::float AS principal_paid
+            COALESCE(SUM(principal_part),0)::float AS principal_paid,
+            COALESCE(SUM(interest_part),0)::float AS interest_paid
        FROM loan_repayments WHERE loan_id = $1`,
     [loanId]
   );
 
-  const { principal, interest, totalDue } = loanTotals(loan);
+  const { interest, totalDue } = loanTotals(loan);
   const remaining = +(totalDue - paidRow.paid).toFixed(2);
   const pay = Number(amount);
 
@@ -241,11 +242,11 @@ const recordRepayment = wrap(async (req, res) => {
     });
   }
 
-  // Principal comes off first; what is left over is interest, banked separately
-  // because interest does not go back into anyone's savings.
-  const principalOwing = Math.max(0, +(principal - paidRow.principal_paid).toFixed(2));
-  const principalPart = Math.min(pay, principalOwing);
-  const interestPart = +(pay - principalPart).toFixed(2);
+  // Interest comes off first; what is left over is the principal. Interest is
+  // banked separately because it does not go back into anyone's savings.
+  const interestOwing = Math.max(0, +(interest - paidRow.interest_paid).toFixed(2));
+  const interestPart = Math.min(pay, interestOwing);
+  const principalPart = +(pay - interestPart).toFixed(2);
 
   const result = await tx(async (client) => {
     const { rows } = await client.query(
