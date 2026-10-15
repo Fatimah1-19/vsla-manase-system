@@ -2,10 +2,14 @@ name: Keep backend awake
 
 # Render's free plan puts the API to sleep after ~15 minutes with no traffic,
 # which makes the public home page lose its numbers until someone visits.
-# This pings the health check every 10 minutes to keep it awake.
+# This pings the health check to keep it awake.
+#
+# Note: GitHub does not run scheduled workflows exactly on time and may skip
+# some runs on quiet repositories, so this is best-effort. For a guaranteed
+# 5-minute ping, point an uptime monitor (e.g. UptimeRobot) at the same URL.
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:

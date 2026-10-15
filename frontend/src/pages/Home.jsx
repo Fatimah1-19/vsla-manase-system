@@ -29,7 +29,7 @@ export default function Home() {
     const load = () => {
       api.get('/public/impact', { auth: false })
         .then((d) => { if (alive) setStats(d); })
-        .catch(() => { if (alive && tries++ < 5) setTimeout(load, 4000); });
+        .catch(() => { if (alive && tries++ < 12) setTimeout(load, 8000); });
     };
     load();
     return () => { alive = false; };
