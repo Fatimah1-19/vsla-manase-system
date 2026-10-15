@@ -144,6 +144,8 @@ export default {
     noExpected: 'No fines are waiting to be paid.',
     myFinesTitle: 'My fines to pay',
     allPaid: 'You have no fines to pay.',
+    toCollectTitle: 'Who must pay',
+    toCollectNote: 'These members still have a fine to settle.',
   },
 
   members: {

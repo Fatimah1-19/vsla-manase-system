@@ -145,6 +145,8 @@ export default {
     noExpected: 'Palibe zindapusa zomwe zikudikira kulipidwa.',
     myFinesTitle: 'Zindapusa zanga zolipira',
     allPaid: 'Mulibe zindapusa zolipira.',
+    toCollectTitle: 'Amene ayenera kulipira',
+    toCollectNote: 'Mamembala awa akadali ndi chindapusa choti alipire.',
   },
 
   members: {

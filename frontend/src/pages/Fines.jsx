@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -77,6 +77,20 @@ export default function Fines() {
   const outstanding = rows.filter((r) => !r.paid).reduce((s, r) => s + r.amount, 0);
   const collected = rows.filter((r) => r.paid).reduce((s, r) => s + r.amount, 0);
 
+  const due = useMemo(() => {
+    const byMember = new Map();
+    for (const r of rows) {
+      if (r.paid) continue;
+      if (!byMember.has(r.member_id)) {
+        byMember.set(r.member_id, { member_id: r.member_id, full_name: r.full_name, has_avatar: r.has_avatar, total: 0, items: [] });
+      }
+      const g = byMember.get(r.member_id);
+      g.total += r.amount;
+      g.items.push(r);
+    }
+    return [...byMember.values()].sort((a, b) => b.total - a.total);
+  }, [rows]);
+
   const columns = [
     { key: 'full_name', label: t('common.name'),
       render: (r) => (
@@ -131,6 +145,35 @@ export default function Fines() {
         <StatCard label={t('fines.collected')} value={money(collected)} tone="green" icon="fines" />
         <StatCard label={t('fines.count')} value={plainNumber(rows.length)} icon="fines" />
       </div>
+
+      {due.length > 0 && (
+        <section className="fines__due">
+          <h2 className="fines__dueTitle">{t('fines.toCollectTitle')}</h2>
+          <p className="fines__dueNote muted">{t('fines.toCollectNote')}</p>
+          <ul className="fines__dueList">
+            {due.map((g) => (
+              <li key={g.member_id} className="fines__dueItem">
+                <span className="fines__dueWho">
+                  <MemberAvatar memberId={g.member_id} hasAvatar={g.has_avatar} name={g.full_name} size={32} />
+                  <span className="fines__dueName">{g.full_name}</span>
+                </span>
+                <span className="fines__dueMeta">
+                  {g.items.map((it) => (
+                    <span key={it.id} className="fines__dueTag">
+                      {it.meeting_id ? t('fines.meetingRef', it.meeting_id) : t('fines.noMeeting')}
+                      {' · '}
+                      {it.month ? monthLong(it.month) : shortDate(it.date)}
+                      {' · '}
+                      {money(it.amount)}
+                    </span>
+                  ))}
+                </span>
+                <span className="fines__dueAmount money">{money(g.total)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Ledger columns={columns} rows={rows} empty={<EmptyState title={t('fines.empty')} />} />
 
