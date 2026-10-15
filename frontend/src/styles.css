@@ -2996,7 +2996,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 .home__nav a .icon { color: var(--maize); }
 .home__nav a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; text-decoration: none; }
 
-.home__loginbtn { min-height: 40px; padding: 0.3rem 1rem; }
+.home__loginbtn { min-height: 34px; padding: 0.25rem 0.85rem; font-size: 0.85rem; }
 
 /* ---- the first screen ---- */
 .home__hero { padding-top: 2.5rem; padding-bottom: 2.25rem; }
