@@ -734,6 +734,9 @@ export default function Loans() {
                   <button type="submit" className="btn" disabled={busy}>
                     {busy ? t('common.saving') : t('common.save')}
                   </button>
+                  <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => setRecOpen(false)}>
+                    {t('common.cancel')}
+                  </button>
                 </div>
               </>
             )}

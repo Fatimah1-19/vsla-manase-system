@@ -3443,7 +3443,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 .loans__repayList li:last-child { border-bottom: 0; }
 
 .print-only { display: none; }
-.loans__printRow { margin-top: 1rem; display: flex; justify-content: flex-end; }
+.loans__printRow { margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.6rem; }
 @media print {
   .print-only { display: block; font-weight: 700; margin-bottom: 0.75rem; }
 }
