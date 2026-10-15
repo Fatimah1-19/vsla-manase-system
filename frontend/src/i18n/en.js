@@ -96,7 +96,7 @@ const base = {
       'Interest goes back to you at the share-out. If you choose not to pay interest, you repay only what you borrowed.',
     noInterest: 'No interest', purpose: 'What is the money for?',
     dueDate: 'Repay by', totalDue: 'Total to repay', repaid: 'Repaid', outstanding: 'Still owing',
-    termNote: 'A loan runs for three months from the day it is approved, and must be finished before the cycle ends. Repay in installments or all at once.',
+    termNote: 'A loan runs for up to three months from the day it is approved, but always ends by the close of the cycle. Repay in installments or all at once.',
     approve: 'Approve', reject: 'Turn down', decisionNote: 'Reason (the borrower will see this)',
     recordRepayment: 'Record a repayment', repayments: 'Repayments',
     statementFor: 'Loan statement', remind: 'Send repayment reminders',

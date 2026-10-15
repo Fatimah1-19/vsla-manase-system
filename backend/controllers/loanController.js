@@ -31,6 +31,14 @@ const threeMonthsFrom = (d) => {
   x.setMonth(x.getMonth() + 3);
   return x;
 };
+// A three-month term, but never past the day the cycle closes: the money must
+// be back in the box before the cycle ends. If the cycle ends sooner, the loan
+// simply runs for the shorter time.
+const dueWithinCycle = (cycleEnd) => {
+  const three = threeMonthsFrom(new Date());
+  if (cycleEnd && three > new Date(cycleEnd)) return new Date(cycleEnd);
+  return three;
+};
 
 // GET /api/loans/limit?member_id=  — how much she may borrow, and why
 const borrowingLimit = wrap(async (req, res) => {
@@ -103,16 +111,10 @@ const applyLoan = wrap(async (req, res) => {
     });
   }
 
-  // A loan runs three months from the day it is given. Until it is approved the
-  // request carries a provisional due date; approval sets the final one. Either
-  // way the money must be back before the cycle closes.
-  const cycleEnd = new Date(cycle.end_date);
-  const due = threeMonthsFrom(new Date());
-  if (due > cycleEnd) {
-    return res.status(400).json({
-      message: `A three-month loan would end on ${ymd(due)}, after this cycle closes on ${ymd(cycleEnd)}.`,
-    });
-  }
+  // A loan runs three months from the day it is given, but never past the day
+  // the cycle closes. Until it is approved the request carries a provisional
+  // due date; approval sets the final one.
+  const due = dueWithinCycle(cycle.end_date);
 
   const defaultRate = Number(await getSetting('default_interest_rate', '10'));
   const carriesInterest = with_interest !== false && String(with_interest) !== 'false';
@@ -167,17 +169,10 @@ const decideLoan = wrap(async (req, res) => {
         };
       }
 
-      // The loan runs three months from the day it is given, and must still be
-      // finished before the cycle closes.
+      // The loan runs three months from the day it is given, but never past the
+      // day the cycle closes.
       const [cycle] = await run(`SELECT end_date FROM cycles WHERE id = $1`, [loan.cycle_id]);
-      const due = threeMonthsFrom(new Date());
-      if (cycle && due > new Date(cycle.end_date)) {
-        return {
-          code: 400,
-          message: `A three-month loan from today would end on ${ymd(due)}, after this cycle closes on ${ymd(cycle.end_date)}.`,
-        };
-      }
-      loan.due_date = ymd(due);
+      loan.due_date = ymd(dueWithinCycle(cycle && cycle.end_date));
     }
 
     await client.query(
