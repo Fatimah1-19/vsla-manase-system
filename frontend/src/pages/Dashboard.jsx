@@ -55,12 +55,12 @@ export default function Dashboard() {
           <h1 className="dash__greeting">{t('dashboard.greeting', user.full_name.split(' ')[0])}</h1>
           <span className="dash__roleChip">{t(`roles.${user.role}`)}</span>
           <QuickSearch />
-        </div>
-        <div className="dash__meta">
-          <p className="dash__today">
-            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-          <LiveClock />
+          <div className="dash__meta">
+            <p className="dash__today">
+              {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+            <LiveClock />
+          </div>
         </div>
       </header>
 
