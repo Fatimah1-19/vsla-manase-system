@@ -20,6 +20,18 @@ const withBalance = (loan) => {
   };
 };
 
+// A loan runs for three months. These helpers work in whole calendar days so a
+// date never slips a day through a timezone change.
+const ymd = (d) => {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+};
+const threeMonthsFrom = (d) => {
+  const x = new Date(d);
+  x.setMonth(x.getMonth() + 3);
+  return x;
+};
+
 // GET /api/loans/limit?member_id=  — how much she may borrow, and why
 const borrowingLimit = wrap(async (req, res) => {
   const memberId = req.user.role === 'member' ? req.user.member_id : Number(req.query.member_id);
@@ -43,7 +55,7 @@ const borrowingLimit = wrap(async (req, res) => {
 
 // POST /api/loans — a member borrows from the group's own money
 const applyLoan = wrap(async (req, res) => {
-  const { member_id, amount, with_interest = true, purpose, due_date } = req.body;
+  const { member_id, amount, with_interest = true, purpose } = req.body;
 
   // A member may only borrow for herself; the committee may file on her behalf.
   const borrowerId = req.user.role === 'member' ? req.user.member_id : Number(member_id);
@@ -91,19 +103,15 @@ const applyLoan = wrap(async (req, res) => {
     });
   }
 
-  // Everything must come back before the cycle closes.
+  // A loan runs three months from the day it is given. Until it is approved the
+  // request carries a provisional due date; approval sets the final one. Either
+  // way the money must be back before the cycle closes.
   const cycleEnd = new Date(cycle.end_date);
-  let due = due_date ? new Date(due_date) : null;
-  if (!due) {
-    due = new Date(Math.min(Date.now() + 90 * 86400000, cycleEnd.getTime()));
-  }
+  const due = threeMonthsFrom(new Date());
   if (due > cycleEnd) {
     return res.status(400).json({
-      message: `The repayment date must be on or before ${cycleEnd.toISOString().slice(0, 10)}, when the cycle ends.`,
+      message: `A three-month loan would end on ${ymd(due)}, after this cycle closes on ${ymd(cycleEnd)}.`,
     });
-  }
-  if (due <= new Date(Date.now() - 86400000)) {
-    return res.status(400).json({ message: 'The repayment date must be in the future.' });
   }
 
   const defaultRate = Number(await getSetting('default_interest_rate', '10'));
@@ -112,8 +120,8 @@ const applyLoan = wrap(async (req, res) => {
   const loan = await one(
     `INSERT INTO loans (member_id, cycle_id, amount, with_interest, interest_rate, purpose, due_date, status)
      VALUES ($1,$2,$3,$4,$5,$6,$7,'pending') RETURNING *`,
-    [borrowerId, cycle.id, amount, carriesInterest, carriesInterest ? defaultRate : 0,
-     purpose || null, due.toISOString().slice(0, 10)]
+   [borrowerId, cycle.id, amount, carriesInterest, carriesInterest ? defaultRate : 0,
+   purpose || null, ymd(due)]
   );
 
   await emit(EVENTS.LOAN_APPLIED, { recordedBy: req.user.id, member, loan });
@@ -158,11 +166,24 @@ const decideLoan = wrap(async (req, res) => {
           message: `The box only has ${available.toLocaleString()} available. That is less than this loan.`,
         };
       }
+
+      // The loan runs three months from the day it is given, and must still be
+      // finished before the cycle closes.
+      const [cycle] = await run(`SELECT end_date FROM cycles WHERE id = $1`, [loan.cycle_id]);
+      const due = threeMonthsFrom(new Date());
+      if (cycle && due > new Date(cycle.end_date)) {
+        return {
+          code: 400,
+          message: `A three-month loan from today would end on ${ymd(due)}, after this cycle closes on ${ymd(cycle.end_date)}.`,
+        };
+      }
+      loan.due_date = ymd(due);
     }
 
     await client.query(
-      `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4 WHERE id = $1`,
-      [id, status, note || null, req.user.id]
+      `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4,
+              due_date = COALESCE($5, due_date) WHERE id = $1`,
+      [id, status, note || null, req.user.id, status === 'approved' ? loan.due_date : null]
     );
     return { loan };
   });

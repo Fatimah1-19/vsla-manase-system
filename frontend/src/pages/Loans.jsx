@@ -10,14 +10,14 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import StatCard from '../components/StatCard.jsx';
-import { money, shortDate, inputDate, monthLong, plainNumber } from '../utils/format.js';
+import { money, shortDate, monthLong, plainNumber } from '../utils/format.js';
 import '../styles.css';
 
 const STATUS_TAG = {
   pending: 'gold', approved: 'green', rejected: 'grey', repaid: 'blue', defaulted: 'red',
 };
 
-const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '', due_date: '' };
+const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '' };
 
 /**
  * A flat list of repayments (newest first) becomes Cycle/Year -> Month -> Date
@@ -110,7 +110,6 @@ export default function Loans() {
         amount: Number(form.amount),
         with_interest: form.with_interest,
         purpose: form.purpose || null,
-        due_date: form.due_date || null,
       };
       if (isCommittee && form.member_id) body.member_id = Number(form.member_id);
       const res = await api.post('/loans', body);
@@ -331,18 +330,15 @@ export default function Loans() {
             </p>
           )}
 
-          <div className="form-row form-row--2">
+          <div className="form-row">
             <div>
               <label className="field-label" htmlFor="l-amount">{t('common.amount')}</label>
               <input id="l-amount" type="number" inputMode="decimal" min="1" step="any"
                 max={limit ? limit.max_loan : undefined} value={form.amount} onChange={change('amount')} required />
             </div>
-            <div>
-              <label className="field-label" htmlFor="l-due">{t('loans.dueDate')}</label>
-              <input id="l-due" type="date" min={inputDate()} value={form.due_date} onChange={change('due_date')} />
-              <span className="field-hint">{t('loans.dueHint')}</span>
-            </div>
           </div>
+
+          <p className="notice">{t('loans.termNote')}</p>
 
           {/* The borrower's own choice about interest. */}
           <label className="loans__interest">

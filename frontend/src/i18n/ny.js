@@ -101,6 +101,7 @@ const base = {
       'Chiwongola dzanja chimagawidwa ndi gulu. Akasankha kusalipira, amabweza zomwe anakongola zokha.',
     noInterest: 'Palibe chiwongola dzanja', purpose: 'Ndalamazi ndi zachiyani?',
     dueDate: 'Bwezani pofika', totalDue: 'Zonse zobweza', repaid: 'Zabwezedwa',
+    termNote: 'Ngongole imatha miyezi itatu kuyambira tsiku lomwe yavomerezedwa, ndipo iyenera kutha nyengo isanatse. Mutha kubweza magawo magawo kapena zonse pamodzi.',
     outstanding: 'Zotsala', approve: 'Vomerezani', reject: 'Kanizani',
     decisionNote: 'Chifukwa (wokongola adzachiwona)',
     recordRepayment: 'Lembani kubweza', repayments: 'Kubweza',
