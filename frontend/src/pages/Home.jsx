@@ -6,6 +6,7 @@ import LanguageToggle from '../components/LanguageToggle.jsx';
 import Footer from '../components/Footer.jsx';
 import Brand from '../components/Brand.jsx';
 import Icon from '../components/Icon.jsx';
+import Modal from '../components/Modal.jsx';
 import { plainNumber, money } from '../utils/format.js';
 import '../styles.css';
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [form, setForm] = useState({ full_name: '', phone: '', village: '', reason: '' });
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [qOpen, setQOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -53,6 +55,9 @@ export default function Home() {
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const setAnswer = (key, value) => setAnswers((a) => ({ ...a, [key]: value }));
+
+  const answered = questions.filter((q) => answers[q.key]).length;
+  const allAnswered = questions.length === 0 || answered === questions.length;
 
   async function submit(e) {
     e.preventDefault();
@@ -276,31 +281,20 @@ export default function Home() {
                 {questions.length > 0 && (
                   <div className="home__field home__bg">
                     <span className="field-label">{t('home.joinBackground')}</span>
-                    <span className="field-hint">{t('home.joinBackgroundHint')}</span>
-                    <ul className="home__bgList">
-                      {questions.map((qq) => {
-                        const qtext = lang === 'en' ? qq.en : qq.ny;
-                        return (
-                          <li key={qq.key} className="home__bgItem">
-                            <span className="home__bgQ">{qtext}</span>
-                            <div className="home__bgBtns" role="group" aria-label={qtext}>
-                              <button type="button"
-                                className={answers[qq.key] === 'yes' ? 'home__bgBtn is-on' : 'home__bgBtn'}
-                                onClick={() => setAnswer(qq.key, 'yes')} disabled={busy}
-                                aria-pressed={answers[qq.key] === 'yes'}>{t('common.yes')}</button>
-                              <button type="button"
-                                className={answers[qq.key] === 'no' ? 'home__bgBtn is-on' : 'home__bgBtn'}
-                                onClick={() => setAnswer(qq.key, 'no')} disabled={busy}
-                                aria-pressed={answers[qq.key] === 'no'}>{t('common.no')}</button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <button type="button" className="btn btn--ghost home__bgOpen"
+                      onClick={() => setQOpen(true)} disabled={busy}>
+                      <Icon name="faq" size={18} />
+                      {t('home.joinAnswerQuestions')}
+                    </button>
+                    <span className={allAnswered ? 'field-hint is-good' : 'field-hint'}>
+                      {allAnswered
+                        ? t('home.joinAnsweredAll')
+                        : t('home.joinAnswered', answered, questions.length)}
+                    </span>
                   </div>
                 )}
 
-                <button type="submit" className="btn btn--full" disabled={busy}>
+                <button type="submit" className="btn btn--full" disabled={busy || !allAnswered}>
                   {busy ? t('common.sending') : t('home.joinSubmit')}
                 </button>
               </form>
@@ -308,6 +302,39 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <Modal
+        open={qOpen}
+        title={t('home.joinBackground')}
+        onClose={() => setQOpen(false)}
+        footer={
+          <button type="button" className="btn" onClick={() => setQOpen(false)}>
+            {t('home.joinAnswerDone')}
+          </button>
+        }
+      >
+        <p className="field-hint">{t('home.joinBackgroundHint')}</p>
+        <ul className="home__bgList">
+          {questions.map((qq) => {
+            const qtext = lang === 'en' ? qq.en : qq.ny;
+            return (
+              <li key={qq.key} className="home__bgItem">
+                <span className="home__bgQ">{qtext}</span>
+                <div className="home__bgBtns" role="group" aria-label={qtext}>
+                  <button type="button"
+                    className={answers[qq.key] === 'yes' ? 'home__bgBtn is-on' : 'home__bgBtn'}
+                    onClick={() => setAnswer(qq.key, 'yes')} disabled={busy}
+                    aria-pressed={answers[qq.key] === 'yes'}>{t('common.yes')}</button>
+                  <button type="button"
+                    className={answers[qq.key] === 'no' ? 'home__bgBtn is-on' : 'home__bgBtn'}
+                    onClick={() => setAnswer(qq.key, 'no')} disabled={busy}
+                    aria-pressed={answers[qq.key] === 'no'}>{t('common.no')}</button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </Modal>
 
       <Footer variant="public" />
     </div>

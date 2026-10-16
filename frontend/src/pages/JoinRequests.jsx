@@ -28,6 +28,7 @@ export default function JoinRequests() {
   const questions = data?.screening_questions?.length
     ? data.screening_questions
     : (Array.isArray(t('requests.screening')) ? t('requests.screening') : []);
+  const topics = t('requests.topics') || {};
 
   async function vote(id, choice) {
     setBusy(true);
@@ -108,7 +109,7 @@ export default function JoinRequests() {
                       const favourable = answer && qq.good && answer === qq.good;
                       return (
                         <li key={qq.key} className="joinreq__bgItem">
-                          <span className="joinreq__bgQ">{qq.q}</span>
+                          <span className="joinreq__bgQ">{topics[qq.key] || qq.q}</span>
                           <span
                             className={
                               answer

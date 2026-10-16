@@ -2897,6 +2897,8 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   cursor: pointer;
 }
 .home__bgBtn.is-on { background: var(--leaf); border-color: var(--leaf); color: #fff; }
+.home__bgOpen { display: inline-flex; align-items: center; gap: 0.4rem; justify-self: start; margin-top: 0.1rem; }
+.field-hint.is-good { color: var(--leaf-dark); font-weight: 600; }
 
 
 @media (min-width: 900px) {
