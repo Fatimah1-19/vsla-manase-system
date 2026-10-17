@@ -4804,6 +4804,37 @@ section[id] { scroll-margin-top: 4.5rem; }
 .settings__switch { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.6rem; font-weight: 600; }
 .settings__switch input { width: 22px; height: 22px; min-height: 0; accent-color: var(--leaf); }
 
+.sysadmin__table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.4rem 0 0.9rem; }
+.sysadmin__table th {
+  text-align: left; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--slate); padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--rule);
+}
+.sysadmin__table td { padding: 0.5rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.sysadmin__table tr:last-child td { border-bottom: 0; }
+.sysadmin__config { list-style: none; margin: 0.4rem 0 0.9rem; padding: 0; display: grid; gap: 0.75rem; }
+.sysadmin__configItem {
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: 0.7rem 0.8rem; background: var(--card);
+}
+.sysadmin__configHead { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+.sysadmin__configKeys { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.3rem; }
+.sysadmin__configKeys li { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.88rem; }
+.sysadmin__configVal { text-align: right; }
+.sysadmin__configVal em { color: var(--slate); font-style: normal; }
+.sysadmin__systemCard { margin-top: 0.9rem; }
+.sysadmin__more { margin-top: 0.8rem; }
+
+.adminroles__scroll { overflow-x: auto; }
+.adminroles__table { min-width: 520px; }
+.adminroles__cell { text-align: center; }
+.adminroles__yes { color: var(--leaf); font-weight: 700; }
+
+.settings__cats { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 1.1rem; border-bottom: 1px solid var(--rule); }
+.settings__cat {
+  background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer;
+  padding: 0.5rem 0.7rem; font: inherit; color: var(--slate);
+}
+.settings__cat.is-on { color: var(--ink); border-bottom-color: var(--leaf); font-weight: 600; }
+
 @media (min-width: 720px) {
   .sysadmin__grid { grid-template-columns: 1fr 1fr; }
 }

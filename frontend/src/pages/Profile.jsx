@@ -33,7 +33,8 @@ export default function Profile() {
   const toast = useToast();
   const confirm = useConfirm();
   const [data, setData] = useState(null);
-  const [tab, setTab] = useState('details');
+  const [tab, setTab] = useState(() =>
+    (new URLSearchParams(window.location.search).get('tab') === 'account' ? 'account' : 'details'));
   const [details, setDetails] = useState(null);
   const [pass, setPass] = useState({ current_password: '', new_password: '', confirm: '' });
   const [docType, setDocType] = useState('national_id');

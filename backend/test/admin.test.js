@@ -5,7 +5,7 @@ const path = require('path');
 const {
   ROLES, PERMISSIONS, MONEY_PERMISSIONS, can, touchesMoney, requirePermission, blockSystemAdmin,
 } = require('../config/permissions.js');
-const { canDecideChange, canRemoveAdministrator, resetAttempt } = require('../utils/adminRules.js');
+const { canDecideChange, canRemoveAdministrator, canSetSystemRole, resetAttempt } = require('../utils/adminRules.js');
 
 // Run one express middleware with a fake user and see what it answers.
 function run(middleware, user) {
@@ -76,6 +76,24 @@ function run(middleware, user) {
   assert.strictEqual(canRemoveAdministrator({ targetIsAdmin: true, activeAdministrators: 2 }).ok, true);
   assert.strictEqual(canRemoveAdministrator({ targetIsAdmin: false, activeAdministrators: 1 }).ok, true);
   assert.strictEqual(canRemoveAdministrator({ targetIsAdmin: true, activeAdministrators: 0 }).reason, 'last_admin');
+
+  // ---- the administrator may hand out the system role, and nothing else ----
+  assert.strictEqual(canSetSystemRole({ targetRole: 'member', makeAdmin: true, activeAdministrators: 1 }).ok, true);
+  assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: false, activeAdministrators: 2 }).ok, true);
+  assert.strictEqual(canSetSystemRole({ targetRole: 'admin', makeAdmin: false, activeAdministrators: 2 }).reason, 'is_office');
+  assert.strictEqual(canSetSystemRole({ targetRole: 'treasurer', makeAdmin: true, activeAdministrators: 2 }).reason, 'is_office');
+  assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: true, activeAdministrators: 1 }).reason, 'already_admin');
+  assert.strictEqual(canSetSystemRole({ targetRole: 'member', makeAdmin: false, activeAdministrators: 1 }).reason, 'not_admin');
+  assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: false, activeAdministrators: 1 }).reason, 'last_admin');
+
+  // ---- the administrator never changes the group's rules on her own --------
+  const settings = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'settingsController.js'), 'utf8');
+  assert.ok(
+    settings.includes("req.user.role === 'system_admin' ? 'admin' : 'treasurer'"),
+    'a VSLA settings change by the administrator must be proposed to the chairperson'
+  );
+  assert.ok(!/if \(req\.user\.role === 'system_admin'\)\s*\{\s*\n\s*await applyGroupRules/.test(settings),
+    'the administrator must not save VSLA rules directly');
 
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);

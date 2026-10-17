@@ -2,7 +2,12 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'Settings' },
+  nav: {
+    analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'System settings',
+    users: 'Users', roles: 'Roles & permissions', vslaSettings: 'VSLA settings', auditTrail: 'Audit trail', systemActivity: 'System activity',
+    myProfile: 'My profile', changePassword: 'Change password',
+    gDashboard: 'Dashboard', gUserMgmt: 'User management', gVsla: 'VSLA settings', gSystem: 'System', gProfile: 'Profile',
+  },
 
   roles: { system_admin: 'Administrator' },
 
@@ -225,6 +230,29 @@ export default {
 
   settings: {
     adminSubtitle: 'Everything the group and the system run on. Only the administrator changes these.',
+    vslaSubtitle: 'The rules the group lives by. The administrator proposes a change; the chairperson confirms it.',
+    proposeToChair: 'Send to the chairperson',
+    proposedToChair: 'Sent to the chairperson to confirm.',
+    proposedToChairNote: 'When you save, the change is sent to the chairperson. It takes effect once the chairperson confirms it.',
+    catGroupInfo: 'Group information', catSavings: 'Savings settings', catLoans: 'Loan settings',
+    catFines: 'Fine settings', catWelfare: 'Welfare settings', catShareout: 'Share-out settings',
+    catMembership: 'Membership settings', catVoting: 'Voting settings', catMeetings: 'Meeting settings',
+    catSms: 'Notification & SMS settings',
+    groupInfoNote: 'The name and standing of the group. These are fixed when the group is set up.',
+    savingsNote: 'How members save with the group.',
+    loansNote: 'The terms on which the group lends.',
+    smsNote: 'Turn the group\'s text messages on or off. The TextBee key is a secret kept on the server, never shown here.',
+    shareoutNote: 'Savings always go back to the person who saved them. These switches decide what else joins the pot that gets split.',
+    alreadyWaiting: 'A change to the VSLA settings is already waiting for the chairperson.',
+    loanMultiplier: 'How much a member may borrow against her savings (times)',
+    interestRate: 'Interest charged on a loan (%)',
+    shareValue: 'Value of one share (MWK)',
+    welfarePerMeeting: 'Welfare contribution each meeting (MWK)',
+    officeVotingDays: 'How many days an office election stays open',
+    officeQuorum: 'Share of members who must vote in an office election (%)',
+    include_interest_in_shareout: 'Interest earned joins the share-out pot',
+    include_fines_in_shareout: 'Fines collected join the share-out pot',
+    include_welfare_in_shareout: 'The welfare fund joins the share-out pot',
     monthlyLevy: 'Monthly contribution for wrappers (MWK per member)',
     absenceFine: 'Fine for missing a meeting without a reason (MWK)',
     absenceFineNote: 'Set this to 0 to switch the automatic absence fine off. An excused absence is never fined.',
@@ -436,6 +464,28 @@ export default {
   admin: {
     // Dashboard
     dashboardSubtitle: 'Accounts, sign-ins and the way the system behaves.',
+    totalUsers: 'Total users', activeUsers: 'Active users', inactiveUsers: 'Inactive users',
+    totalMembers: 'Total members', committeeMembers: 'Committee members', sysAdmins: 'System administrators',
+    pendingConfigChanges: 'Pending config changes',
+    qaTitle: 'Quick actions', qaManageUsers: 'Manage users', qaManageRoles: 'Manage roles',
+    qaAuditTrail: 'View audit trail', qaSystemActivity: 'View system activity',
+    qaPendingChanges: 'View pending changes', qaSystemSettings: 'System settings',
+    pendingConfigTitle: 'Pending configuration changes',
+    pendingConfigNote: 'VSLA settings you have proposed. The chairperson confirms them — you cannot confirm your own change.',
+    noPendingConfig: 'No configuration changes are waiting.',
+    proposedBy: 'Proposed by', proposedOn: 'Date', currentValue: 'Current', proposedValue: 'Proposed',
+    cannotConfirmOwn: 'Only the chairperson can confirm this.',
+    recentSystemActivity: 'Recent system activity',
+    actUser: 'User', actAction: 'Action', actDateTime: 'Date & time', actStatus: 'Status',
+    statusSuccess: 'Success', statusFailed: 'Failed',
+    viewFullAudit: 'View full audit trail',
+    systemActivitySubtitle: 'Every recorded action on the system, with the time and whether it succeeded.',
+    // Roles and permissions
+    rolesTitle: 'Roles & permissions', rolesSubtitle: 'What each role in the group may do, and who administers the system.',
+    rolesNote: 'Committee offices are decided by a vote of the members. From here you may only add or remove a system administrator — never make one of them the chairperson.',
+    permMatrix: 'Who may do what', permColumn: 'Task', roleColumn: 'Role',
+    systemAdministrators: 'System administrators', makeAdmin: 'Make administrator',
+    removeAdmin: 'Remove administrator', officeLocked: 'Decided by vote',
     accountsTitle: 'Accounts',
     chairpersons: 'Chairperson', treasurers: 'Treasurer', secretaries: 'Secretary',
     administrators: 'Administrators', membersLabel: 'Members', activeAccounts: 'Active accounts',
@@ -471,7 +521,7 @@ export default {
     approve: 'Confirm', reject: 'Reject', confirmed: 'Change confirmed.', rejectedNote: 'Request rejected.',
     kind_update_user: 'Change account details', kind_deactivate_user: 'Suspend account',
     kind_reactivate_user: 'Reactivate account', kind_group_rules: 'Change the group rules',
-    groupRulesForTreasurer: 'The chairperson asks for these group rules to change:',
+    groupRulesPending: 'These group rules are waiting to be confirmed:',
     noPayload: 'No details.',
     // System settings page
     systemSubtitle: 'These control the system itself. The rules of the group are set by the chairperson.',

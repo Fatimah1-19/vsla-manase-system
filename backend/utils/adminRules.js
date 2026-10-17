@@ -29,6 +29,24 @@ function canRemoveAdministrator({ targetIsAdmin, activeAdministrators }) {
     : { ok: true };
 }
 
+// The posts the members fill by a vote of their own. The administrator may never
+// hand one of these out from the account screen.
+const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
+
+/**
+ * May the administrator grant or take away the system-administrator role on an
+ * account? Only a plain member may be made an administrator, and the last active
+ * administrator may never be turned back into a member. An elected office is
+ * never touched from here: it is won by a vote of the members.
+ */
+function canSetSystemRole({ targetRole, makeAdmin, activeAdministrators }) {
+  if (['admin', 'treasurer', 'secretary'].includes(targetRole)) return { ok: false, reason: 'is_office' };
+  if (makeAdmin && targetRole === 'system_admin') return { ok: false, reason: 'already_admin' };
+  if (!makeAdmin && targetRole !== 'system_admin') return { ok: false, reason: 'not_admin' };
+  if (!makeAdmin && Number(activeAdministrators) <= 1) return { ok: false, reason: 'last_admin' };
+  return { ok: true };
+}
+
 /**
  * May this code be tried against a reset request? A code stops being usable
  * when it has expired or has been tried too many times.
@@ -41,4 +59,4 @@ function resetAttempt({ attempts, maxTries, expired }) {
   return { ok: true, remaining: Math.max(limit - used, 0) };
 }
 
-module.exports = { canDecideChange, canRemoveAdministrator, resetAttempt };
+module.exports = { canDecideChange, canRemoveAdministrator, canSetSystemRole, resetAttempt };

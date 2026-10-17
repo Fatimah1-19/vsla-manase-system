@@ -21,8 +21,9 @@ function payloadValue(key, value) {
 }
 
 /**
- * What is waiting to be confirmed. The chairperson confirms account changes the
- * administrator asked for; the treasurer confirms group-rule changes.
+ * What is waiting to be confirmed. The chairperson confirms the account and
+ * group-rule changes the administrator asked for; the treasurer confirms the
+ * group-rule changes the chairperson asks for.
  */
 export default function Approvals() {
   const { t } = useLang();
@@ -79,7 +80,7 @@ export default function Approvals() {
 
               {r.kind === 'group_rules' ? (
                 <div className="approvals__payload">
-                  <p className="approvals__payloadTitle">{t('admin.groupRulesForTreasurer')}</p>
+                  <p className="approvals__payloadTitle">{t('admin.groupRulesPending')}</p>
                   <ul className="approvals__payloadList">
                     {Object.entries(r.payload || {}).map(([k, v]) => (
                       <li key={k}><span className="muted">{k}</span> <strong>{payloadValue(k, v)}</strong></li>

@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { Fragment } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { navFor } from './navItems.js';
@@ -13,6 +14,7 @@ export default function Sidebar({ open, onNavigate }) {
   if (!user) return null;
 
   const items = navFor(user.role);
+  const icon = (name) => <Icon name={name} size={22} className="sidebar__icon" />;
 
   return (
     <nav className={open ? 'sidebar is-open' : 'sidebar'} aria-label={t('nav.menu')}>
@@ -21,18 +23,31 @@ export default function Sidebar({ open, onNavigate }) {
       </div>
 
       <ul className="sidebar__list">
-        {items.map((item) => (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.end}
-              onClick={onNavigate}
-              className={({ isActive }) => (isActive ? 'sidebar__link is-on' : 'sidebar__link')}
-            >
-              <Icon name={item.icon} size={22} className="sidebar__icon" />
-              <span>{t(item.label || item.key)}</span>
-            </NavLink>
-          </li>
+        {items.map((item, i) => (
+          <Fragment key={`${item.to}-${i}`}>
+            {item.group && item.group !== items[i - 1]?.group && (
+              <li className="sidebar__group">{t(item.group)}</li>
+            )}
+            <li>
+              {item.to.includes('?') ? (
+                /* A link with a tab query never owns the page, so it is a plain link. */
+                <Link to={item.to} onClick={onNavigate} className="sidebar__link">
+                  {icon(item.icon)}
+                  <span>{t(item.key)}</span>
+                </Link>
+              ) : (
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  onClick={onNavigate}
+                  className={({ isActive }) => (isActive ? 'sidebar__link is-on' : 'sidebar__link')}
+                >
+                  {icon(item.icon)}
+                  <span>{t(item.key)}</span>
+                </NavLink>
+              )}
+            </li>
+          </Fragment>
         ))}
       </ul>
 

@@ -25,6 +25,9 @@ import Wrappers from './pages/Wrappers.jsx';
 import Approvals from './pages/Approvals.jsx';
 import AdminUsers from './pages/AdminUsers.jsx';
 import SystemSettings from './pages/SystemSettings.jsx';
+import VslaSettings from './pages/VslaSettings.jsx';
+import AdminRoles from './pages/AdminRoles.jsx';
+import SystemActivity from './pages/SystemActivity.jsx';
 import NotFound from './pages/NotFound.jsx';
 import './styles.css';
 
@@ -66,7 +69,10 @@ export default function App() {
         <Route path="activity" element={<ProtectedRoute roles={[...COMMITTEE, 'system_admin']}><Activity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
         <Route path="admin/users" element={<ProtectedRoute roles={['system_admin']}><AdminUsers /></ProtectedRoute>} />
-        <Route path="admin/settings" element={<ProtectedRoute roles={['system_admin']}><SystemSettings /></ProtectedRoute>} />
+        <Route path="admin/roles" element={<ProtectedRoute roles={['system_admin']}><AdminRoles /></ProtectedRoute>} />
+        <Route path="admin/settings" element={<ProtectedRoute roles={['system_admin']}><VslaSettings /></ProtectedRoute>} />
+        <Route path="admin/system" element={<ProtectedRoute roles={['system_admin']}><SystemSettings /></ProtectedRoute>} />
+        <Route path="admin/activity" element={<ProtectedRoute roles={['system_admin']}><SystemActivity /></ProtectedRoute>} />
         <Route path="profile"  element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Profile /></ProtectedRoute>} />
       </Route>
 

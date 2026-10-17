@@ -5,8 +5,9 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
-const { canDecideChange, canRemoveAdministrator } = require('../utils/adminRules');
+const { canDecideChange, canRemoveAdministrator, canSetSystemRole } = require('../utils/adminRules');
 const { applyGroupRules } = require('./settingsController');
+const { ROLES, OFFICES, PERMISSIONS } = require('../config/permissions');
 
 // The fields the administrator may ask to change on an account. Never the role:
 // an office is won by a vote of the members, not handed out from here.
@@ -281,7 +282,77 @@ const decideChangeRequest = wrap(async (req, res) => {
   res.json({ message: 'Change confirmed.' });
 });
 
+// GET /api/admin/config-changes — VSLA settings the administrator has proposed,
+// waiting for the chairperson, together with what was already decided.
+const listConfigChanges = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT cr.id, cr.kind, cr.status, cr.payload, cr.reason, cr.created_at, cr.decided_at,
+            r.full_name AS requested_by_name, d.full_name AS decided_by_name
+       FROM change_requests cr
+       LEFT JOIN users r ON r.id = cr.requested_by
+       LEFT JOIN users d ON d.id = cr.decided_by
+      WHERE cr.kind = 'group_rules'
+      ORDER BY (cr.status = 'pending') DESC, cr.created_at DESC LIMIT 50`
+  );
+  res.json(rows);
+});
+
+// GET /api/admin/permissions — who may do what, straight from the one file that
+// holds every rule. The administrator reads it; she never edits it from here.
+const listPermissions = wrap(async (req, res) => {
+  const permissions = Object.entries(PERMISSIONS).map(([key, roles]) => ({ key, roles }));
+  res.json({ roles: ROLES, offices: OFFICES, permissions });
+});
+
+// PATCH /api/admin/accounts/:id/role  { system_admin: true | false }
+// The one role the administrator may hand out or take back. Group offices
+// (chairperson, treasurer, secretary) are never set here: the members elect them.
+const setSystemRole = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const makeAdmin = !!req.body?.system_admin;
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+  if (id === req.user.id) return res.status(400).json({ message: 'You cannot change your own role here.' });
+
+  const target = await one(`SELECT id, full_name, role, is_active FROM users WHERE id = $1`, [id]);
+  if (!target) return res.status(404).json({ message: 'That account does not exist.' });
+
+  const verdict = canSetSystemRole({
+    targetRole: target.role,
+    makeAdmin,
+    activeAdministrators: await activeAdministrators(),
+  });
+  if (!verdict.ok) {
+    const messages = {
+      is_office: 'The committee posts are decided by a vote of the members, not from here.',
+      already_admin: 'That account is already an administrator.',
+      not_admin: 'That account is not a system administrator.',
+      last_admin: 'This is the only administrator. Keep at least one.',
+    };
+    return res.status(400).json({ message: messages[verdict.reason] || 'That change cannot be made.' });
+  }
+
+  const role = makeAdmin ? 'system_admin' : 'member';
+  await query(`UPDATE users SET role = $2 WHERE id = $1`, [target.id, role]);
+
+  // An administrator is a member like everyone else, so she must have a member row.
+  if (makeAdmin) {
+    await query(
+      `INSERT INTO members (user_id, membership_number, village)
+       SELECT $1, 'VB-' || LPAD(COALESCE((SELECT MAX(CAST(SUBSTRING(membership_number FROM 4) AS INT)) FROM members), 0) + 1, 4, '0'), NULL
+       WHERE NOT EXISTS (SELECT 1 FROM members WHERE user_id = $1)`,
+      [target.id]
+    );
+  }
+
+  await audit(req.user.id, makeAdmin ? 'GRANT_SYSTEM_ADMIN' : 'REVOKE_SYSTEM_ADMIN', 'users', id, target.full_name);
+  res.json({
+    message: makeAdmin
+      ? `${target.full_name} is now a system administrator.`
+      : `${target.full_name} is no longer a system administrator.`,
+  });
+});
+
 module.exports = {
   listMembers, createAccount, listMyChangeRequests, proposeChange, withdrawChangeRequest,
-  listPending, decideChangeRequest,
+  listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,
 };
