@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/contributionController');
-const { protect, authorize, committee, recorders } = require('../middleware/auth');
+const { protect, authorize, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/mine', c.mine);
 router.get('/', committee(), c.listMonth);
 router.get('/payments', committee(), c.listPayments);

@@ -38,7 +38,7 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const rows = await api.get('/settings');
+    const rows = await api.get('/settings/group-rules');
     const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
     setValues(map);
     let parsed = [];
@@ -60,8 +60,8 @@ export default function Settings() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.put('/settings', { ...values, join_screening_questions: JSON.stringify(questions) });
-      toast.success(t('settings.saved'));
+      await api.put('/settings/group-rules', { ...values, join_screening_questions: JSON.stringify(questions) });
+      toast.success(t('settings.proposed'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -240,9 +240,12 @@ export default function Settings() {
         </section>
 
         {isAdmin && (
-          <button type="submit" className="btn" disabled={busy}>
-            {busy ? t('common.saving') : t('common.save')}
-          </button>
+          <>
+            <p className="settings__note">{t('settings.proposedNote')}</p>
+            <button type="submit" className="btn" disabled={busy}>
+              {busy ? t('common.saving') : t('settings.propose')}
+            </button>
+          </>
         )}
       </form>
     </div>

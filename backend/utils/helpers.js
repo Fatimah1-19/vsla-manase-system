@@ -47,12 +47,12 @@ async function getSetting(key, fallback = null) {
   return settings.has(key) ? settings.get(key) : fallback;
 }
 
-async function setSetting(key, value) {
+async function setSetting(key, value, group = 'group') {
   await query(
-    `INSERT INTO settings (setting_key, setting_value, updated_at)
-     VALUES ($1,$2,NOW())
+    `INSERT INTO settings (setting_key, setting_value, setting_group, updated_at)
+     VALUES ($1,$2,$3,NOW())
      ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2, updated_at = NOW()`,
-    [key, String(value)]
+    [key, String(value), group]
   );
   clearCache();
 }

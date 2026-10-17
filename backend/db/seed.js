@@ -23,6 +23,7 @@ const PEOPLE = [
   { username: 'maryk',    name: 'Mary Kachala',  role: 'member',    phone: '0991000005', lang: 'ny', pass: 'member123' },
   { username: 'ellenm',   name: 'Ellen Mbewe',   role: 'member',    phone: '0991000006', lang: 'ny', pass: 'member123' },
   { username: 'tionges',  name: 'Tionge Sakala', role: 'member',    phone: '0991000007', lang: 'en', pass: 'member123' },
+  { username: 'sysadmin', name: 'Tamara Zulu',   role: 'system_admin', phone: '0991000008', lang: 'en', pass: 'sysadmin123' },
 ];
 
 (async () => {
@@ -68,11 +69,15 @@ const PEOPLE = [
         [p.username, hashed, p.role, p.name, p.phone, p.lang]
       )).rows[0];
 
-      n += 1;
-      await client.query(
-        `INSERT INTO members (user_id, membership_number, village) VALUES ($1,$2,$3)`,
-        [user.id, `VB-${String(n).padStart(4, '0')}`, 'Manase']
-      );
+      // The system administrator is not a group member: no membership number
+      // and no money records of her own.
+      if (p.role !== 'system_admin') {
+        n += 1;
+        await client.query(
+          `INSERT INTO members (user_id, membership_number, village) VALUES ($1,$2,$3)`,
+          [user.id, `VB-${String(n).padStart(4, '0')}`, 'Manase']
+        );
+      }
       created.push(p);
     }
 

@@ -9,6 +9,7 @@ import MemberDashboard from './dashboards/MemberDashboard.jsx';
 import TreasurerDashboard from './dashboards/TreasurerDashboard.jsx';
 import SecretaryDashboard from './dashboards/SecretaryDashboard.jsx';
 import AdminDashboard from './dashboards/AdminDashboard.jsx';
+import SystemAdminDashboard from './dashboards/SystemAdminDashboard.jsx';
 import CycleBar from './dashboards/CycleBar.jsx';
 import '../styles.css';
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
     treasurer: TreasurerDashboard,
     secretary: SecretaryDashboard,
     admin: AdminDashboard,
+    system_admin: SystemAdminDashboard,
   };
   const Board = boards[user.role] || MemberDashboard;
 

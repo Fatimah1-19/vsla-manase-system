@@ -2,7 +2,10 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases' },
+  nav: { analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'System settings' },
+
+  roles: { system_admin: 'Administrator' },
+
 
   common: { showPassword: 'Show password', hidePassword: 'Hide password', noResults: 'Nothing matches your search' },
 
@@ -225,6 +228,9 @@ export default {
     absenceFine: 'Fine for missing a meeting without a reason (MWK)',
     absenceFineNote: 'Set this to 0 to switch the automatic absence fine off. An excused absence is never fined.',
     adminOnly: 'Only the chairperson can change these.',
+    proposed: 'Sent to the treasurer to confirm.',
+    proposedNote: 'When you save, the change is sent to the treasurer. It takes effect once the treasurer confirms it.',
+    propose: 'Send to the treasurer',
     casesTitle: 'Member cases',
     caseNote: 'These decide how a vote to suspend, dismiss or bring a member back is carried.',
     caseVotingDays: 'How many days a vote stays open',
@@ -425,4 +431,65 @@ export default {
   messages: { confirmSend: (n) => `Send this to ${n} ${n === 1 ? 'person' : 'people'}?` },
   cycles: { confirmClose: 'Close this cycle? This cannot be undone.' },
   requests: { confirmDecide: 'Record what the group decided? The person will be told by text message.' },
+
+  admin: {
+    // Dashboard
+    dashboardSubtitle: 'Accounts, sign-ins and the way the system behaves.',
+    accountsTitle: 'Accounts',
+    chairpersons: 'Chairperson', treasurers: 'Treasurer', secretaries: 'Secretary',
+    administrators: 'Administrators', membersLabel: 'Members', activeAccounts: 'Active accounts',
+    lockedAccounts: 'Locked accounts', smsToday: 'Texts sent today',
+    pendingChanges: 'Waiting to be confirmed', pendingJoins: 'Join requests waiting',
+    systemTitle: 'System settings', recentSignins: 'Recent sign-ins',
+    quickAdmin: 'Common jobs', manageAccounts: 'Members & accounts', manageSettings: 'System settings', viewActivity: 'Activity log',
+    settingsNote: 'These control how the system behaves. Group rules are set by the chairperson.',
+    // Users page
+    title: 'Members & accounts', subtitle: 'Open accounts and ask the chairperson to confirm changes. You never see money.',
+    addMember: 'Add a member', addAccount: 'Open an account',
+    accounts: 'All accounts', role: 'Role', status: 'Status', lastLogin: 'Last signed in',
+    active: 'Active', suspended: 'Suspended', never: 'Never',
+    edit: 'Change details', suspend: 'Ask to suspend', reactivate: 'Ask to reactivate',
+    proposeChange: 'Ask the chairperson to confirm',
+    myRequests: 'My requests', withdraw: 'Withdraw', noRequests: 'You have not asked for any change yet.',
+    requestSent: 'Sent to the chairperson to confirm.', requestSentNote: 'It takes effect once the chairperson confirms it.',
+    decidedAlready: 'Already decided',
+    fullName: 'Full name', village: 'Village', language: 'Language', phone: 'Phone number',
+    languageEn: 'English', languageNy: 'Chichewa',
+    accountOpened: 'Account opened', passwordTexted: 'The username and a first password have been sent to them by text.',
+    passwordNotTexted: 'No phone number on file, so nothing was texted. They can use "I have forgotten my password" once a number is added.',
+    nothingToChange: 'Nothing was changed.',
+    changePassword: 'New password',
+    confirmReset: 'Create a new password and text it to them? Their current password will stop working.',
+    resetDone: 'A new password was created and texted to them.',
+    statusPending: 'Waiting', statusApproved: 'Confirmed', statusRejected: 'Rejected', statusWithdrawn: 'Withdrawn',
+    // Approvals
+    approvals: 'Approvals', approvalsSubtitle: 'Confirm what is waiting. A change only takes effect once you confirm it.',
+    nothingWaiting: 'Nothing is waiting to be confirmed.',
+    requestedBy: 'Asked by', target: 'Account', requestedOn: 'When', reason: 'Reason',
+    approve: 'Confirm', reject: 'Reject', confirmed: 'Change confirmed.', rejectedNote: 'Request rejected.',
+    kind_update_user: 'Change account details', kind_deactivate_user: 'Suspend account',
+    kind_reactivate_user: 'Reactivate account', kind_group_rules: 'Change the group rules',
+    groupRulesForTreasurer: 'The chairperson asks for these group rules to change:',
+    noPayload: 'No details.',
+    // System settings page
+    systemSubtitle: 'These control the system itself. The rules of the group are set by the chairperson.',
+    sessionTimeoutLabel: 'How long a quiet session stays open (minutes)',
+    maxLoginLabel: 'Wrong passwords allowed before an account locks',
+    lockLabel: 'How long a locked account stays locked (minutes)',
+    resetTriesLabel: 'Tries allowed at one SMS reset code',
+    smsLabel: 'Send text messages',
+    saved: 'Saved.',
+    on: 'On', off: 'Off',
+  },
+
+  activity: {
+    sittings: 'Sign-in sessions', fullLog: 'Full log',
+    filterAction: 'Action', filterWho: 'Person', filterFrom: 'From', filterTo: 'To',
+    filterSearch: 'Search', anyAction: 'Any action', anyPerson: 'Anyone',
+    apply: 'Apply', clear: 'Clear', export: 'Export to file',
+    previous: 'Newer', next: 'Older', pageOf: (p, n) => `Page ${p} of ${n}`,
+    logEmpty: 'Nothing matches these filters.',
+    totalRows: (n) => `${n} event${n === 1 ? '' : 's'}`,
+    record: 'Record', who: 'Who',
+  },
 };

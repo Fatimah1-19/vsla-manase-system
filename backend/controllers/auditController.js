@@ -1,26 +1,73 @@
 const { query } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
+const { audit } = require('../utils/audit');
 
-// GET /api/audit
-const listAudit = wrap(async (req, res) => {
-  const limit = Math.min(Number(req.query.limit) || 150, 500);
-  const { action, user_id } = req.query;
-
+// Turn the page's filters into a WHERE clause. Shared by the list and the export.
+function buildFilters(req) {
+  const { action, user_id, from, to, q } = req.query;
   const where = [];
   const params = [];
   if (action) { params.push(action); where.push(`a.action = $${params.length}`); }
-  if (user_id) { params.push(user_id); where.push(`a.user_id = $${params.length}`); }
-  params.push(limit);
+  if (user_id) { params.push(Number(user_id)); where.push(`a.user_id = $${params.length}`); }
+  if (from) { params.push(from); where.push(`a.created_at >= $${params.length}::date`); }
+  if (to) { params.push(to); where.push(`a.created_at < ($${params.length}::date + INTERVAL '1 day')`); }
+  if (q) {
+    params.push(`%${String(q)}%`);
+    where.push(`(COALESCE(a.details,'') ILIKE $${params.length} OR COALESCE(u.full_name,'') ILIKE $${params.length} OR a.action ILIKE $${params.length})`);
+  }
+  return { where, params, filterSql: where.length ? 'WHERE ' + where.join(' AND ') : '' };
+}
+
+const SELECT = `SELECT a.id, a.action, a.entity_type, a.entity_id, a.details, a.created_at,
+                       a.user_id, u.full_name, u.role
+                  FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id`;
+
+// GET /api/audit  — the whole history, filtered and paged
+const listAudit = wrap(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const offset = (page - 1) * limit;
+  const { params, filterSql } = buildFilters(req);
+
+  const total = (await query(`SELECT COUNT(*)::int AS c FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id ${filterSql}`, params))[0].c;
 
   const rows = await query(
-    `SELECT a.id, a.action, a.entity_type, a.entity_id, a.details, a.created_at,
-            u.full_name, u.role
-       FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      ORDER BY a.created_at DESC LIMIT $${params.length}`,
-    params
+    `${SELECT} ${filterSql} ORDER BY a.created_at DESC, a.id DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, limit, offset]
   );
-  res.json(rows);
+
+  const actions = (await query(`SELECT DISTINCT action FROM audit_logs ORDER BY action`)).map((r) => r.action);
+
+  // Looking at the history is itself worth remembering. Only on a fresh view,
+  // not on every page of the same look.
+  if (page === 1) await audit(req.user.id, 'VIEW_AUDIT', 'audit_logs', null, filterSql || 'all');
+
+  res.json({ rows, total, page, limit, actions });
+});
+
+// GET /api/audit/export — the same history as a file the group can keep
+const exportAudit = wrap(async (req, res) => {
+  const { params, filterSql } = buildFilters(req);
+  const rows = await query(`${SELECT} ${filterSql} ORDER BY a.created_at DESC, a.id DESC LIMIT 5000`, params);
+
+  const cell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = ['When', 'Who', 'Role', 'Action', 'Type', 'Record', 'Details'];
+  const lines = [header.join(',')];
+  for (const r of rows) {
+    lines.push([
+      r.created_at ? new Date(r.created_at).toISOString() : '',
+      r.full_name || 'System', r.role || '', r.action || '',
+      r.entity_type || '', r.entity_id == null ? '' : r.entity_id, r.details || '',
+    ].map(cell).join(','));
+  }
+
+  await audit(req.user.id, 'EXPORT_AUDIT', 'audit_logs', null, `${rows.length} rows`);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="activity-log.csv"');
+  res.send('\uFEFF' + lines.join('\r\n'));
 });
 
 // GET /api/audit/sessions
@@ -91,4 +138,4 @@ const listSessions = wrap(async (req, res) => {
   res.json({ sessions, unassigned });
 });
 
-module.exports = { listAudit, listSessions };
+module.exports = { listAudit, exportAudit, listSessions };

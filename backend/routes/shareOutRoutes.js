@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/shareOutController');
-const { protect, committee, recorders } = require('../middleware/auth');
+const { protect, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', committee(), c.listShareOuts);
 router.get('/mine', c.myShare);
 router.get('/preview', committee(), c.preview);

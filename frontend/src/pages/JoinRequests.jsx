@@ -14,7 +14,7 @@ import '../styles.css';
 /** Every member votes; a committee member records what the group decided. */
 export default function JoinRequests() {
   const { t } = useLang();
-  const { isCommittee } = useAuth();
+  const { isCommittee, isSystemAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -48,12 +48,7 @@ export default function JoinRequests() {
     try {
       const res = await api.patch(`/join-requests/${request.id}`, { status });
       if (status === 'approved') {
-        setCredentials({
-          name: request.full_name,
-          username: res.username,
-          password: res.temporary_password,
-          smsSent: res.sms_sent,
-        });
+        setCredentials({ name: request.full_name, username: res.username, smsSent: res.sms_sent });
       } else {
         toast.success(res.message);
       }
@@ -136,6 +131,7 @@ export default function JoinRequests() {
                   </p>
                 </div>
 
+                {!isSystemAdmin && (
                 <div className="joinreq__vote">
                   <span className="joinreq__voteLabel">{t('requests.vote')}</span>
                   <div className="joinreq__voteBtns">
@@ -159,6 +155,7 @@ export default function JoinRequests() {
                     </button>
                   </div>
                 </div>
+                )}
 
                 {isCommittee && (
                   <div className="joinreq__decide">
@@ -195,22 +192,18 @@ export default function JoinRequests() {
 
       <Modal
         open={!!credentials}
-        title={t('members.tempPassword')}
+        title={t('admin.accountOpened')}
         onClose={() => setCredentials(null)}
         footer={<button type="button" className="btn" onClick={() => setCredentials(null)}>{t('common.close')}</button>}
       >
         {credentials && (
           <>
-            <p className="notice notice--warn">{t('members.writeItDown')}</p>
             <dl className="joinreq__creds">
               <div><dt>{t('common.name')}</dt><dd>{credentials.name}</dd></div>
               <div><dt>{t('login.username')}</dt><dd><code>{credentials.username}</code></dd></div>
-              <div><dt>{t('login.password')}</dt><dd><code className="joinreq__pass">{credentials.password}</code></dd></div>
             </dl>
             <p className={credentials.smsSent ? 'notice notice--good' : 'notice notice--danger'}>
-              {credentials.smsSent
-                ? 'These have been texted to their phone.'
-                : 'The text did not go out. Give them these details yourself.'}
+              {credentials.smsSent ? t('admin.passwordTexted') : t('admin.passwordNotTexted')}
             </p>
           </>
         )}

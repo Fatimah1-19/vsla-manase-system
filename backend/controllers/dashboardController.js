@@ -141,6 +141,41 @@ const getDashboard = wrap(async (req, res) => {
     });
   }
 
+  // ---------- System administrator ----------
+  // She looks after the accounts and the system itself. No money is ever shown.
+  if (role === 'system_admin') {
+    const [people, locked, pendingChanges, pendingJoins, smsToday, systemRows, recent] = await Promise.all([
+      one(`SELECT COUNT(*) FILTER (WHERE role='admin')::int       AS chairpersons,
+                  COUNT(*) FILTER (WHERE role='treasurer')::int   AS treasurers,
+                  COUNT(*) FILTER (WHERE role='secretary')::int   AS secretaries,
+                  COUNT(*) FILTER (WHERE role='system_admin')::int AS administrators,
+                  COUNT(*) FILTER (WHERE role='member')::int      AS members,
+                  COUNT(*) FILTER (WHERE is_active = TRUE)::int   AS active,
+                  COUNT(*)::int                                   AS total FROM users`),
+      one(`SELECT COUNT(*)::int AS c FROM users WHERE locked_until > NOW()`),
+      one(`SELECT COUNT(*)::int AS c FROM change_requests WHERE status = 'pending'`),
+      one(`SELECT COUNT(*)::int AS c FROM join_requests WHERE status = 'pending'`),
+      one(`SELECT COUNT(*)::int AS c FROM sms_notifications WHERE sent_at::date = CURRENT_DATE`),
+      query(`SELECT setting_key, setting_value FROM settings WHERE setting_key = ANY($1)`,
+        [['session_timeout_minutes', 'max_login_attempts', 'lock_minutes', 'reset_max_tries', 'sms_enabled']]),
+      query(`SELECT a.action, a.details, a.created_at, u.full_name
+               FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id
+              WHERE a.action IN ('LOGIN','LOGIN_LOCKED','LOGOUT','PASSWORD_RESET','ADMIN_RESET_PASSWORD',
+                                 'PASSWORD_RESET_FAILED','PASSWORD_RESET_BLOCKED')
+              ORDER BY a.created_at DESC LIMIT 8`),
+    ]);
+
+    return res.json({
+      ...base,
+      users: { ...people, locked: locked.c },
+      pending_change_requests: pendingChanges.c,
+      pending_join_requests: pendingJoins.c,
+      sms_today: smsToday.c,
+      system_settings: Object.fromEntries(systemRows.map((r) => [r.setting_key, r.setting_value])),
+      recent_activity: recent,
+    });
+  }
+
   // ---------- Committee: admin, treasurer, secretary ----------
   // Every question this role needs goes out at the same moment. With the database
   // far away each trip costs about a third of a second, so asking one by one made

@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { analytics } = require('../controllers/analyticsController');
-const { protect, committee } = require('../middleware/auth');
+const { protect, committee, blockSystemAdmin } = require('../middleware/auth');
 
-router.get('/', protect, committee(), analytics);
+router.get('/', protect, blockSystemAdmin, committee(), analytics);
 
 module.exports = router;

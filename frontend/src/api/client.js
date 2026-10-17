@@ -75,6 +75,7 @@ export async function fetchFile(path) {
   return URL.createObjectURL(await res.blob());
 }
 
+
 export const api = {
   get:   (p, o)    => request('GET', p, undefined, o),
   post:  (p, b, o) => request('POST', p, b, o),

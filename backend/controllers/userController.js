@@ -6,6 +6,8 @@ const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
 
+// Roles the chairperson may hand out. The system administrator is deliberately
+// not here: that account is created when the group is set up, not from a page.
 const ROLES = ['admin', 'treasurer', 'secretary', 'member'];
 
 // Suspending, dismissing or bringing back an ordinary member is the members' decision,
@@ -99,8 +101,8 @@ const createUser = wrap(async (req, res) => {
     message: `${full_name} has been added.`,
     user: created.user,
     member: created.member,
-    // Shown once so the admin can write it down if the SMS did not go through.
-    temporary_password: plainPassword,
+    // The password is only ever sent to the person by text. It is never
+    // returned here, so nobody but them can read it.
     sms_sent: smsResult.ok,
     sms_error: smsResult.ok ? null : smsResult.error,
   });
@@ -195,7 +197,11 @@ const adminResetPassword = wrap(async (req, res) => {
   }
 
   await audit(req.user.id, 'ADMIN_RESET_PASSWORD', 'users', id, user.username);
-  res.json({ message: `New password created for ${user.full_name}.`, temporary_password: plain, sms_sent: sms.ok });
+  // The new password is only sent to the person by text, never returned here.
+  res.json({
+    message: `A new password was created for ${user.full_name} and sent to them by text.`,
+    sms_sent: sms.ok,
+  });
 });
 
 // POST /api/users/:id/unlock — clear a lockout before the 5 minutes are up

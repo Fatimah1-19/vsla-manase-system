@@ -1,8 +1,8 @@
 ﻿const router = require('express').Router();
 const c = require('../controllers/reportController');
-const { protect, committee } = require('../middleware/auth');
+const { protect, committee, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/absentees', committee(), c.listAbsentees);
 router.get('/absentee-register', committee(), c.listAbsenteeRegister);
 router.get('/group', committee(), c.groupReport);

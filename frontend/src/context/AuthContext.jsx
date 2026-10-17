@@ -5,8 +5,7 @@ import { useToast } from './ToastContext.jsx';
 
 const AuthContext = createContext(null);
 
-// Log out after this long with no touch, tap or keypress.
-const IDLE_LIMIT_MS = 10 * 60 * 1000;
+// Show the "still there?" box this long before a quiet session closes.
 const WARN_BEFORE_MS = 60 * 1000;
 
 export function AuthProvider({ children }) {
@@ -14,6 +13,9 @@ export function AuthProvider({ children }) {
   const [checking, setChecking] = useState(true);
   const [idleWarning, setIdleWarning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(60);
+  // How long a quiet session stays open. The administrator sets this on the
+  // System settings page; 10 minutes is used until the first sign-in tells us.
+  const [idleMinutes, setIdleMinutes] = useState(10);
 
   const { setLang, t } = useLang();
   const toast = useToast();
@@ -93,21 +95,24 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user) { clearTimers(); return undefined; }
 
+    const idleMs = Math.max(1, Number(idleMinutes) || 10) * 60 * 1000;
+    const warnMs = Math.min(WARN_BEFORE_MS, Math.max(15 * 1000, Math.floor(idleMs / 2)));
+
     const startCountdown = () => {
       showWarning(true);
-      setSecondsLeft(Math.round(WARN_BEFORE_MS / 1000));
+      setSecondsLeft(Math.round(warnMs / 1000));
       tickTimer.current = setInterval(() => {
         setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
       }, 1000);
       outTimer.current = setTimeout(() => {
         logout(tRef.current('idle.loggedOut'));
-      }, WARN_BEFORE_MS);
+      }, warnMs);
     };
 
     const reset = () => {
       clearTimers();
       showWarning(false);
-      warnTimer.current = setTimeout(startCountdown, IDLE_LIMIT_MS - WARN_BEFORE_MS);
+      warnTimer.current = setTimeout(startCountdown, Math.max(0, idleMs - warnMs));
     };
     resetRef.current = reset;
 
@@ -133,7 +138,7 @@ export function AuthProvider({ children }) {
       clearTimers();
       resetRef.current = null;
     };
-  }, [user, clearTimers, logout, showWarning]);
+  }, [user, idleMinutes, clearTimers, logout, showWarning]);
 
   const applyUser = useCallback((u) => {
     setUser(u);
@@ -146,8 +151,11 @@ export function AuthProvider({ children }) {
     (async () => {
       if (!getToken()) { setChecking(false); return; }
       try {
-        const { user: me } = await api.get('/auth/me');
-        if (!cancelled) applyUser(me);
+        const { user: me, session_timeout_minutes } = await api.get('/auth/me');
+        if (!cancelled) {
+          applyUser(me);
+          if (session_timeout_minutes) setIdleMinutes(session_timeout_minutes);
+        }
       } catch {
         setToken(null);
       } finally {
@@ -161,6 +169,7 @@ export function AuthProvider({ children }) {
     const data = await api.post('/auth/login', { username, password }, { auth: false });
     setToken(data.token);
     applyUser(data.user);
+    if (data.session_timeout_minutes) setIdleMinutes(data.session_timeout_minutes);
     return data.user;
   }, [applyUser]);
 
@@ -182,6 +191,8 @@ export function AuthProvider({ children }) {
       // Treasurer and secretary: the two who write everything in the books.
       isRecorder: !!user && ['treasurer', 'secretary'].includes(user.role),
       isAdmin: user?.role === 'admin',
+      // The administrator looks after accounts and the system, never the books.
+      isSystemAdmin: user?.role === 'system_admin',
     }),
     [user, checking, login, logout, refresh, avatar, idleWarning, secondsLeft]
   );

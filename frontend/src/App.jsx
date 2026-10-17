@@ -23,11 +23,17 @@ import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Wrappers from './pages/Wrappers.jsx';
+import Approvals from './pages/Approvals.jsx';
+import AdminUsers from './pages/AdminUsers.jsx';
+import SystemSettings from './pages/SystemSettings.jsx';
 import NotFound from './pages/NotFound.jsx';
 import './styles.css';
 
 const COMMITTEE = ['admin', 'treasurer', 'secretary'];
 const EVERYONE = ['admin', 'treasurer', 'secretary', 'member'];
+// The administrator is not part of the group's book-keeping, so she is kept out
+// of every money page. She can still look at join requests.
+const EVERYONE_AND_ADMIN = [...EVERYONE, 'system_admin'];
 
 export default function App() {
   return (
@@ -46,21 +52,24 @@ export default function App() {
         <Route path="savings"  element={<ProtectedRoute roles={COMMITTEE}><Savings /></ProtectedRoute>} />
         <Route path="analytics" element={<ProtectedRoute roles={COMMITTEE}><Analytics /></ProtectedRoute>} />
         <Route path="reports"   element={<Navigate to="/app/analytics?tab=reports" replace />} />
-        <Route path="wrappers" element={<Wrappers />} />
-        <Route path="loans"    element={<Loans />} />
+        <Route path="wrappers" element={<ProtectedRoute roles={EVERYONE}><Wrappers /></ProtectedRoute>} />
+        <Route path="loans"    element={<ProtectedRoute roles={EVERYONE}><Loans /></ProtectedRoute>} />
         <Route path="members"  element={<ProtectedRoute roles={COMMITTEE}><Members /></ProtectedRoute>} />
-        <Route path="meetings" element={<Meetings />} />
-        <Route path="welfare"  element={<Welfare />} />
-        <Route path="fines"    element={<Fines />} />
-        <Route path="shareout" element={<ShareOut />} />
-        <Route path="requests" element={<JoinRequests />} />
-        <Route path="cases"    element={<Cases />} />
-        <Route path="leadership" element={<Leadership />} />
+        <Route path="meetings" element={<ProtectedRoute roles={EVERYONE}><Meetings /></ProtectedRoute>} />
+        <Route path="welfare"  element={<ProtectedRoute roles={EVERYONE}><Welfare /></ProtectedRoute>} />
+        <Route path="fines"    element={<ProtectedRoute roles={EVERYONE}><Fines /></ProtectedRoute>} />
+        <Route path="shareout" element={<ProtectedRoute roles={EVERYONE}><ShareOut /></ProtectedRoute>} />
+        <Route path="requests" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><JoinRequests /></ProtectedRoute>} />
+        <Route path="cases"    element={<ProtectedRoute roles={EVERYONE}><Cases /></ProtectedRoute>} />
+        <Route path="leadership" element={<ProtectedRoute roles={EVERYONE}><Leadership /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
-        <Route path="activity" element={<ProtectedRoute roles={COMMITTEE}><Activity /></ProtectedRoute>} />
+        <Route path="activity" element={<ProtectedRoute roles={[...COMMITTEE, 'system_admin']}><Activity /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute roles={['admin']}><Settings /></ProtectedRoute>} />
-        <Route path="profile"  element={<ProtectedRoute roles={EVERYONE}><Profile /></ProtectedRoute>} />
+        <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
+        <Route path="admin/users" element={<ProtectedRoute roles={['system_admin']}><AdminUsers /></ProtectedRoute>} />
+        <Route path="admin/settings" element={<ProtectedRoute roles={['system_admin']}><SystemSettings /></ProtectedRoute>} />
+        <Route path="profile"  element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Profile /></ProtectedRoute>} />
       </Route>
 
       {/* Old links from the HTML version */}

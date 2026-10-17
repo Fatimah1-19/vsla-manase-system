@@ -5,11 +5,24 @@ const { query, one } = require('../config/db');
 const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
+const { getSetting } = require('../utils/helpers');
 const { wrap } = require('../middleware/errorHandler');
 
-const MAX_ATTEMPTS = Number(process.env.MAX_LOGIN_ATTEMPTS || 3);
-const LOCK_MINUTES = Number(process.env.LOCK_MINUTES || 5);
+// The administrator sets the security numbers on the System settings page. The
+// environment values are only the fallback used before the table is filled in.
 const RESET_MINUTES = 10;
+const envInt = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d);
+
+async function num(key, fallback) {
+  const v = await getSetting(key, null);
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+const maxAttempts = () => num('max_login_attempts', envInt(process.env.MAX_LOGIN_ATTEMPTS, 3));
+const lockMinutes = () => num('lock_minutes', envInt(process.env.LOCK_MINUTES, 5));
+const resetMaxTries = () => num('reset_max_tries', 3);
+const sessionTimeout = () => num('session_timeout_minutes', 10);
+const smsEnabled = async () => String(await getSetting('sms_enabled', 'true')).toLowerCase() !== 'false';
 
 function signToken(user) {
   return jwt.sign(
@@ -63,6 +76,8 @@ const login = wrap(async (req, res) => {
   }
 
   const match = await bcrypt.compare(password, user.password);
+  const MAX_ATTEMPTS = await maxAttempts();
+  const LOCK_MINUTES = await lockMinutes();
 
   if (!match) {
     const attempts = user.failed_attempts + 1;
@@ -101,12 +116,13 @@ const login = wrap(async (req, res) => {
     message: 'Logged in.',
     token: signToken(user),
     user: publicUser(user, member ? member.id : null),
+    session_timeout_minutes: await sessionTimeout(),
   });
 });
 
 // GET /api/auth/me
 const me = wrap(async (req, res) => {
-  res.json({ user: req.user });
+  res.json({ user: req.user, session_timeout_minutes: await sessionTimeout() });
 });
 
 // POST /api/auth/forgot  { username }  -> texts a 6-digit code
@@ -133,10 +149,12 @@ const forgotPassword = wrap(async (req, res) => {
     [user.id, codeHash, String(RESET_MINUTES)]
   );
 
-  await sendSMS(user.phone, build('passwordResetCode', user.language, { code, minutes: RESET_MINUTES }), {
-    name: user.full_name,
-    category: 'password_reset',
-  });
+  if (await smsEnabled()) {
+    await sendSMS(user.phone, build('passwordResetCode', user.language, { code, minutes: RESET_MINUTES }), {
+      name: user.full_name,
+      category: 'password_reset',
+    });
+  }
 
   await audit(user.id, 'PASSWORD_RESET_REQUESTED', 'users', user.id, null);
 
@@ -169,15 +187,21 @@ const resetPassword = wrap(async (req, res) => {
   );
   if (!reset) return res.status(400).json({ message: 'That code is wrong or has expired. Ask for a new one.' });
 
-  if (reset.attempts >= 5) {
+  const MAX_TRIES = await resetMaxTries();
+  if (reset.attempts >= MAX_TRIES) {
     await query(`UPDATE password_resets SET used = TRUE WHERE id = $1`, [reset.id]);
+    await audit(user.id, 'PASSWORD_RESET_BLOCKED', 'users', user.id, `After ${MAX_TRIES} wrong codes`);
     return res.status(429).json({ message: 'Too many wrong codes. Ask for a new code.' });
   }
 
   const codeOk = await bcrypt.compare(code, reset.code_hash);
   if (!codeOk) {
     await query(`UPDATE password_resets SET attempts = attempts + 1 WHERE id = $1`, [reset.id]);
-    return res.status(400).json({ message: 'That code is wrong.', attempts_remaining: 4 - reset.attempts });
+    await audit(user.id, 'PASSWORD_RESET_FAILED', 'users', user.id, `Try ${reset.attempts + 1} of ${MAX_TRIES}`);
+    return res.status(400).json({
+      message: 'That code is wrong.',
+      attempts_remaining: Math.max(MAX_TRIES - reset.attempts - 1, 0),
+    });
   }
 
   const hashed = await bcrypt.hash(newPassword, 10);

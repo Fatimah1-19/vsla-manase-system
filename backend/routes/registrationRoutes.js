@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/registrationController');
-const { protect, authorize, committee, recorders } = require('../middleware/auth');
+const { protect, authorize, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', committee(), c.listFees);
 router.post('/', recorders(), c.recordFee);
 router.delete('/:id', authorize('admin'), c.remove);

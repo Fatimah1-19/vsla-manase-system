@@ -71,7 +71,10 @@ function authorize(...roles) {
   };
 }
 
-/** Anyone who keeps the books: admin, treasurer or secretary. */
+/**
+ * Anyone who keeps the books: the chairperson (admin), treasurer or secretary.
+ * The system administrator is deliberately not one of them.
+ */
 const committee = () => authorize('admin', 'treasurer', 'secretary');
 
 /**
@@ -81,4 +84,19 @@ const committee = () => authorize('admin', 'treasurer', 'secretary');
  */
 const recorders = () => authorize('treasurer', 'secretary');
 
-module.exports = { protect, authorize, committee, recorders };
+/**
+ * The system administrator looks after accounts and the system itself. This is
+ * NOT an office: she never keeps the books and never holds a seat. Wherever
+ * money is handled she is refused with 403.
+ */
+const systemAdmin = () => authorize('system_admin');
+
+/** Refuse the system administrator on any route that handles money. */
+function blockSystemAdmin(req, res, next) {
+  if (req.user && req.user.role === 'system_admin') {
+    return res.status(403).json({ message: 'Administrators cannot open money records.' });
+  }
+  next();
+}
+
+module.exports = { protect, authorize, committee, recorders, systemAdmin, blockSystemAdmin };

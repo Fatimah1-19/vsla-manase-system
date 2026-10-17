@@ -462,3 +462,64 @@ ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFA
 -- Older databases collected the background per member vote; that column is no
 -- longer written, but it is left in place so nothing is lost.
 ALTER TABLE join_request_votes ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- =====================================================================
+--  SYSTEM ADMINISTRATOR
+--  A new role that looks after accounts and the system itself. It is NOT an
+--  office: the chairperson (role 'admin'), treasurer and secretary keep the
+--  books. An administrator may never touch money and never holds an office.
+-- =====================================================================
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('admin','treasurer','secretary','member','system_admin'));
+
+-- Settings are now split in two: 'group' rules (chairperson, confirmed by the
+-- treasurer) and 'system' settings (the administrator). Anything already stored
+-- stays a group rule.
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS setting_group VARCHAR(12) NOT NULL DEFAULT 'group';
+CREATE INDEX IF NOT EXISTS idx_settings_group ON settings(setting_group);
+
+INSERT INTO settings (setting_key, setting_value, setting_group) VALUES
+  ('session_timeout_minutes', '10', 'system'),  -- how long a quiet session stays open
+  ('max_login_attempts',      '3',  'system'),  -- wrong passwords before a lock
+  ('lock_minutes',            '5',  'system'),  -- how long the lock lasts
+  ('reset_max_tries',         '3',  'system'),  -- tries at one SMS reset code
+  ('sms_enabled',             'true', 'system') -- turn text messages on or off
+ON CONFLICT (setting_key) DO NOTHING;
+
+-- A change the administrator proposes (an account change) or the chairperson
+-- proposes (a group-rule change). It does nothing until the approver confirms.
+CREATE TABLE IF NOT EXISTS change_requests (
+  id             SERIAL PRIMARY KEY,
+  kind           VARCHAR(30) NOT NULL
+                 CHECK (kind IN ('update_user','deactivate_user','reactivate_user','group_rules')),
+  requested_by   INT NOT NULL REFERENCES users(id),
+  approver_role  VARCHAR(20) NOT NULL,            -- 'admin' (chairperson) or 'treasurer'
+  target_user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  payload        JSONB NOT NULL DEFAULT '{}'::jsonb,
+  reason         TEXT,
+  status         VARCHAR(10) NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','approved','rejected','withdrawn')),
+  decided_by     INT REFERENCES users(id),
+  decided_at     TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_change_requests_status ON change_requests(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_change_requests_approver ON change_requests(approver_role, status);
+
+-- The audit trail is append-only: rows may be added but never changed or
+-- removed, even by a mistake in the application code.
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_logs(user_id);
+
+CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'audit_logs is append-only';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS audit_append_only ON audit_logs;
+CREATE TRIGGER audit_append_only
+  BEFORE UPDATE OR DELETE ON audit_logs
+  FOR EACH ROW EXECUTE FUNCTION prevent_audit_change();

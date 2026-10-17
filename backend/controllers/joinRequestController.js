@@ -122,7 +122,10 @@ const vote = wrap(async (req, res) => {
  */
 const decideRequest = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { status, role = 'member', language = 'ny' } = req.body;
+  const { status, language = 'ny' } = req.body;
+  // Whoever joins from the public form is an ordinary member. The role is never
+  // taken from the request body, so nobody can talk their way into an office.
+  const role = 'member';
 
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ message: 'The decision must be approved or rejected.' });
@@ -151,7 +154,7 @@ const decideRequest = wrap(async (req, res) => {
     const { rows: userRows } = await client.query(
       `INSERT INTO users (username, password, role, full_name, phone, language, must_change_password)
        VALUES ($1,$2,$3,$4,$5,$6,TRUE) RETURNING id, username, full_name, language`,
-      [username, hashed, role === 'member' ? 'member' : role, request.full_name, request.phone,
+      [username, hashed, role, request.full_name, request.phone,
        language === 'en' ? 'en' : 'ny']
     );
     const user = userRows[0];
@@ -183,8 +186,8 @@ const decideRequest = wrap(async (req, res) => {
   res.json({
     message: `${request.full_name} has joined the group.`,
     username: created.user.username,
-    temporary_password: plain,
     membership_number: created.member.membership_number,
+    // The password was sent to them by text and is never returned here.
     sms_sent: sms.ok,
   });
 });

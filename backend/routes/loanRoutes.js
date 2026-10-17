@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/loanController');
-const { protect, authorize, committee, recorders } = require('../middleware/auth');
+const { protect, authorize, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', c.listLoans);                                   // members see their own
 router.get('/overdue', committee(), c.overdueLoans);
 router.get('/limit', c.borrowingLimit);                         // savings x multiplier

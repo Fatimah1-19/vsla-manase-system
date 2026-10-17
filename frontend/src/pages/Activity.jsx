@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api/client.js';
+import { useCallback, useEffect, useState } from 'react';
+import { api, fetchFile } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
@@ -7,6 +7,9 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { dateTime, humanAction } from '../utils/format.js';
 import '../styles.css';
+
+const PAGE_SIZE = 50;
+const EMPTY_FILTERS = { q: '', action: '', from: '', to: '' };
 
 /** One event line, shared by the sittings below and the "other events" list. */
 function EventRow({ event, t, showWho }) {
@@ -25,26 +28,125 @@ function EventRow({ event, t, showWho }) {
   );
 }
 
+/** The plain history list: every recorded step, filtered and downloadable. */
+function LogTab({ t, toast }) {
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState(null);
+
+  const query = useCallback((forPage) => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+    p.set('page', forPage);
+    p.set('limit', PAGE_SIZE);
+    return p;
+  }, [filters]);
+
+  useEffect(() => {
+    setData(null);
+    api.get(`/audit?${query(page)}`).then(setData).catch((e) => toast.error(e.message));
+  }, [query, page, toast]);
+
+  const set = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })); };
+
+  const exportCsv = () => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+    fetchFile(`/audit/export?${p}`).then((url) => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'activity.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }).catch((e) => toast.error(e.message));
+  };
+
+  if (!data) return <Spinner />;
+
+  const total = data.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <>
+      <div className="activity__filters">
+        <input
+          className="activity__search"
+          placeholder={t('activity.filterSearch')}
+          value={filters.q}
+          onChange={(e) => set('q', e.target.value)}
+        />
+        <select value={filters.action} onChange={(e) => set('action', e.target.value)}>
+          <option value="">{t('activity.anyAction')}</option>
+          {(data.actions || []).map((a) => <option key={a} value={a}>{humanAction(a)}</option>)}
+        </select>
+        <label className="activity__date">
+          <span>{t('activity.filterFrom')}</span>
+          <input type="date" value={filters.from} onChange={(e) => set('from', e.target.value)} />
+        </label>
+        <label className="activity__date">
+          <span>{t('activity.filterTo')}</span>
+          <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
+        </label>
+        <button type="button" className="btn btn--ghost btn--small" onClick={exportCsv}>
+          {t('activity.export')}
+        </button>
+      </div>
+
+      {data.rows.length === 0 ? (
+        <EmptyState title={t('activity.logEmpty')} />
+      ) : (
+        <>
+          <ul className="activity__list activity__list--log">
+            {data.rows.map((event) => <EventRow key={event.id} event={event} t={t} showWho />)}
+          </ul>
+          <div className="activity__pager">
+            <button type="button" className="btn btn--ghost btn--small" disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}>{t('activity.previous')}</button>
+            <span className="muted">{t('activity.pageOf', page, pages)}</span>
+            <button type="button" className="btn btn--ghost btn--small" disabled={page >= pages}
+              onClick={() => setPage((p) => Math.min(pages, p + 1))}>{t('activity.next')}</button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 /** Who signed in, when they left, and everything done in between. */
 export default function Activity() {
   const { t } = useLang();
   const toast = useToast();
+  const [tab, setTab] = useState('sessions');
   const [data, setData] = useState(null);
 
   useEffect(() => {
+    if (tab !== 'sessions') return;
     api.get('/audit/sessions?limit=1000').then(setData).catch((e) => toast.error(e.message));
-  }, [toast]);
+  }, [tab, toast]);
 
-  if (!data) return <Spinner />;
-
-  const sessions = data.sessions || [];
-  const unassigned = data.unassigned || [];
+  const sessions = data?.sessions || [];
+  const unassigned = data?.unassigned || [];
 
   return (
     <div className="activity">
       <PageHeader title={t('nav.activity')} subtitle={t('activity.subtitle')} />
 
-      {sessions.length === 0 && unassigned.length === 0 ? (
+      <div className="activity__tabs" role="tablist">
+        {['sessions', 'log'].map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k}
+            className={tab === k ? 'activity__tab is-on' : 'activity__tab'} onClick={() => setTab(k)}>
+            {k === 'sessions' ? t('activity.sittings') : t('activity.fullLog')}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'log' ? (
+        <LogTab t={t} toast={toast} />
+      ) : !data ? (
+        <Spinner />
+      ) : sessions.length === 0 && unassigned.length === 0 ? (
         <EmptyState title={t('common.none')} />
       ) : (
         <>

@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/cycleController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', c.listCycles);
 router.get('/active', c.activeCycle);
 router.post('/', authorize('admin'), c.createCycle);

@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/memberController');
-const { protect, committee } = require('../middleware/auth');
+const { protect, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', c.listMembers);
 router.get('/me', c.getMyRecord);
 router.get('/:id/avatar', c.getMemberAvatar);

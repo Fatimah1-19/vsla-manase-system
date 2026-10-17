@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/savingsController');
-const { protect, authorize, committee, recorders } = require('../middleware/auth');
+const { protect, authorize, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
 
-router.use(protect);
+router.use(protect, blockSystemAdmin);
 router.get('/', committee(), c.listSavings);
 router.get('/summary', committee(), c.savingsSummary);
 router.post('/', recorders(), c.recordSaving);

@@ -38,6 +38,8 @@ app.use(express.json({ limit: '1mb' }));
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/approvals', require('./routes/approvalRoutes'));
 app.use('/api/members', require('./routes/memberRoutes'));
 app.use('/api/savings', require('./routes/savingsRoutes'));
 app.use('/api/loans', require('./routes/loanRoutes'));
