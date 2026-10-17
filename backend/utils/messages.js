@@ -106,6 +106,10 @@ const T = {
     en: (p) => `Hello ${p.name}, your password was changed. If this was not you, tell the chairperson at once. — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, achinsinsi anu asinthidwa. Ngati sanali inu, uzani mtsogoleri msanga. — ${GROUP}`,
   },
+  passwordResetByAdmin: {
+    en: (p) => `Hello ${p.name}, a new password has been set for your account. Your username is ${p.username} and your temporary password is ${p.password}. Please change it after you log in. — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, achinsinsi atsopano akhazikitsidwa pa akaunti yanu. Dzina lanu logwiritsa ntchito ndi ${p.username} ndipo achinsinsi anu a kanthawi ndi ${p.password}. Chonde asinthe mukalowa. — ${GROUP}`,
+  },
   loanDueSoon: {
     en: (p) => `Hello ${p.name}, your loan of ${money(p.outstanding)} is due on ${day(p.dueDate)}. Please repay before the cycle ends. — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, ngongole yanu ya ${money(p.outstanding)} iyenera kubwezedwa pa ${day(p.dueDate)}. Chonde bwezani nyengo isanathe. — ${GROUP}`,

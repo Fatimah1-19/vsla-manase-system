@@ -35,6 +35,25 @@ const listMembers = wrap(async (req, res) => {
   res.json(rows);
 });
 
+// GET /api/admin/accounts/:id — one account, for the "view details" panel
+const getAccount = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+
+  const row = await one(
+    `SELECT u.id, u.username, u.role, u.full_name, u.phone, u.language, u.is_active,
+            u.last_login, u.created_at, u.locked_until, u.must_change_password,
+            m.membership_number, m.status AS member_status, m.village,
+            (m.avatar IS NOT NULL) AS has_avatar
+       FROM users u
+       LEFT JOIN members m ON m.user_id = u.id
+      WHERE u.id = $1`,
+    [id]
+  );
+  if (!row) return res.status(404).json({ message: 'That account does not exist.' });
+  res.json(row);
+});
+
 // POST /api/admin/accounts — the administrator opens an account for a new member
 const createAccount = wrap(async (req, res) => {
   const { full_name, phone, language = 'ny', village } = req.body || {};
@@ -323,6 +342,7 @@ const setSystemRole = wrap(async (req, res) => {
   });
   if (!verdict.ok) {
     const messages = {
+      chairperson_conflict: 'A user cannot simultaneously hold the System Administrator and Chairperson roles because these responsibilities must remain separated.',
       is_office: 'The committee posts are decided by a vote of the members, not from here.',
       already_admin: 'That account is already an administrator.',
       not_admin: 'That account is not a system administrator.',
@@ -352,7 +372,50 @@ const setSystemRole = wrap(async (req, res) => {
   });
 });
 
+// POST /api/admin/accounts/:id/reset-password — the administrator sets a fresh
+// password and texts it. The member must choose her own the next time she signs in.
+const resetAccountPassword = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+  if (id === req.user.id) return res.status(400).json({ message: 'Use Change password for your own account.' });
+
+  const target = await one(`SELECT id, username, full_name, phone, language FROM users WHERE id = $1`, [id]);
+  if (!target) return res.status(404).json({ message: 'That account does not exist.' });
+
+  const plain = tempPassword();
+  const hashed = await bcrypt.hash(plain, 10);
+
+  await query(
+    `UPDATE users SET password = $2, must_change_password = TRUE, failed_attempts = 0, locked_until = NULL WHERE id = $1`,
+    [id, hashed]
+  );
+  await query(`UPDATE password_resets SET used = TRUE WHERE user_id = $1 AND used = FALSE`, [id]);
+
+  let smsResult = { ok: false, error: 'No phone number on file' };
+  if (target.phone) {
+    smsResult = await sendSMS(
+      target.phone,
+      build('passwordResetByAdmin', target.language, { name: target.full_name, username: target.username, password: plain }),
+      { name: target.full_name, category: 'password_reset', sentBy: req.user.id }
+    );
+  }
+
+  await audit(req.user.id, 'ADMIN_RESET_PASSWORD', 'users', id, target.full_name);
+
+  res.json({
+    message: smsResult.ok
+      ? `A new password has been texted to ${target.full_name}.`
+      : `A new password was created for ${target.full_name}.`,
+    username: target.username,
+    sms_sent: smsResult.ok,
+    sms_error: smsResult.ok ? null : smsResult.error,
+    // Handed back only when it could not be texted, so the administrator can pass it on.
+    temporary_password: smsResult.ok ? undefined : plain,
+  });
+});
+
 module.exports = {
-  listMembers, createAccount, listMyChangeRequests, proposeChange, withdrawChangeRequest,
+  listMembers, getAccount, createAccount, resetAccountPassword,
+  listMyChangeRequests, proposeChange, withdrawChangeRequest,
   listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,
 };

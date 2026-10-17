@@ -532,6 +532,48 @@ export default {
     smsLabel: 'Send text messages',
     saved: 'Saved.',
     on: 'On', off: 'Off',
+    // User table, filters and actions
+    contact: 'Contact', created: 'Created', statusLocked: 'Locked',
+    searchUsers: 'Search by name, username or phone',
+    allRoles: 'All roles', allStatus: 'All statuses',
+    noUsers: 'No account matches your search.',
+    resetPassword: 'Reset password', manageRole: 'Manage role',
+    // Account details panel
+    userDetails: 'Account details', username: 'Username', membershipNumber: 'Member number',
+    mustChange: 'Must change password',
+    resetNoPhone: 'No phone number on file. Give them this temporary password:',
+    // Manage role panel
+    roleSelfLocked: 'You cannot change your own role.',
+    roleNote: 'A plain member may be made a system administrator, and an administrator turned back into a member. The committee posts are decided by a vote of the members.',
+    // Roles & permissions
+    separationTitle: 'Roles that cannot be held together',
+    separationAllowed: 'System Administrator + Member: allowed. An administrator is a member like everyone else.',
+    separationBody: 'A user cannot simultaneously hold the System Administrator and Chairperson roles because these responsibilities must remain separated.',
+    officeVoteNote: 'The committee posts are won by a vote of the members, never handed out from here.',
+    caps: {
+      system_admin: [
+        'User management', 'Role management', 'Technical settings',
+        'VSLA configuration management', 'Audit trail', 'System activity',
+        'SMS and notification configuration',
+      ],
+      admin: [
+        'Membership decisions', 'Membership approval and rejection', 'Committee functions',
+        'Confirmation of important VSLA configuration changes',
+        'Other authorised Chairperson functions',
+      ],
+      treasurer: [
+        'Savings', 'Loans', 'Loan repayments', 'Fines', 'Welfare',
+        'Other authorised financial transactions',
+      ],
+      secretary: [
+        'Membership records', 'Meetings', 'Attendance', 'Administrative records',
+        'Other authorised Secretary functions',
+      ],
+      member: [
+        'View permitted information', 'View own records',
+        'Participate in membership voting', 'Other permitted member functions',
+      ],
+    },
   },
 
   activity: {

@@ -525,6 +525,48 @@ export default {
     smsLabel: 'Tumizani mauthenga',
     saved: 'Zasungidwa.',
     on: 'Yatsegulidwa', off: 'Yatsekedwa',
+    // User table, filters and actions
+    contact: 'Kulumikizana', created: 'Zapangidwa', statusLocked: 'Yatsekedwa',
+    searchUsers: 'Fufuzani dzina, dzina lolowera kapena foni',
+    allRoles: 'Maudindo onse', allStatus: 'Mikhalidwe yonse',
+    noUsers: 'Palibe akaunti yogwirizana ndi kufufuza kwanu.',
+    resetPassword: 'Sinthani achinsinsi', manageRole: 'Yang\'anirani udindo',
+    // Account details panel
+    userDetails: 'Zambiri za akaunti', username: 'Dzina lolowera', membershipNumber: 'Nambala ya membala',
+    mustChange: 'Ayenera kusintha achinsinsi',
+    resetNoPhone: 'Palibe nambala ya foni. Apatseni achinsinsi a kanthawi awa:',
+    // Manage role panel
+    roleSelfLocked: 'Simungasinthe udindo wanu womwe.',
+    roleNote: 'Membala wamba akhoza kukhala woyang\'anira wa dongosolo, ndipo woyang\'anira akhoza kubwerera kukhala membala. Maudindo a komiti amasankhidwa ndi voti ya mamembala.',
+    // Roles & permissions
+    separationTitle: 'Maudindo omwe sangakhalire pamodzi',
+    separationAllowed: 'System Administrator + Member: zololedwa. Woyang\'anira ndi membala monga wina aliyense.',
+    separationBody: 'Wogwiritsa ntchito sangathe kukhala ndi maudindo a System Administrator ndi Chairperson nthawi imodzi chifukwa ntchito izi ziyenera kukhala zosiyana.',
+    officeVoteNote: 'Maudindo a komiti amapezedwa ndi voti ya mamembala, samaperekedwa kuchokera kuno.',
+    caps: {
+      system_admin: [
+        'Kuyang\'anira ogwiritsa ntchito', 'Kuyang\'anira maudindo', 'Zokhazikika za ukadaulo',
+        'Kusintha kasinthidwe ka VSLA', 'Kaundula wa zochitika', 'Zochitika za dongosolo',
+        'Kasinthidwe ka mauthenga',
+      ],
+      admin: [
+        'Zigamulo za umembala', 'Kuvomereza kapena kukana umembala', 'Ntchito za komiti',
+        'Kutsimikizira zosintha zazikulu za kasinthidwe ka VSLA',
+        'Ntchito zina zovomerezeka za Mtsogoleri',
+      ],
+      treasurer: [
+        'Zosunga', 'Ngongole', 'Kubweza ngongole', 'Zindapusa', 'Thandizo la chithandizo',
+        'Ntchito zina zovomerezeka zachuma',
+      ],
+      secretary: [
+        'Zolemba za umembala', 'Misonkhano', 'Kupezekapo', 'Zolemba za utsogoleri',
+        'Ntchito zina zovomerezeka za Mlembi',
+      ],
+      member: [
+        'Kuwona zomwe zaloledwa', 'Kuwona zolemba zanu',
+        'Kuvota pa nkhani za umembala', 'Ntchito zina zovomerezeka za membala',
+      ],
+    },
   },
 
   activity: {

@@ -38,8 +38,13 @@ const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
  * account? Only a plain member may be made an administrator, and the last active
  * administrator may never be turned back into a member. An elected office is
  * never touched from here: it is won by a vote of the members.
+ *
+ * The chairperson is singled out: the system administrator and the chairperson
+ * must stay two different people, because looking after the accounts and
+ * leading the group are responsibilities that must remain separated.
  */
 function canSetSystemRole({ targetRole, makeAdmin, activeAdministrators }) {
+  if (makeAdmin && targetRole === 'admin') return { ok: false, reason: 'chairperson_conflict' };
   if (['admin', 'treasurer', 'secretary'].includes(targetRole)) return { ok: false, reason: 'is_office' };
   if (makeAdmin && targetRole === 'system_admin') return { ok: false, reason: 'already_admin' };
   if (!makeAdmin && targetRole !== 'system_admin') return { ok: false, reason: 'not_admin' };

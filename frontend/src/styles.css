@@ -4838,3 +4838,45 @@ section[id] { scroll-margin-top: 4.5rem; }
 @media (min-width: 720px) {
   .sysadmin__grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- User management table, filters, details and role cards -------------- */
+.adminusers__filters {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin: 0.6rem 0 1.1rem;
+}
+.adminusers__search { flex: 1 1 240px; min-width: 180px; }
+.adminusers__filter { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--slate); }
+.adminusers__filter select { min-width: 150px; }
+.adminusers__scroll { overflow-x: auto; }
+.adminusers__table { min-width: 780px; }
+.adminusers__sub { margin-top: 0.15rem; font-size: 0.78rem; color: var(--slate); }
+.adminusers__rowActions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.adminusers__rowActions .btn { white-space: nowrap; }
+.adminusers__requestsCard { margin-top: 1.4rem; }
+.adminusers__details { margin: 0; display: grid; gap: 0.45rem; }
+.adminusers__details > div { display: flex; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.45rem; }
+.adminusers__details dt { color: var(--slate); font-size: 0.85rem; }
+.adminusers__details dd { margin: 0; font-weight: 600; text-align: right; }
+.adminusers__role p { margin: 0.2rem 0; }
+
+.rolesrules { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.rolesrules__item { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.6rem 0.75rem; border-radius: var(--radius); }
+.rolesrules__item--ok { background: var(--leaf-wash); color: var(--leaf-dark); }
+.rolesrules__item--no { background: var(--flame-wash); color: #7E271E; }
+.rolesrules__mark { font-weight: 800; line-height: 1.3; }
+
+.rolecards { display: grid; gap: 0.9rem; grid-template-columns: 1fr; margin-top: 0.6rem; }
+.rolecard { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: var(--card-pad); box-shadow: var(--shadow); }
+.rolecard--system_admin { border-top: 3px solid var(--leaf); }
+.rolecard--admin { border-top: 3px solid var(--sky); }
+.rolecard--treasurer { border-top: 3px solid var(--maize); }
+.rolecard--secretary { border-top: 3px solid var(--ink); }
+.rolecard--member { border-top: 3px solid var(--slate); }
+.rolecard__head { margin-bottom: 0.5rem; }
+.rolecard__name { margin: 0; font-size: 1.05rem; }
+.rolecard__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.rolecard__list li { position: relative; padding-left: 1.1rem; font-size: 0.9rem; }
+.rolecard__list li::before { content: '\2022'; position: absolute; left: 0.2rem; color: var(--leaf); font-weight: 800; }
+
+@media (min-width: 720px) {
+  .rolecards { grid-template-columns: 1fr 1fr; }
+}

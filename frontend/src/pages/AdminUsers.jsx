@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -10,34 +11,65 @@ import EmptyState from '../components/EmptyState.jsx';
 import { shortDate, dateTime } from '../utils/format.js';
 import '../styles.css';
 
-const langLabel = (lang, t) => (lang === 'en' ? t('admin.languageEn') : t('admin.languageNy'));
+const ROLE_ORDER = ['admin', 'treasurer', 'secretary', 'member', 'system_admin'];
+const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
 
-/** The system administrator opens accounts and asks the chairperson for changes. */
+/** How one account stands right now: locked by wrong passwords, or on/off. */
+function statusOf(a) {
+  if (a.locked_until && new Date(a.locked_until) > new Date()) return 'locked';
+  return a.is_active ? 'active' : 'suspended';
+}
+
+const STATUS_TAG = { active: 'tag--green', suspended: 'tag--grey', locked: 'tag--gold' };
+
+/**
+ * The account table. The administrator searches it, opens a person's details,
+ * asks the chairperson to change details or suspend an account, sets a fresh
+ * password herself, and hands out or takes back the system-administrator role.
+ */
 export default function AdminUsers() {
   const { t } = useLang();
   const toast = useToast();
   const confirm = useConfirm();
+  const { user } = useAuth();
 
   const [accounts, setAccounts] = useState(null);
   const [requests, setRequests] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [add, setAdd] = useState(null);         // the "open an account" form
-  const [edit, setEdit] = useState(null);       // the "ask for a change" form
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [busy, setBusy] = useState(0);
+
+  const [add, setAdd] = useState(null);      // the "open an account" form
+  const [edit, setEdit] = useState(null);    // the "ask for a change" form
+  const [view, setView] = useState(null);    // the details panel
+  const [roleFor, setRoleFor] = useState(null); // the "manage role" panel
 
   const load = useCallback(async () => {
-    const [members, reqs] = await Promise.all([
+    const [members, myRequests] = await Promise.all([
       api.get('/admin/members'),
       api.get('/admin/change-requests'),
     ]);
     setAccounts(members);
-    setRequests(reqs);
+    setRequests(myRequests);
   }, []);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (accounts || []).filter((a) => {
+      if (roleFilter && a.role !== roleFilter) return false;
+      if (statusFilter && statusOf(a) !== statusFilter) return false;
+      if (!q) return true;
+      return [a.full_name, a.username, a.phone, a.membership_number]
+        .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+    });
+  }, [accounts, search, roleFilter, statusFilter]);
+
   async function submitAdd(e) {
     e.preventDefault();
-    setBusy(true);
+    setBusy(-1);
     try {
       const res = await api.post('/admin/accounts', add);
       toast.success(res.message);
@@ -47,13 +79,13 @@ export default function AdminUsers() {
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setBusy(false);
+      setBusy(0);
     }
   }
 
   async function submitEdit(e) {
     e.preventDefault();
-    setBusy(true);
+    setBusy(-1);
     try {
       const payload = {};
       for (const key of ['full_name', 'phone', 'language', 'village']) {
@@ -68,7 +100,7 @@ export default function AdminUsers() {
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setBusy(false);
+      setBusy(0);
     }
   }
 
@@ -76,12 +108,55 @@ export default function AdminUsers() {
     const kind = account.is_active ? 'deactivate_user' : 'reactivate_user';
     const msg = account.is_active ? t('admin.suspend') : t('admin.reactivate');
     if (!(await confirm({ message: `${msg} — ${account.full_name}?` }))) return;
+    setBusy(account.id);
     try {
       await api.post('/admin/change-requests', { kind, target_user_id: account.id });
       toast.success(t('admin.requestSent'));
       await load();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setBusy(0);
+    }
+  }
+
+  async function resetPassword(account) {
+    if (!(await confirm({ message: `${t('admin.confirmReset')}` }))) return;
+    setBusy(account.id);
+    try {
+      const res = await api.post(`/admin/accounts/${account.id}/reset-password`);
+      if (res.temporary_password) {
+        toast.info(`${t('admin.resetNoPhone')} ${res.temporary_password}`);
+      } else {
+        toast.success(t('admin.resetDone'));
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(0);
+    }
+  }
+
+  async function applyRole(account, makeAdmin) {
+    setBusy(account.id);
+    try {
+      const res = await api.patch(`/admin/accounts/${account.id}/role`, { system_admin: makeAdmin });
+      toast.success(res.message);
+      setRoleFor(null);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(0);
+    }
+  }
+
+  async function openView(account) {
+    setView(account);
+    try {
+      setView(await api.get(`/admin/accounts/${account.id}`));
+    } catch {
+      // The row we already have is enough if the detail call fails.
     }
   }
 
@@ -105,76 +180,126 @@ export default function AdminUsers() {
         action={<button type="button" className="btn" onClick={() => setAdd({ full_name: '', phone: '', language: 'ny', village: '' })}>{t('admin.addMember')}</button>}
       />
 
-      <section className="sysadmin__grid">
-        <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('admin.myRequests')}</h2>
-          {requests.length === 0 ? (
-            <p className="muted">{t('admin.noRequests')}</p>
-          ) : (
-            <ul className="adminusers__requests">
-              {requests.map((r) => (
-                <li key={r.id} className="adminusers__request">
-                  <div>
-                    <strong>{t(`admin.kind_${r.kind}`)}</strong>
-                    {r.target_name ? <span className="muted"> · {r.target_name}</span> : null}
-                    <p className="muted">{shortDate(r.created_at)}</p>
-                  </div>
-                  <span className={`tag ${r.status === 'approved' ? 'tag--green' : r.status === 'rejected' ? 'tag--grey' : 'tag--gold'}`}>
-                    {t(`admin.status${r.status.charAt(0).toUpperCase()}${r.status.slice(1)}`)}
-                  </span>
-                  {r.status === 'pending' && (
-                    <button type="button" className="btn btn--ghost btn--small" onClick={() => withdraw(r.id)}>
-                      {t('admin.withdraw')}
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </section>
+      {/* Search and filters */}
+      <div className="adminusers__filters">
+        <input
+          className="adminusers__search"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('admin.searchUsers')}
+          aria-label={t('admin.searchUsers')}
+        />
+        <label className="adminusers__filter">
+          <span>{t('common.role')}</span>
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+            <option value="">{t('admin.allRoles')}</option>
+            {ROLE_ORDER.map((r) => <option key={r} value={r}>{t(`roles.${r}`)}</option>)}
+          </select>
+        </label>
+        <label className="adminusers__filter">
+          <span>{t('common.status')}</span>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">{t('admin.allStatus')}</option>
+            <option value="active">{t('admin.active')}</option>
+            <option value="suspended">{t('admin.suspended')}</option>
+            <option value="locked">{t('admin.statusLocked')}</option>
+          </select>
+        </label>
+      </div>
 
       <section>
         <h2 className="dash__sectionTitle">{t('admin.accounts')}</h2>
-        {accounts.length === 0 ? (
-          <EmptyState title={t('common.none')} />
+        {filtered.length === 0 ? (
+          <EmptyState title={t('admin.noUsers')} />
         ) : (
-          <ul className="adminusers__list">
-            {accounts.map((a) => (
-              <li key={a.id} className="adminusers__card">
-                <div className="adminusers__head">
-                  <div>
-                    <h3 className="adminusers__name">{a.full_name}</h3>
-                    <p className="adminusers__meta">
-                      <code>{a.username}</code>
-                      {a.phone ? ` · ${a.phone}` : ''}
-                      {a.membership_number ? ` · ${a.membership_number}` : ''}
-                    </p>
-                  </div>
-                  <div className="adminusers__tags">
-                    <span className="tag">{t(`roles.${a.role}`)}</span>
-                    <span className={`tag ${a.is_active ? 'tag--green' : 'tag--grey'}`}>
-                      {a.is_active ? t('admin.active') : t('admin.suspended')}
-                    </span>
-                  </div>
-                </div>
+          <div className="adminusers__scroll">
+            <table className="sysadmin__table adminusers__table">
+              <thead>
+                <tr>
+                  <th>{t('common.name')}</th>
+                  <th>{t('admin.contact')}</th>
+                  <th>{t('common.role')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('admin.created')}</th>
+                  <th>{t('admin.lastLogin')}</th>
+                  <th>{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((a) => {
+                  const st = statusOf(a);
+                  return (
+                    <tr key={a.id}>
+                      <td>
+                        <strong>{a.full_name}</strong>
+                        <div className="adminusers__sub">
+                          <code>{a.username}</code>
+                          {a.membership_number ? ` · ${a.membership_number}` : ''}
+                        </div>
+                      </td>
+                      <td>{a.phone || '—'}</td>
+                      <td><span className="tag">{t(`roles.${a.role}`)}</span></td>
+                      <td>
+                        <span className={`tag ${STATUS_TAG[st]}`}>
+                          {st === 'active' ? t('admin.active') : st === 'suspended' ? t('admin.suspended') : t('admin.statusLocked')}
+                        </span>
+                      </td>
+                      <td>{shortDate(a.created_at)}</td>
+                      <td>{a.last_login ? dateTime(a.last_login) : t('admin.never')}</td>
+                      <td>
+                        <div className="adminusers__rowActions">
+                          <button type="button" className="btn btn--ghost btn--small" onClick={() => openView(a)}>
+                            {t('common.view')}
+                          </button>
+                          <button type="button" className="btn btn--ghost btn--small" onClick={() => setEdit({
+                            id: a.id, full_name: a.full_name, phone: a.phone || '',
+                            language: a.language || 'ny', village: a.village || '', reason: '',
+                          })}>
+                            {t('admin.edit')}
+                          </button>
+                          <button type="button" className="btn btn--ghost btn--small" disabled={busy === a.id} onClick={() => askStatusChange(a)}>
+                            {a.is_active ? t('admin.suspend') : t('admin.reactivate')}
+                          </button>
+                          <button type="button" className="btn btn--ghost btn--small" disabled={busy === a.id} onClick={() => resetPassword(a)}>
+                            {t('admin.resetPassword')}
+                          </button>
+                          <button type="button" className="btn btn--ghost btn--small" onClick={() => setRoleFor(a)}>
+                            {t('admin.manageRole')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-                <p className="adminusers__login">
-                  {t('admin.lastLogin')}: {a.last_login ? dateTime(a.last_login) : t('admin.never')}
-                  {a.village ? ` · ${a.village}` : ''}
-                </p>
-
-                <div className="adminusers__actions">
-                  <button type="button" className="btn btn--sky btn--small" onClick={() => setEdit({
-                    id: a.id, full_name: a.full_name, phone: a.phone || '',
-                    language: a.language || 'ny', village: a.village || '', reason: '',
-                  })}>
-                    {t('admin.edit')}
-                  </button>
-                  <button type="button" className="btn btn--ghost btn--small" onClick={() => askStatusChange(a)}>
-                    {a.is_active ? t('admin.suspend') : t('admin.reactivate')}
-                  </button>
+      {/* What the administrator has already asked the chairperson for */}
+      <section className="dash__card adminusers__requestsCard">
+        <h2 className="dash__sectionTitle">{t('admin.myRequests')}</h2>
+        {requests.length === 0 ? (
+          <p className="muted">{t('admin.noRequests')}</p>
+        ) : (
+          <ul className="adminusers__requests">
+            {requests.map((r) => (
+              <li key={r.id} className="adminusers__request">
+                <div>
+                  <strong>{t(`admin.kind_${r.kind}`)}</strong>
+                  {r.target_name ? <span className="muted"> · {r.target_name}</span> : null}
+                  <p className="muted">{shortDate(r.created_at)}</p>
                 </div>
+                <span className={`tag ${r.status === 'approved' ? 'tag--green' : r.status === 'rejected' ? 'tag--grey' : 'tag--gold'}`}>
+                  {t(`admin.status${r.status.charAt(0).toUpperCase()}${r.status.slice(1)}`)}
+                </span>
+                {r.status === 'pending' && (
+                  <button type="button" className="btn btn--ghost btn--small" onClick={() => withdraw(r.id)}>
+                    {t('admin.withdraw')}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -189,8 +314,8 @@ export default function AdminUsers() {
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setAdd(null)}>{t('common.cancel')}</button>
-            <button type="submit" form="addAccountForm" className="btn" disabled={busy}>
-              {busy ? t('common.saving') : t('common.save')}
+            <button type="submit" form="addAccountForm" className="btn" disabled={busy === -1}>
+              {busy === -1 ? t('common.saving') : t('common.save')}
             </button>
           </>
         }
@@ -229,8 +354,8 @@ export default function AdminUsers() {
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</button>
-            <button type="submit" form="editAccountForm" className="btn" disabled={busy}>
-              {busy ? t('common.sending') : t('admin.proposeChange')}
+            <button type="submit" form="editAccountForm" className="btn" disabled={busy === -1}>
+              {busy === -1 ? t('common.sending') : t('admin.proposeChange')}
             </button>
           </>
         }
@@ -262,6 +387,59 @@ export default function AdminUsers() {
             </div>
             <p className="settings__note">{t('admin.requestSentNote')}</p>
           </form>
+        )}
+      </Modal>
+
+      {/* View details */}
+      <Modal open={!!view} title={t('admin.userDetails')} onClose={() => setView(null)}>
+        {view && (
+          <dl className="adminusers__details">
+            <div><dt>{t('admin.fullName')}</dt><dd>{view.full_name}</dd></div>
+            <div><dt>{t('admin.username')}</dt><dd><code>{view.username}</code></dd></div>
+            <div><dt>{t('common.role')}</dt><dd>{t(`roles.${view.role}`)}</dd></div>
+            <div><dt>{t('common.status')}</dt><dd>{statusOf(view) === 'active' ? t('admin.active') : statusOf(view) === 'suspended' ? t('admin.suspended') : t('admin.statusLocked')}</dd></div>
+            <div><dt>{t('admin.contact')}</dt><dd>{view.phone || '—'}</dd></div>
+            <div><dt>{t('admin.membershipNumber')}</dt><dd>{view.membership_number || '—'}</dd></div>
+            <div><dt>{t('admin.village')}</dt><dd>{view.village || '—'}</dd></div>
+            <div><dt>{t('admin.language')}</dt><dd>{view.language === 'en' ? t('admin.languageEn') : t('admin.languageNy')}</dd></div>
+            <div><dt>{t('admin.created')}</dt><dd>{dateTime(view.created_at)}</dd></div>
+            <div><dt>{t('admin.lastLogin')}</dt><dd>{view.last_login ? dateTime(view.last_login) : t('admin.never')}</dd></div>
+            <div><dt>{t('admin.mustChange')}</dt><dd>{view.must_change_password ? t('common.yes') : t('common.no')}</dd></div>
+          </dl>
+        )}
+      </Modal>
+
+      {/* Manage role */}
+      <Modal
+        open={!!roleFor}
+        title={t('admin.manageRole')}
+        onClose={() => setRoleFor(null)}
+        footer={roleFor && roleFor.role !== 'admin' && !OFFICE_ROLES.includes(roleFor.role) && view !== roleFor && roleFor.id !== user?.id ? (
+          <button
+            type="button"
+            className="btn"
+            disabled={busy === roleFor.id}
+            onClick={() => applyRole(roleFor, roleFor.role !== 'system_admin')}
+          >
+            {roleFor.role === 'system_admin' ? t('admin.removeAdmin') : t('admin.makeAdmin')}
+          </button>
+        ) : null}
+      >
+        {roleFor && (
+          <div className="adminusers__role">
+            <p><strong>{roleFor.full_name}</strong></p>
+            <p className="muted">{t('common.role')}: {t(`roles.${roleFor.role}`)}</p>
+
+            {roleFor.id === user?.id ? (
+              <p className="notice notice--warn">{t('admin.roleSelfLocked')}</p>
+            ) : OFFICE_ROLES.includes(roleFor.role) ? (
+              <p className="notice notice--warn">
+                {roleFor.role === 'admin' ? t('admin.separationBody') : t('admin.officeLocked')}
+              </p>
+            ) : (
+              <p className="settings__note">{t('admin.roleNote')}</p>
+            )}
+          </div>
         )}
       </Modal>
     </div>
