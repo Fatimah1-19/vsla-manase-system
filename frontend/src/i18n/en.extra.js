@@ -484,6 +484,7 @@ export default {
 
   activity: {
     sittings: 'Sign-in sessions', fullLog: 'Full log',
+    system: 'System',
     filterAction: 'Action', filterWho: 'Person', filterFrom: 'From', filterTo: 'To',
     filterSearch: 'Search', anyAction: 'Any action', anyPerson: 'Anyone',
     apply: 'Apply', clear: 'Clear', export: 'Export to file',

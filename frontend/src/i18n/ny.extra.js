@@ -480,7 +480,7 @@ export default {
   },
 
   activity: {
-    sittings: 'Nthawi zolowa', fullLog: 'Mbiri yonse',
+    sittings: 'Nthawi zolowa', fullLog: 'Mbiri yonse', system: 'Dongosolo',
     filterAction: 'Zochita', filterWho: 'Munthu', filterFrom: 'Kuyambira', filterTo: 'Mpaka',
     filterSearch: 'Fufuzani', anyAction: 'Zochita zilizonse', anyPerson: 'Aliyense',
     apply: 'Gwiritsani', clear: 'Chotsani', export: 'Tumizani ku fayilo',
