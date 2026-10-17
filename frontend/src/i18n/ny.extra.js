@@ -3,7 +3,7 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Ziwerengero', reports: 'Malipoti', wrappers: 'Zovala za mwezi', cases: 'Milandu ya mamembala', approvals: 'Zoyenera kutsimikizira', accounts: 'Maakaunti', systemSettings: 'Zokhazikika za dongosolo' },
+  nav: { analytics: 'Ziwerengero', reports: 'Malipoti', wrappers: 'Zovala za mwezi', cases: 'Milandu ya mamembala', approvals: 'Zoyenera kutsimikizira', accounts: 'Maakaunti', systemSettings: 'Zokhazikika' },
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
@@ -225,6 +225,7 @@ export default {
   },
 
   settings: {
+    adminSubtitle: 'Zonse zomwe gulu ndi dongosolo limagwiritsa ntchito. Mtsogoleri wa dongosolo yekha ndiye amasintha izi.',
     monthlyLevy: 'Ndalama za mwezi za zovala (MWK pa membala)',
     absenceFine: 'Chindapusa chosowa msonkhano popanda chifukwa (MWK)',
     absenceFineNote: 'Ikani 0 kuti chindapusa chosowa chisagwire ntchito. Amene anadziwitsa salipidwa chindapusa.',

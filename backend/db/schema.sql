@@ -488,6 +488,24 @@ INSERT INTO settings (setting_key, setting_value, setting_group) VALUES
   ('sms_enabled',             'true', 'system') -- turn text messages on or off
 ON CONFLICT (setting_key) DO NOTHING;
 
+-- =====================================================================
+--  THE ADMINISTRATOR IS ALSO A MEMBER
+--  She belongs to the group like everyone else, so she has a membership
+--  number and her "My account" page looks the same as the others'. Any
+--  account still without a member row gets one here. Re-running is safe.
+-- =====================================================================
+INSERT INTO members (user_id, membership_number, village)
+SELECT u.id,
+       'VB-' || LPAD((
+         COALESCE((SELECT MAX(NULLIF(REGEXP_REPLACE(membership_number, '\D', '', 'g'), '')::int) FROM members), 0)
+         + ROW_NUMBER() OVER (ORDER BY u.id)
+       )::text, 4, '0'),
+       'Manase'
+  FROM users u
+  LEFT JOIN members m ON m.user_id = u.id
+ WHERE m.id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
+
 -- A change the administrator proposes (an account change) or the chairperson
 -- proposes (a group-rule change). It does nothing until the approver confirms.
 CREATE TABLE IF NOT EXISTS change_requests (

@@ -23,7 +23,6 @@ export const NAV_ITEMS = [
   { to: '/app/cycles',     key: 'nav.cycles',    icon: 'cycles',    roles: ['admin'] },
   { to: '/app/approvals',  key: 'nav.approvals', label: 'nav.approvals', icon: 'requests', roles: ['admin', 'treasurer'] },
   { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['admin', 'treasurer', 'secretary', 'system_admin'] },
-  { to: '/app/settings',   key: 'nav.settings',  icon: 'settings',  roles: ['admin'] },
   { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',   roles: ['admin', 'treasurer', 'secretary', 'member', 'system_admin'], phone: true },
   { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',  roles: ['admin', 'treasurer', 'secretary', 'member'] },
 ];

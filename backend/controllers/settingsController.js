@@ -85,8 +85,9 @@ function cleanGroupRule(key, value) {
   return v;
 }
 
-// PUT /api/settings/group-rules  (chairperson only)
-// Nothing changes yet: the proposal waits for the treasurer to confirm it.
+// PUT /api/settings/group-rules
+// The administrator keeps every setting herself, so her save takes effect at
+// once. The chairperson's proposal still waits for the treasurer to confirm it.
 const proposeGroupRules = wrap(async (req, res) => {
   const updates = req.body && typeof req.body === 'object' ? req.body : {};
   const keys = Object.keys(updates).filter((k) => isGroupRule(k));
@@ -99,6 +100,11 @@ const proposeGroupRules = wrap(async (req, res) => {
     } catch (err) {
       return res.status(400).json({ message: err.message });
     }
+  }
+
+  if (req.user.role === 'system_admin') {
+    await applyGroupRules(payload, req.user.id);
+    return res.json({ message: 'Saved.' });
   }
 
   const waiting = await query(`SELECT id FROM change_requests WHERE kind = 'group_rules' AND status = 'pending' LIMIT 1`);

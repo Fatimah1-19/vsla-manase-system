@@ -69,15 +69,13 @@ const PEOPLE = [
         [p.username, hashed, p.role, p.name, p.phone, p.lang]
       )).rows[0];
 
-      // The system administrator is not a group member: no membership number
-      // and no money records of her own.
-      if (p.role !== 'system_admin') {
-        n += 1;
-        await client.query(
-          `INSERT INTO members (user_id, membership_number, village) VALUES ($1,$2,$3)`,
-          [user.id, `VB-${String(n).padStart(4, '0')}`, 'Manase']
-        );
-      }
+      // Everyone is a member of the group, the administrator included, so each
+      // one gets a membership number and her own "My account" page.
+      n += 1;
+      await client.query(
+        `INSERT INTO members (user_id, membership_number, village) VALUES ($1,$2,$3)`,
+        [user.id, `VB-${String(n).padStart(4, '0')}`, 'Manase']
+      );
       created.push(p);
     }
 

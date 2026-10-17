@@ -79,8 +79,9 @@ const PERMISSIONS = {
   'users.manage': ['admin'],
   'approvals.view': ['admin', 'treasurer'],
   'approvals.decide': ['admin', 'treasurer'],
-  'groupRules.view': ['admin', 'treasurer'],
-  'groupRules.propose': ['admin'],
+  // The rules the group lives by: the administrator keeps every one of them now.
+  'groupRules.view': ['admin', 'treasurer', 'system_admin'],
+  'groupRules.propose': ['admin', 'system_admin'],
   'joinRequests.decide': ['admin', 'treasurer', 'secretary'],
   'cases.manage': ['admin'],
   'cases.settlement': ['treasurer', 'secretary'],

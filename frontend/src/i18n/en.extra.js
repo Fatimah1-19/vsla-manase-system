@@ -2,7 +2,7 @@
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
-  nav: { analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'System settings' },
+  nav: { analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'Settings' },
 
   roles: { system_admin: 'Administrator' },
 
@@ -224,6 +224,7 @@ export default {
   },
 
   settings: {
+    adminSubtitle: 'Everything the group and the system run on. Only the administrator changes these.',
     monthlyLevy: 'Monthly contribution for wrappers (MWK per member)',
     absenceFine: 'Fine for missing a meeting without a reason (MWK)',
     absenceFineNote: 'Set this to 0 to switch the automatic absence fine off. An excused absence is never fined.',
