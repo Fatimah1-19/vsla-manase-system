@@ -1,5 +1,8 @@
 // One place that talks to the backend.
-const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+// In development the Vite proxy sends /api to the local server. In production the
+// site always calls its own origin, and vercel.json forwards /api to the API, so
+// the browser never has to reach the API host directly.
+const BASE = (import.meta.env.DEV ? import.meta.env.VITE_API_URL || '' : '').replace(/\/$/, '');
 const TOKEN_KEY = 'vb_token';
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);

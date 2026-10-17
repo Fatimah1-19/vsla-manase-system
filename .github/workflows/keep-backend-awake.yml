@@ -18,8 +18,12 @@ jobs:
     steps:
       - name: Ping the API health check
         run: |
-          for i in 1 2 3; do
-            curl -fsS --max-time 90 https://vsla-manase-system.onrender.com/api/health && exit 0
-            sleep 10
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 90 https://vsla-manase-system.onrender.com/api/health; then
+              echo "Backend is awake."
+              exit 0
+            fi
+            echo "Attempt $i failed; it may still be waking up. Retrying in 15s..."
+            sleep 15
           done
           echo "The backend did not answer this time."
