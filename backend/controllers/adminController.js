@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const { query, one, tx } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { sendSMS } = require('../utils/sms');
-const { build } = require('../utils/messages');
+const { sendSMS, DRY_RUN } = require('../utils/sms');
+const { build, templates } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
 const { canDecideChange, canRemoveAdministrator, canSetSystemRole } = require('../utils/adminRules');
@@ -414,8 +414,41 @@ const resetAccountPassword = wrap(async (req, res) => {
   });
 });
 
+// GET /api/admin/sms — the technical picture of text messaging, for the
+// administrator. She looks after the service, never the group's money, so no
+// money and no message bodies are shown here.
+const smsInfo = wrap(async (req, res) => {
+  const [stats, types, recent] = await Promise.all([
+    one(
+      `SELECT COUNT(*)::int AS total,
+              COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+              COUNT(*) FILTER (WHERE status = 'failed')::int AS failed,
+              COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped,
+              COUNT(*) FILTER (WHERE sent_at::date = CURRENT_DATE)::int AS today
+         FROM sms_notifications`
+    ),
+    query(
+      `SELECT category, COUNT(*)::int AS count
+         FROM sms_notifications GROUP BY category ORDER BY count DESC`
+    ),
+    query(
+      `SELECT id, recipient_name, category, status, sent_at
+         FROM sms_notifications ORDER BY sent_at DESC LIMIT 10`
+    ),
+  ]);
+  res.json({
+    gateway_configured: !!process.env.TEXTBEE_API_KEY,
+    dry_run: DRY_RUN,
+    templates: Object.keys(templates),
+    stats,
+    types,
+    recent,
+  });
+});
+
 module.exports = {
   listMembers, getAccount, createAccount, resetAccountPassword,
   listMyChangeRequests, proposeChange, withdrawChangeRequest,
   listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,
+  smsInfo,
 };

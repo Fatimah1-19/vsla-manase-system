@@ -6,18 +6,19 @@ import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import '../styles.css';
 
-const SYSTEM_LABELS = {
+const SECURITY_LABELS = {
   session_timeout_minutes: 'admin.sessionTimeoutLabel',
   max_login_attempts: 'admin.maxLoginLabel',
   lock_minutes: 'admin.lockLabel',
   reset_max_tries: 'admin.resetTriesLabel',
 };
-const SYSTEM_ORDER = ['session_timeout_minutes', 'max_login_attempts', 'lock_minutes', 'reset_max_tries'];
+const SECURITY_ORDER = ['session_timeout_minutes', 'max_login_attempts', 'lock_minutes', 'reset_max_tries'];
 
 /**
- * How the system itself behaves. These are the administrator's alone and take
- * effect at once. The rules of the group live on the VSLA settings page and are
- * confirmed by the chairperson.
+ * The technical settings of the system itself — general information, security
+ * and the application state. These are the administrator's alone. The group's
+ * money rules (loans, fines, savings, welfare, share-out) live on their own
+ * VSLA settings pages and are confirmed by the chairperson.
  */
 export default function SystemSettings() {
   const { t } = useLang();
@@ -53,12 +54,25 @@ export default function SystemSettings() {
     <div className="settings">
       <PageHeader title={t('nav.systemSettings')} subtitle={t('admin.systemSubtitle')} />
 
+      {/* ---- GENERAL: fixed details of the system ---- */}
+      <div className="settings__group">
+        <h2 className="settings__h2">{t('settings.generalTitle')}</h2>
+        <ul className="sysadmin__settings">
+          <li><span>{t('settings.systemName')}</span><strong>{t('app.name')}</strong></li>
+          <li><span>{t('settings.currency')}</span><strong>{t('settings.currencyValue')}</strong></li>
+          <li><span>{t('settings.dateFormat')}</span><strong>{t('settings.dateFormatValue')}</strong></li>
+          <li><span>{t('settings.timeFormat')}</span><strong>{t('settings.timeFormatValue')}</strong></li>
+          <li><span>{t('settings.languageLabel')}</span><strong>{t('settings.languageValue')}</strong></li>
+        </ul>
+      </div>
+
+      {/* ---- SECURITY: the administrator's own settings ---- */}
       <form onSubmit={save} className="settings__form">
         <section className="settings__group">
-          <h2 className="settings__h2">{t('admin.systemTitle')}</h2>
-          {SYSTEM_ORDER.filter((k) => k in system).map((k) => (
+          <h2 className="settings__h2">{t('settings.securityTitle')}</h2>
+          {SECURITY_ORDER.filter((k) => k in system).map((k) => (
             <div className="settings__row" key={k}>
-              <label className="field-label" htmlFor={`sys-${k}`}>{t(SYSTEM_LABELS[k])}</label>
+              <label className="field-label" htmlFor={`sys-${k}`}>{t(SECURITY_LABELS[k])}</label>
               <input
                 id={`sys-${k}`}
                 type="number"
@@ -69,21 +83,26 @@ export default function SystemSettings() {
               />
             </div>
           ))}
-
-          <label className="settings__switch">
-            <input
-              type="checkbox"
-              checked={String(system.sms_enabled).toLowerCase() !== 'false'}
-              onChange={(e) => setVal('sms_enabled', e.target.checked ? 'true' : 'false')}
-            />
-            <span>{t('admin.smsLabel')}</span>
-          </label>
+          <ul className="sysadmin__settings">
+            <li><span>{t('settings.passwordRule')}</span><strong>{t('settings.passwordRuleValue')}</strong></li>
+          </ul>
+          <p className="settings__note">{t('settings.securityNote')}</p>
         </section>
 
         <button type="submit" className="btn" disabled={busy}>
           {busy ? t('common.saving') : t('common.save')}
         </button>
       </form>
+
+      {/* ---- APPLICATION: read-only state ---- */}
+      <div className="settings__group">
+        <h2 className="settings__h2">{t('settings.applicationTitle')}</h2>
+        <ul className="sysadmin__settings">
+          <li><span>{t('settings.appStatus')}</span><strong>{t('settings.appStatusValue')}</strong></li>
+          <li><span>{t('settings.maintenance')}</span><strong>{t('settings.maintenanceValue')}</strong></li>
+        </ul>
+        <p className="settings__note">{t('settings.applicationNote')}</p>
+      </div>
     </div>
   );
 }

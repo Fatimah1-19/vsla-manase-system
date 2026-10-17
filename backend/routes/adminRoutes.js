@@ -20,4 +20,8 @@ router.post('/change-requests/:id/withdraw', requirePermission('accounts.manage'
 router.get('/config-changes', requirePermission('accounts.view'), c.listConfigChanges);
 router.get('/permissions', requirePermission('accounts.view'), c.listPermissions);
 
+// The technical picture of text messaging — service status, types, templates
+// and the delivery log. No money, no message bodies.
+router.get('/sms', requirePermission('system.settings'), c.smsInfo);
+
 module.exports = router;

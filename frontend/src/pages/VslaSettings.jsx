@@ -5,9 +5,15 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
-import { money } from '../utils/format.js';
+import { money, dateTime } from '../utils/format.js';
 import { GROUP_LABELS } from '../utils/groupRuleLabels.js';
 import '../styles.css';
+
+// savingRecorded -> "Saving recorded"; other_thing -> "Other thing".
+const pretty = (s) => String(s || '')
+  .replace(/([a-z])([A-Z])/g, '$1 $2')
+  .replace(/[_-]+/g, ' ')
+  .replace(/^\w/, (c) => c.toUpperCase());
 
 // Each category lives on its own page, in the order the group reads them.
 const SECTIONS = [
@@ -54,15 +60,18 @@ export default function VslaSettings() {
   const [group, setGroup] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [system, setSystem] = useState(null);
+  const [sms, setSms] = useState(null);
   const [pendingKeys, setPendingKeys] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const [rows, sys, changes] = await Promise.all([
+    const [rows, sys, changes, smsInfo] = await Promise.all([
       api.get('/settings/group-rules'),
       api.get('/settings/system'),
       api.get('/admin/config-changes').catch(() => []),
+      api.get('/admin/sms').catch(() => null),
     ]);
+    setSms(smsInfo);
     const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
     setGroup(map);
     let parsed = [];
@@ -324,17 +333,46 @@ export default function VslaSettings() {
           </div>
         )}
 
-        {/* ---- meetings: nothing of its own ---- */}
+        {/* ---- meetings: dates and place are set per meeting ---- */}
         {section.id === 'meetings' && (
-          <div className="settings__groupCard">
-            <p className="settings__note">{t('settings.meetingsNoSettings')}</p>
-            <ul className="sysadmin__settings">
-              <li><span>{t('settings.absenceFine')}</span><strong>{money0(group.absence_fine)}</strong></li>
-            </ul>
-            <p className="settings__note">
-              {t('settings.meetingsFineRef')} <Link to="/app/admin/settings/fines">{t('settings.catFines')}</Link>
-            </p>
-          </div>
+          <>
+            <div className="settings__tableWrap">
+              <table className="sysadmin__table">
+                <thead>
+                  <tr>
+                    <th>{t('settings.tblSetting')}</th>
+                    <th>{t('settings.tblCurrent')}</th>
+                    <th>{t('settings.tblStatus')}</th>
+                    <th>{t('settings.tblActions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['meetingFrequency', 'meetingFrequencyValue'],
+                    ['meetingDay', 'meetingDayValue'],
+                    ['meetingTime', 'meetingTimeValue'],
+                    ['meetingLocation', 'meetingLocationValue'],
+                  ].map(([l, v]) => (
+                    <tr key={l}>
+                      <td>{t(`settings.${l}`)}</td>
+                      <td>{t(`settings.${v}`)}</td>
+                      <td><span className={`tag ${STATUS_TAG.fixed}`}>{t('settings.stFixed')}</span></td>
+                      <td>—</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="settings__groupCard">
+              <p className="settings__note">{t('settings.meetingsNoSettings')}</p>
+              <ul className="sysadmin__settings">
+                <li><span>{t('settings.absenceFine')}</span><strong>{money0(group.absence_fine)}</strong></li>
+              </ul>
+              <p className="settings__note">
+                {t('settings.meetingsFineRef')} <Link to="/app/admin/settings/fines">{t('settings.catFines')}</Link>
+              </p>
+            </div>
+          </>
         )}
 
         {/* ---- membership: how a new member joins (read-only) ---- */}
@@ -406,21 +444,116 @@ export default function VslaSettings() {
           </form>
         )}
 
-        {/* ---- SMS: the administrator's own switch ---- */}
+        {/* ---- SMS: the administrator's own technical switch ---- */}
         {section.id === 'sms' && (
-          <form onSubmit={saveSms} className="settings__form">
-            <label className="settings__switch">
-              <input
-                type="checkbox"
-                checked={String(system.sms_enabled).toLowerCase() !== 'false'}
-                onChange={(e) => setSystem((s) => ({ ...s, sms_enabled: e.target.checked ? 'true' : 'false' }))}
-              />
-              <span>{t('admin.smsLabel')}</span>
-            </label>
-            <button type="submit" className="btn" disabled={busy}>
-              {busy ? t('common.saving') : t('common.save')}
-            </button>
-          </form>
+          <>
+            {(() => {
+              const on = String(system.sms_enabled).toLowerCase() !== 'false';
+              const live = sms?.gateway_configured && !sms?.dry_run;
+              return (
+                <div className="settings__tableWrap">
+                  <table className="sysadmin__table">
+                    <thead>
+                      <tr>
+                        <th>{t('settings.tblSetting')}</th>
+                        <th>{t('settings.tblCurrent')}</th>
+                        <th>{t('settings.tblStatus')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{t('settings.smsService')}</td>
+                        <td>{on ? t('settings.stEnabled') : t('settings.stDisabled')}</td>
+                        <td><span className={`tag ${on ? STATUS_TAG.in_force : STATUS_TAG.off}`}>{on ? t('settings.stActive') : t('settings.stOff')}</span></td>
+                      </tr>
+                      <tr>
+                        <td>{t('settings.smsGateway')}</td>
+                        <td>{sms?.dry_run ? t('settings.smsTestMode') : sms?.gateway_configured ? t('settings.smsConfigured') : t('settings.smsNotConfigured')}</td>
+                        <td><span className={`tag ${live ? STATUS_TAG.in_force : STATUS_TAG.not_set}`}>{live ? t('settings.stInForce') : t('settings.stNotSet')}</span></td>
+                      </tr>
+                      <tr>
+                        <td>{t('settings.smsPreferences')}</td>
+                        <td>{t('settings.smsPreferencesValue')}</td>
+                        <td><span className={`tag ${STATUS_TAG.fixed}`}>{t('settings.stFixed')}</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
+            {sms && (
+              <div className="settings__stats">
+                <div className="settings__stat"><span>{t('settings.smsTotal')}</span><strong>{sms.stats.total}</strong></div>
+                <div className="settings__stat"><span>{t('settings.smsSent')}</span><strong>{sms.stats.sent}</strong></div>
+                <div className="settings__stat"><span>{t('settings.smsFailed')}</span><strong>{sms.stats.failed}</strong></div>
+                <div className="settings__stat"><span>{t('settings.smsToday')}</span><strong>{sms.stats.today}</strong></div>
+              </div>
+            )}
+
+            {sms && sms.types.length > 0 && (
+              <div className="settings__groupCard">
+                <h3 className="settings__h2">{t('settings.smsTypes')}</h3>
+                <ul className="settings__chips">
+                  {sms.types.map((ty) => (
+                    <li key={ty.category} className="settings__chip">
+                      {pretty(ty.category)}<span className="settings__chipCount">{ty.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {sms && sms.templates.length > 0 && (
+              <div className="settings__groupCard">
+                <h3 className="settings__h2">{t('settings.smsTemplates')}</h3>
+                <p className="settings__note">{t('settings.smsTemplatesNote')}</p>
+                <ul className="settings__chips">
+                  {sms.templates.map((k) => <li key={k} className="settings__chip">{pretty(k)}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {sms && sms.recent.length > 0 && (
+              <div className="settings__tableWrap">
+                <h3 className="settings__h2">{t('settings.smsRecent')}</h3>
+                <table className="sysadmin__table">
+                  <thead>
+                    <tr>
+                      <th>{t('common.name')}</th>
+                      <th>{t('settings.smsTypeLabel')}</th>
+                      <th>{t('settings.tblStatus')}</th>
+                      <th>{t('settings.smsSentAt')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sms.recent.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.recipient_name || '—'}</td>
+                        <td>{pretty(r.category)}</td>
+                        <td><span className={`tag ${r.status === 'sent' ? STATUS_TAG.in_force : STATUS_TAG.not_set}`}>{pretty(r.status)}</span></td>
+                        <td>{dateTime(r.sent_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <form onSubmit={saveSms} className="settings__form">
+              <label className="settings__switch">
+                <input
+                  type="checkbox"
+                  checked={String(system.sms_enabled).toLowerCase() !== 'false'}
+                  onChange={(e) => setSystem((s) => ({ ...s, sms_enabled: e.target.checked ? 'true' : 'false' }))}
+                />
+                <span>{t('admin.smsLabel')}</span>
+              </label>
+              <button type="submit" className="btn" disabled={busy}>
+                {busy ? t('common.saving') : t('common.save')}
+              </button>
+            </form>
+          </>
         )}
       </div>
     </div>
