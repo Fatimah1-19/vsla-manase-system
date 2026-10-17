@@ -439,6 +439,7 @@ export default {
     chairpersons: 'Chairperson', treasurers: 'Treasurer', secretaries: 'Secretary',
     administrators: 'Administrators', membersLabel: 'Members', activeAccounts: 'Active accounts',
     lockedAccounts: 'Locked accounts', smsToday: 'Texts sent today',
+    failedLogins7d: 'Locked out in 7 days', smsStatus: 'Text messaging',
     pendingChanges: 'Waiting to be confirmed', pendingJoins: 'Join requests waiting',
     systemTitle: 'System settings', recentSignins: 'Recent sign-ins',
     quickAdmin: 'Common jobs', manageAccounts: 'Members & accounts', manageSettings: 'System settings', viewActivity: 'Activity log',

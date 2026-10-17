@@ -1,14 +1,14 @@
 const router = require('express').Router();
 const c = require('../controllers/shareOutController');
-const { protect, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
+const { protect, requirePermission, blockSystemAdmin } = require('../middleware/auth');
 
 router.use(protect, blockSystemAdmin);
-router.get('/', committee(), c.listShareOuts);
+router.get('/', requirePermission('shareout.view'), c.listShareOuts);
 router.get('/mine', c.myShare);
-router.get('/preview', committee(), c.preview);
-router.post('/', recorders(), c.createShareOut);
-router.post('/:id/confirm', committee(), c.confirmShareOut);
-router.post('/:id/distribute', recorders(), c.distribute);
+router.get('/preview', requirePermission('shareout.view'), c.preview);
+router.post('/', requirePermission('shareout.record'), c.createShareOut);
+router.post('/:id/confirm', requirePermission('shareout.view'), c.confirmShareOut);
+router.post('/:id/distribute', requirePermission('shareout.record'), c.distribute);
 router.get('/:id', c.getShareOut);
 
 module.exports = router;

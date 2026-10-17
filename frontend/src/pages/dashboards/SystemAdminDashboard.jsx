@@ -12,6 +12,7 @@ export default function SystemAdminDashboard({ data }) {
   const { t } = useLang();
   const u = data.users || {};
   const s = data.system_settings || {};
+  const sms = data.sms || {};
 
   return (
     <>
@@ -39,7 +40,19 @@ export default function SystemAdminDashboard({ data }) {
           tone={data.pending_join_requests > 0 ? 'gold' : 'plain'}
           icon="requests"
         />
+        <StatCard
+          label={t('admin.failedLogins7d')}
+          value={plainNumber(data.failed_logins_7d)}
+          tone={data.failed_logins_7d > 0 ? 'gold' : 'plain'}
+          icon="lock"
+        />
         <StatCard label={t('admin.smsToday')} value={plainNumber(data.sms_today)} icon="messages" />
+        <StatCard
+          label={t('admin.smsStatus')}
+          value={sms.enabled && sms.configured ? t('admin.on') : t('admin.off')}
+          tone={sms.enabled && sms.configured ? 'green' : 'red'}
+          icon="messages"
+        />
       </div>
 
       <div className="sysadmin__grid">

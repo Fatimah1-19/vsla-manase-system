@@ -1,14 +1,14 @@
 const router = require('express').Router();
 const c = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, requirePermission } = require('../middleware/auth');
 
 router.use(protect);
-router.get('/', authorize('admin', 'secretary', 'treasurer'), c.listUsers);
-router.post('/', authorize('admin'), c.createUser);
-router.patch('/:id', authorize('admin'), c.updateUser);
-router.post('/:id/reset-password', authorize('admin'), c.adminResetPassword);
-router.post('/:id/unlock', authorize('admin'), c.unlockUser);
-router.delete('/:id', authorize('admin'), c.deactivateUser);
-router.post('/:id/reactivate', authorize('admin'), c.reactivateUser);
+router.get('/', requirePermission('users.view'), c.listUsers);
+router.post('/', requirePermission('users.manage'), c.createUser);
+router.patch('/:id', requirePermission('users.manage'), c.updateUser);
+router.post('/:id/reset-password', requirePermission('users.manage'), c.adminResetPassword);
+router.post('/:id/unlock', requirePermission('users.manage'), c.unlockUser);
+router.delete('/:id', requirePermission('users.manage'), c.deactivateUser);
+router.post('/:id/reactivate', requirePermission('users.manage'), c.reactivateUser);
 
 module.exports = router;

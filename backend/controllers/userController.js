@@ -5,6 +5,7 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
+const { canRemoveAdministrator } = require('../utils/adminRules');
 
 // Roles the chairperson may hand out. The system administrator is deliberately
 // not here: that account is created when the group is set up, not from a page.
@@ -124,7 +125,8 @@ const updateUser = wrap(async (req, res) => {
   // Never leave the group without an admin.
   if (existing.role === 'admin' && role && role !== 'admin') {
     const admins = await one(`SELECT COUNT(*)::int AS c FROM users WHERE role = 'admin' AND is_active = TRUE`);
-    if (admins.c <= 1) return res.status(400).json({ message: 'This is the only admin. Make someone else an admin first.' });
+    const removable = canRemoveAdministrator({ targetIsAdmin: true, activeAdministrators: admins.c });
+    if (!removable.ok) return res.status(400).json({ message: 'This is the only admin. Make someone else an admin first.' });
   }
 
   // An ordinary member's standing in the group (active, suspended, dismissed) can only

@@ -144,7 +144,7 @@ const getDashboard = wrap(async (req, res) => {
   // ---------- System administrator ----------
   // She looks after the accounts and the system itself. No money is ever shown.
   if (role === 'system_admin') {
-    const [people, locked, pendingChanges, pendingJoins, smsToday, systemRows, recent] = await Promise.all([
+    const [people, locked, pendingChanges, pendingJoins, smsToday, failedLogins, smsFailed, systemRows, recent] = await Promise.all([
       one(`SELECT COUNT(*) FILTER (WHERE role='admin')::int       AS chairpersons,
                   COUNT(*) FILTER (WHERE role='treasurer')::int   AS treasurers,
                   COUNT(*) FILTER (WHERE role='secretary')::int   AS secretaries,
@@ -156,6 +156,10 @@ const getDashboard = wrap(async (req, res) => {
       one(`SELECT COUNT(*)::int AS c FROM change_requests WHERE status = 'pending'`),
       one(`SELECT COUNT(*)::int AS c FROM join_requests WHERE status = 'pending'`),
       one(`SELECT COUNT(*)::int AS c FROM sms_notifications WHERE sent_at::date = CURRENT_DATE`),
+      // Log-ins that ended in a lockout over the last seven days.
+      one(`SELECT COUNT(*)::int AS c FROM audit_logs
+            WHERE action = 'LOGIN_LOCKED' AND created_at >= NOW() - INTERVAL '7 days'`),
+      one(`SELECT COUNT(*)::int AS c FROM sms_notifications WHERE status = 'failed'`),
       query(`SELECT setting_key, setting_value FROM settings WHERE setting_key = ANY($1)`,
         [['session_timeout_minutes', 'max_login_attempts', 'lock_minutes', 'reset_max_tries', 'sms_enabled']]),
       query(`SELECT a.action, a.details, a.created_at, u.full_name
@@ -165,13 +169,21 @@ const getDashboard = wrap(async (req, res) => {
               ORDER BY a.created_at DESC LIMIT 8`),
     ]);
 
+    const system_settings = Object.fromEntries(systemRows.map((r) => [r.setting_key, r.setting_value]));
+
     return res.json({
       ...base,
       users: { ...people, locked: locked.c },
       pending_change_requests: pendingChanges.c,
       pending_join_requests: pendingJoins.c,
       sms_today: smsToday.c,
-      system_settings: Object.fromEntries(systemRows.map((r) => [r.setting_key, r.setting_value])),
+      failed_logins_7d: failedLogins.c,
+      sms: {
+        enabled: String(system_settings.sms_enabled).toLowerCase() !== 'false',
+        configured: !!process.env.TEXTBEE_API_KEY,
+        failed: smsFailed.c,
+      },
+      system_settings,
       recent_activity: recent,
     });
   }

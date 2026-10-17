@@ -259,6 +259,7 @@ const base = {
     offline: 'Cannot reach the server. Check that the backend is running.',
     sessionExpired: 'Your session ended. Please log in again.',
     notAllowed: 'Your role cannot open that page.',
+    notAllowedBody: 'The menu only shows the pages your role may use. If you think you should have access, speak to the chairperson.',
     notFound: 'That page does not exist.',
   },
 };

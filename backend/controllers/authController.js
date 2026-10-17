@@ -7,6 +7,7 @@ const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { getSetting } = require('../utils/helpers');
 const { wrap } = require('../middleware/errorHandler');
+const { resetAttempt } = require('../utils/adminRules');
 
 // The administrator sets the security numbers on the System settings page. The
 // environment values are only the fallback used before the table is filled in.
@@ -181,14 +182,23 @@ const resetPassword = wrap(async (req, res) => {
 
   const reset = await one(
     `SELECT * FROM password_resets
-      WHERE user_id = $1 AND used = FALSE AND expires_at > NOW()
+      WHERE user_id = $1 AND used = FALSE
       ORDER BY id DESC LIMIT 1`,
     [user.id]
   );
   if (!reset) return res.status(400).json({ message: 'That code is wrong or has expired. Ask for a new one.' });
 
   const MAX_TRIES = await resetMaxTries();
-  if (reset.attempts >= MAX_TRIES) {
+  const attempt = resetAttempt({
+    attempts: reset.attempts,
+    maxTries: MAX_TRIES,
+    expired: new Date(reset.expires_at) <= new Date(),
+  });
+  if (!attempt.ok && attempt.reason === 'expired') {
+    await query(`UPDATE password_resets SET used = TRUE WHERE id = $1`, [reset.id]);
+    return res.status(400).json({ message: 'That code is wrong or has expired. Ask for a new one.' });
+  }
+  if (!attempt.ok) {
     await query(`UPDATE password_resets SET used = TRUE WHERE id = $1`, [reset.id]);
     await audit(user.id, 'PASSWORD_RESET_BLOCKED', 'users', user.id, `After ${MAX_TRIES} wrong codes`);
     return res.status(429).json({ message: 'Too many wrong codes. Ask for a new code.' });

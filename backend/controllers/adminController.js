@@ -5,6 +5,7 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
+const { canDecideChange, canRemoveAdministrator } = require('../utils/adminRules');
 const { applyGroupRules } = require('./settingsController');
 
 // The fields the administrator may ask to change on an account. Never the role:
@@ -123,7 +124,11 @@ const proposeChange = wrap(async (req, res) => {
 
   if (kind === 'deactivate_user') {
     if (!target.is_active) return res.status(400).json({ message: 'That account is already suspended.' });
-    if (target.role === 'system_admin' && (await activeAdministrators()) <= 1) {
+    const removable = canRemoveAdministrator({
+      targetIsAdmin: target.role === 'system_admin',
+      activeAdministrators: await activeAdministrators(),
+    });
+    if (!removable.ok) {
       return res.status(400).json({ message: 'This is the only active administrator. Keep at least one.' });
     }
     const openLoan = await one(
@@ -204,11 +209,17 @@ const decideChangeRequest = wrap(async (req, res) => {
 
   const cr = await one(`SELECT * FROM change_requests WHERE id = $1`, [id]);
   if (!cr) return res.status(404).json({ message: 'That request does not exist.' });
-  if (cr.status !== 'pending') return res.status(400).json({ message: 'That request was already decided.' });
-  if (cr.approver_role !== req.user.role) {
-    return res.status(403).json({ message: 'This request is not yours to confirm.' });
-  }
-  if (cr.requested_by === req.user.id) {
+
+  const verdict = canDecideChange({
+    status: cr.status,
+    approverRoleRequired: cr.approver_role,
+    approverRole: req.user.role,
+    requestedById: cr.requested_by,
+    approverId: req.user.id,
+  });
+  if (!verdict.ok) {
+    if (verdict.reason === 'already_decided') return res.status(400).json({ message: 'That request was already decided.' });
+    if (verdict.reason === 'wrong_role') return res.status(403).json({ message: 'This request is not yours to confirm.' });
     return res.status(400).json({ message: 'You cannot confirm your own request.' });
   }
 
@@ -247,7 +258,11 @@ const decideChangeRequest = wrap(async (req, res) => {
         await query(`UPDATE members SET village = $2 WHERE user_id = $1`, [targetId, payload.village]);
       }
     } else if (cr.kind === 'deactivate_user') {
-      if (target.role === 'system_admin' && (await activeAdministrators()) <= 1) {
+      const removable = canRemoveAdministrator({
+        targetIsAdmin: target.role === 'system_admin',
+        activeAdministrators: await activeAdministrators(),
+      });
+      if (!removable.ok) {
         return res.status(400).json({ message: 'This is the only active administrator. Keep at least one.' });
       }
       await query(`UPDATE users SET is_active = FALSE WHERE id = $1`, [targetId]);

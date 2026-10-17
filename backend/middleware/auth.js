@@ -1,6 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { one } = require('../config/db');
 const { getCachedUser, cacheUser } = require('../utils/userCache');
+// Every role rule lives in config/permissions.js. This file only knows how to
+// find out *who* is asking; the permissions file decides what they may do.
+const {
+  authorize, requirePermission, committee, recorders, systemAdmin, blockSystemAdmin,
+} = require('../config/permissions');
+
 
 /** Require a valid, unexpired token. */
 async function protect(req, res, next) {
@@ -60,43 +66,14 @@ async function protect(req, res, next) {
   }
 }
 
-/** Restrict a route to certain roles. */
-function authorize(...roles) {
-  return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ message: 'Please log in to continue.' });
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Your role cannot do this.' });
-    }
-    next();
-  };
-}
-
-/**
- * Anyone who keeps the books: the chairperson (admin), treasurer or secretary.
- * The system administrator is deliberately not one of them.
- */
-const committee = () => authorize('admin', 'treasurer', 'secretary');
-
-/**
- * The people who write in the books: the treasurer and the secretary.
- * The chairperson (admin) oversees, approves loans and manages members,
- * but the entries themselves are made by these two.
- */
-const recorders = () => authorize('treasurer', 'secretary');
-
-/**
- * The system administrator looks after accounts and the system itself. This is
- * NOT an office: she never keeps the books and never holds a seat. Wherever
- * money is handled she is refused with 403.
- */
-const systemAdmin = () => authorize('system_admin');
-
-/** Refuse the system administrator on any route that handles money. */
-function blockSystemAdmin(req, res, next) {
-  if (req.user && req.user.role === 'system_admin') {
-    return res.status(403).json({ message: 'Administrators cannot open money records.' });
-  }
-  next();
-}
-
-module.exports = { protect, authorize, committee, recorders, systemAdmin, blockSystemAdmin };
+// The role guards live in config/permissions.js and are re-exported here so a
+// route can import everything it needs from one place.
+module.exports = {
+  protect,
+  authorize,
+  requirePermission,
+  committee,
+  recorders,
+  systemAdmin,
+  blockSystemAdmin,
+};

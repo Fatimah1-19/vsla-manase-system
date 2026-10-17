@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const c = require('../controllers/smsController');
-const { protect, committee } = require('../middleware/auth');
+const { protect, requirePermission } = require('../middleware/auth');
 
-router.use(protect, committee());
+router.use(protect, requirePermission('messages.view'));
 router.get('/', c.listMessages);
 router.get('/stats', c.smsStats);
-router.post('/send', c.sendMessage);
+router.post('/send', requirePermission('messages.send'), c.sendMessage);
 
 module.exports = router;

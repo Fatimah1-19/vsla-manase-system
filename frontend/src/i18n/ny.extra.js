@@ -439,6 +439,7 @@ export default {
     chairpersons: 'Mtsogoleri', treasurers: 'Msungichuma', secretaries: 'Mlembi',
     administrators: 'Oyanganira dongosolo', membersLabel: 'Mamembala', activeAccounts: 'Maakaunti omwe akugwira',
     lockedAccounts: 'Maakaunti otsekedwa', smsToday: 'Mauthenga otumizidwa lero',
+    failedLogins7d: 'Otsekedwa m\'masiku 7', smsStatus: 'Kutumiza mauthenga',
     pendingChanges: 'Zodikira kutsimikizidwa', pendingJoins: 'Zopempha zolowa zodikira',
     systemTitle: 'Zokhazikika za dongosolo', recentSignins: 'Kulowa kwaposachedwa',
     quickAdmin: 'Ntchito zofala', manageAccounts: 'Mamembala ndi maakaunti', manageSettings: 'Zokhazikika za dongosolo', viewActivity: 'Mbiri ya zochitika',

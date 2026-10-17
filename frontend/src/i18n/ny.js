@@ -268,6 +268,7 @@ const base = {
     offline: 'Sitikufika pa seva. Onetsetsani kuti bakendi ikuyenda.',
     sessionExpired: 'Nthawi yanu yatha. Chonde lowaninso.',
     notAllowed: 'Udindo wanu sungatsegule tsamba limenelo.',
+    notAllowedBody: 'Menyu imangoonetsa masamba amene udindo wanu ungagwiritse ntchito. Ngati mukuganiza kuti muyenera kukhala ndi mwayi, lankhulani ndi mtsogoleri.',
     notFound: 'Tsamba limenelo kulibe.',
   },
 }

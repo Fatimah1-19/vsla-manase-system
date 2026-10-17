@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const c = require('../controllers/registrationController');
-const { protect, authorize, committee, recorders, blockSystemAdmin } = require('../middleware/auth');
+const { protect, requirePermission, blockSystemAdmin } = require('../middleware/auth');
 
 router.use(protect, blockSystemAdmin);
-router.get('/', committee(), c.listFees);
-router.post('/', recorders(), c.recordFee);
-router.delete('/:id', authorize('admin'), c.remove);
+router.get('/', requirePermission('registration.view'), c.listFees);
+router.post('/', requirePermission('registration.record'), c.recordFee);
+router.delete('/:id', requirePermission('registration.delete'), c.remove);
 
 module.exports = router;
