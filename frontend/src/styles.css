@@ -4831,9 +4831,17 @@ section[id] { scroll-margin-top: 4.5rem; }
 .settings__cats { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 1.1rem; border-bottom: 1px solid var(--rule); }
 .settings__cat {
   background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer;
-  padding: 0.5rem 0.7rem; font: inherit; color: var(--slate);
+  padding: 0.5rem 0.7rem; font: inherit; color: var(--slate); text-decoration: none;
 }
 .settings__cat.is-on { color: var(--ink); border-bottom-color: var(--leaf); font-weight: 600; }
+
+.settings__tableWrap { overflow-x: auto; margin: 0.6rem 0 1.2rem; }
+.settings__tableWrap .sysadmin__table { min-width: 620px; }
+.settings__desc { color: var(--slate); font-size: 0.85rem; max-width: 22rem; }
+.settings__groupCard { background: var(--leaf-wash); border-radius: var(--radius); padding: var(--card-pad); margin: 0.6rem 0 1.2rem; }
+.settings__flow { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+.settings__flow li { color: var(--ink); }
+.settings__form .notice { margin: 0.6rem 0; }
 
 @media (min-width: 720px) {
   .sysadmin__grid { grid-template-columns: 1fr 1fr; }

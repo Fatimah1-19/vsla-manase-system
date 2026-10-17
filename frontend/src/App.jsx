@@ -70,7 +70,8 @@ export default function App() {
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
         <Route path="admin/users" element={<ProtectedRoute roles={['system_admin']}><AdminUsers /></ProtectedRoute>} />
         <Route path="admin/roles" element={<ProtectedRoute roles={['system_admin']}><AdminRoles /></ProtectedRoute>} />
-        <Route path="admin/settings" element={<ProtectedRoute roles={['system_admin']}><VslaSettings /></ProtectedRoute>} />
+        <Route path="admin/settings" element={<Navigate to="/app/admin/settings/general" replace />} />
+        <Route path="admin/settings/:section" element={<ProtectedRoute roles={['system_admin']}><VslaSettings /></ProtectedRoute>} />
         <Route path="admin/system" element={<ProtectedRoute roles={['system_admin']}><SystemSettings /></ProtectedRoute>} />
         <Route path="admin/activity" element={<ProtectedRoute roles={['system_admin']}><SystemActivity /></ProtectedRoute>} />
         <Route path="profile"  element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Profile /></ProtectedRoute>} />
