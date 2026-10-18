@@ -167,6 +167,19 @@ function run(middleware, user) {
   }
   // No card invents a figure: every value reads from the dashboard payload.
   assert.ok(chairDash.includes('data.members?.total'), 'total members must read the real count');
+
+  // ---- the highlighted pending action and the quick actions ---------------
+  for (const qa of ['chair.qaReviewRequests', 'chair.qaViewMembers', 'chair.qaViewLoans',
+                    'chair.qaViewSavings', 'chair.qaViewRepayments', 'chair.qaViewReports',
+                    'chair.qaReviewSettings', 'chair.qaViewMeetings']) {
+    assert.ok(chairDash.includes(qa), `the chair board must offer the ${qa} quick action`);
+  }
+  assert.ok(chairDash.includes('chair__alert'), 'the most important pending action must be highlighted');
+  assert.ok(
+    chairDash.indexOf('chair.alertJoins') < chairDash.indexOf('chair.alertRules')
+      && chairDash.indexOf('chair.alertRules') < chairDash.indexOf('chair.alertCarry'),
+    'people waiting to join must be highlighted before anything else'
+  );
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

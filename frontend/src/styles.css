@@ -4852,6 +4852,9 @@ section[id] { scroll-margin-top: 4.5rem; }
 .chair__carry li:last-child { border-bottom: 0; }
 .chair__carryNum { font-weight: 700; min-width: 1.6rem; }
 .chair__queue .settings__tableWrap .sysadmin__table { min-width: 360px; }
+.chair__alert { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0 0; }
+.chair__alertText { display: flex; align-items: baseline; gap: 0.6rem; }
+.chair__alertNum { font-size: 1.3rem; font-weight: 800; }
 .settings__desc { color: var(--slate); font-size: 0.85rem; max-width: 22rem; }
 .settings__groupCard { background: var(--leaf-wash); border-radius: var(--radius); padding: var(--card-pad); margin: 0.6rem 0 1.2rem; }
 .settings__flow { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; display: grid; gap: 0.35rem; }

@@ -33,6 +33,18 @@ export default {
     presentCount: (p, m) => `${p} mwa ${m} adawera`,
     confirmChanges: 'Tsitsimulani malamulo',
     moneyTitle: 'Ndalama mwachidule',
+    alertJoins: 'Opempha kulowa odikira',
+    alertRules: 'Malamulo okhudzidwa akudikira inu',
+    alertCarry: 'Mavoti okwaniritsidwa adikira',
+    qaTitle: 'Zochitika mwachangu',
+    qaReviewRequests: 'Onani opempha kulowa',
+    qaViewMembers: 'Onani mamembala',
+    qaViewLoans: 'Onani ngongole',
+    qaViewSavings: 'Onani kusunga',
+    qaViewRepayments: 'Onani kubwezera ngongole',
+    qaViewReports: 'Onani malipoti',
+    qaReviewSettings: 'Onani zokhazikika zodikira',
+    qaViewMeetings: 'Onani misonkhano',
   },
 
 

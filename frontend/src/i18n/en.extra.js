@@ -35,6 +35,18 @@ export default {
     presentCount: (p, m) => `${p} of ${m} marked present`,
     confirmChanges: 'Confirm rule changes',
     moneyTitle: 'Money at a glance',
+    alertJoins: 'Pending join requests',
+    alertRules: 'Rule changes waiting for you',
+    alertCarry: 'Votes waiting to be carried out',
+    qaTitle: 'Quick actions',
+    qaReviewRequests: 'Review Join Requests',
+    qaViewMembers: 'View Members',
+    qaViewLoans: 'View Loans',
+    qaViewSavings: 'View Savings',
+    qaViewRepayments: 'View Repayments',
+    qaViewReports: 'View Reports',
+    qaReviewSettings: 'Review Pending Settings',
+    qaViewMeetings: 'View Meetings',
   },
 
 

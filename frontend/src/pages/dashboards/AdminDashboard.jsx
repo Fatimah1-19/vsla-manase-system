@@ -39,6 +39,16 @@ export default function AdminDashboard({ data }) {
   ].filter((c) => c.n > 0);
   const somethingWaiting = joinQueue.length > 0 || ruleQueue.length > 0 || carryQueue.length > 0;
 
+  // The one thing that most needs her, put where she cannot miss it:
+  // people waiting to join first, then the rules, then the finished votes.
+  const topAlert = joinQueue.length > 0
+    ? { label: t('chair.alertJoins'), n: joinQueue.length, to: '/app/requests' }
+    : (chair.rule_changes_waiting || 0) > 0
+      ? { label: t('chair.alertRules'), n: chair.rule_changes_waiting, to: '/app/approvals' }
+      : carryQueue.length > 0
+        ? { label: t('chair.alertCarry'), n: carryQueue.reduce((s, c) => s + c.n, 0), to: carryQueue[0].to }
+        : null;
+
   const monthContribs = data.contributions_by_month || [];
   const contributions = monthContribs.map((c) => ({
     label: `${shortMonth(c.month)} ${c.month.slice(0, 4)}`,
@@ -69,6 +79,17 @@ export default function AdminDashboard({ data }) {
           icon="requests"
         />
       </div>
+
+      {/* ---- THE ONE THING THAT CANNOT WAIT ------------------------------ */}
+      {topAlert && (
+        <p className="notice notice--warn chair__alert">
+          <span className="chair__alertText">
+            <strong>{topAlert.label}</strong>
+            <span className="chair__alertNum">{plainNumber(topAlert.n)}</span>
+          </span>
+          <Link to={topAlert.to} className="btn btn--small">{t('chair.open')}</Link>
+        </p>
+      )}
 
       {/* ---- WHAT IS HERS TO SETTLE -------------------------------------- */}
       {somethingWaiting && (
@@ -280,13 +301,16 @@ export default function AdminDashboard({ data }) {
       </section>
 
       <section className="adash__quick">
-        <h2 className="dash__sectionTitle">{t('dashboard.commonJobs')}</h2>
+        <h2 className="dash__sectionTitle">{t('chair.qaTitle')}</h2>
         <div className="adash__links">
-          <Link to="/app/approvals" className="btn">{t('chair.confirmChanges')}</Link>
-          <Link to="/app/members" className="btn btn--sky">{t('members.addPerson')}</Link>
-          <Link to="/app/analytics" className="btn btn--sky">{t('nav.analytics')}</Link>
-          <Link to="/app/messages" className="btn btn--gold">{t('messages.send')}</Link>
-          <Link to="/app/shareout" className="btn btn--ghost">{t('shareout.title')}</Link>
+          <Link to="/app/requests" className="btn">{t('chair.qaReviewRequests')}</Link>
+          <Link to="/app/members" className="btn btn--sky">{t('chair.qaViewMembers')}</Link>
+          <Link to="/app/loans" className="btn">{t('chair.qaViewLoans')}</Link>
+          <Link to="/app/savings" className="btn">{t('chair.qaViewSavings')}</Link>
+          <Link to="/app/loans?tab=repayments" className="btn">{t('chair.qaViewRepayments')}</Link>
+          <Link to="/app/analytics?tab=reports" className="btn btn--sky">{t('chair.qaViewReports')}</Link>
+          <Link to="/app/approvals" className="btn btn--gold">{t('chair.qaReviewSettings')}</Link>
+          <Link to="/app/meetings" className="btn btn--ghost">{t('chair.qaViewMeetings')}</Link>
         </div>
       </section>
 
