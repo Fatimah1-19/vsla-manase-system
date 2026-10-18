@@ -245,6 +245,38 @@ function run(middleware, user) {
   assert.ok(loansPage.includes('status === \'approved\''), 'the loan status is shown clearly');
   // Approval stays with the authorised committee; we do not invent new workflow.
 
+  // ---- the savings book: watched, never quietly rewritten -----------------
+  assert.ok(can('admin', 'savings.view'), 'the chairperson may open the savings book');
+  assert.ok(!can('admin', 'savings.record'), 'the chairperson does not add or correct entries');
+  const chairView = await run(requirePermission('savings.view'), { role: 'admin' });
+  assert.strictEqual(chairView.passed, true);
+  const chairRecord = await run(requirePermission('savings.record'), { role: 'admin' });
+  assert.strictEqual(chairRecord.status, 403);
+  const savingsRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'savingsRoutes.js'), 'utf8');
+  assert.ok(savingsRoutes.includes("router.get('/', requirePermission('savings.view')"),
+    'reading the book needs only the view permission');
+  assert.ok(savingsRoutes.includes("router.post('/', requirePermission('savings.record')"),
+    'adding an entry needs the record permission');
+  assert.ok(savingsRoutes.includes("router.patch('/:id', requirePermission('savings.record')"),
+    'correcting an entry needs the record permission');
+  assert.ok(savingsRoutes.includes("router.delete('/:id', requirePermission('savings.delete')"),
+    'removing an entry is its own explicit permission');
+  // Any correction that does happen is controlled and audited.
+  const savingsCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'savingsController.js'), 'utf8');
+  assert.ok(savingsCtrl.includes("audit(req.user.id, 'UPDATE_SAVING'"),
+    'a corrected entry must write the old and new figures to the audit trail');
+  assert.ok(savingsCtrl.includes("audit(req.user.id, 'DELETE_SAVING'"),
+    'a removed entry must write who took it out to the audit trail');
+  // The page itself only offers recording to the treasurers and secretary.
+  const savingsPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Savings.jsx'), 'utf8');
+  assert.ok(savingsPage.includes('isRecorder && <button') || savingsPage.includes('action={isRecorder &&'),
+    'the record button is for the recorders only');
+  assert.ok(savingsPage.includes('{isRecorder && (') && savingsPage.includes("t('common.edit')"),
+    'the chairperson cannot open an entry for editing');
+  assert.ok(savingsPage.includes('{isAdmin && (') && savingsPage.includes("t('common.del')"),
+    'removing an entry stays an explicit, authorised action');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
