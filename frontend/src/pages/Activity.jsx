@@ -10,6 +10,23 @@ import '../styles.css';
 
 const PAGE_SIZE = 50;
 const EMPTY_FILTERS = { q: '', action: '', from: '', to: '' };
+const FAILED = /FAILED|LOCKED|BLOCKED|REJECT|DENIED/;
+
+// users #16  — the record an event touched.
+const prettyRecord = (type, id) => {
+  if (!type) return '—';
+  const name = String(type).replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+  return id == null ? name : `${name} #${id}`;
+};
+
+const dateOnly = (v) => {
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+const timeOnly = (v) => {
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
 
 /** One event line, shared by the sittings below and the "other events" list. */
 function EventRow({ event, t, showWho }) {
@@ -94,13 +111,48 @@ function LogTab({ t, toast }) {
         </button>
       </div>
 
+      <p className="activity__readonly">{t('activity.readOnly')}</p>
+
       {data.rows.length === 0 ? (
         <EmptyState title={t('activity.logEmpty')} />
       ) : (
         <>
-          <ul className="activity__list activity__list--log">
-            {data.rows.map((event) => <EventRow key={event.id} event={event} t={t} showWho />)}
-          </ul>
+          <div className="settings__tableWrap">
+            <table className="sysadmin__table">
+              <thead>
+                <tr>
+                  <th>{t('activity.colUser')}</th>
+                  <th>{t('activity.colAction')}</th>
+                  <th>{t('activity.colRecord')}</th>
+                  <th>{t('activity.colDate')}</th>
+                  <th>{t('activity.colTime')}</th>
+                  <th>{t('activity.colStatus')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.map((event) => {
+                  const failed = FAILED.test(String(event.action || ''));
+                  return (
+                    <tr key={event.id}>
+                      <td>{event.full_name || t('activity.system')}</td>
+                      <td>
+                        {humanAction(event.action)}
+                        {event.details ? <span className="muted"> · {event.details}</span> : null}
+                      </td>
+                      <td>{prettyRecord(event.entity_type, event.entity_id)}</td>
+                      <td>{dateOnly(event.created_at)}</td>
+                      <td>{timeOnly(event.created_at)}</td>
+                      <td>
+                        <span className={`tag ${failed ? 'tag--grey' : 'tag--green'}`}>
+                          {failed ? t('activity.statusFailed') : t('activity.statusDone')}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           <div className="activity__pager">
             <button type="button" className="btn btn--ghost btn--small" disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}>{t('activity.previous')}</button>

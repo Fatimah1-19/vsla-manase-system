@@ -333,6 +333,14 @@ export default {
       passwordRule: 'Password requirements', passwordRuleValue: 'At least 6 characters',
       appStatus: 'Application status', appStatusValue: 'Running',
       maintenance: 'Maintenance mode', maintenanceValue: 'Not available',
+      // Approval workflow record
+      historyTitle: 'Changes you have proposed',
+      historyNote: 'A rule only changes once the chairperson confirms it. You cannot confirm your own proposal, and a rejected change leaves the current value untouched.',
+      proposedValue: 'Proposed value', proposedBy: 'Proposed by', dateProposed: 'Date proposed',
+      decidedBy: 'Confirmed / rejected by', decidedAt: 'Date decided',
+      withdraw: 'Withdraw', withdrawn: 'Proposal withdrawn.',
+      req_pending: 'Waiting', req_approved: 'Confirmed', req_rejected: 'Rejected', req_withdrawn: 'Withdrawn',
+      questionCount: (n) => `${n} question${n === 1 ? '' : 's'}`,
     },
 
   wrappers: {
@@ -590,6 +598,11 @@ export default {
     smsLabel: 'Send text messages',
     saved: 'Saved.',
     on: 'On', off: 'Off',
+    // System activity page
+    actSearch: 'Search by action, person or details',
+    actAnyUser: 'Anyone',
+    actRecord: 'Affected record', actDate: 'Date', actTime: 'Time', actDetails: 'Details',
+    actViewDetails: 'View', actHideDetails: 'Hide',
     // User table, filters and actions
     contact: 'Contact', created: 'Created', statusLocked: 'Locked',
     searchUsers: 'Search by name, username or phone',
@@ -644,5 +657,9 @@ export default {
     logEmpty: 'Nothing matches these filters.',
     totalRows: (n) => `${n} event${n === 1 ? '' : 's'}`,
     record: 'Record', who: 'Who',
+    readOnly: 'This trail is read-only. Entries can never be edited, deleted or hidden.',
+    colUser: 'User', colAction: 'Action', colRecord: 'Affected record',
+    colDate: 'Date', colTime: 'Time', colStatus: 'Status',
+    statusDone: 'Success', statusFailed: 'Failed',
   },
 };

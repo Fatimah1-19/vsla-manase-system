@@ -45,6 +45,20 @@ const SWITCH_FIELDS = {
 const STATUS_TAG = {
   in_force: 'tag--green', waiting: 'tag--gold', not_set: 'tag--grey', fixed: 'tag--grey', off: 'tag--grey',
 };
+// Which settings each page owns, so a proposed change is shown on the page it
+// belongs to.
+const SECTION_KEYS = {
+  savings: ['weekly_share_value', 'monthly_levy'],
+  loans: ['loan_multiplier', 'default_interest_rate'],
+  fines: ['absence_fine'],
+  welfare: ['welfare_contribution'],
+  shareout: ['include_interest_in_shareout', 'include_fines_in_shareout', 'include_welfare_in_shareout'],
+  membership: ['registration_fee', 'join_screening_questions'],
+  voting: ['case_voting_days', 'case_quorum_percent', 'case_dismiss_percent', 'office_voting_days', 'office_quorum_percent'],
+};
+const MONEY_KEYS = new Set(['weekly_share_value', 'monthly_levy', 'welfare_contribution', 'registration_fee', 'absence_fine']);
+const PERCENT_KEYS = new Set(['default_interest_rate', 'case_quorum_percent', 'case_dismiss_percent', 'office_quorum_percent']);
+const REQ_TAG_BY_STATUS = { pending: STATUS_TAG.waiting, approved: STATUS_TAG.in_force, rejected: STATUS_TAG.not_set, withdrawn: STATUS_TAG.not_set };
 
 /**
  * The VSLA settings, one dedicated page per category. The administrator reads the
@@ -61,6 +75,7 @@ export default function VslaSettings() {
   const [questions, setQuestions] = useState([]);
   const [system, setSystem] = useState(null);
   const [sms, setSms] = useState(null);
+  const [changes, setChanges] = useState([]);
   const [pendingKeys, setPendingKeys] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
 
@@ -81,8 +96,10 @@ export default function VslaSettings() {
     } catch { parsed = []; }
     setQuestions(parsed.map((q) => ({ id: q.id || '', good: q.good === 'no' ? 'no' : 'yes', en: q.en || '', ny: q.ny || '' })));
     setSystem(Object.fromEntries(sys.map((r) => [r.setting_key, r.setting_value])));
+    const list = changes || [];
+    setChanges(list);
     const keys = new Set();
-    for (const c of (changes || [])) {
+    for (const c of list) {
       if (c.status === 'pending' && c.payload) Object.keys(c.payload).forEach((k) => keys.add(k));
     }
     setPendingKeys(keys);
@@ -122,6 +139,19 @@ export default function VslaSettings() {
     }
   }
 
+  async function withdraw(id) {
+    setBusy(true);
+    try {
+      const res = await api.post(`/admin/change-requests/${id}/withdraw`);
+      toast.success(res.message || t('settings.withdrawn'));
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function addQuestion() {
     setQuestions((q) => [...q, { id: '', good: 'yes', en: '', ny: '' }]);
   }
@@ -140,6 +170,32 @@ export default function VslaSettings() {
     return { status: t('settings.stInForce'), tag: STATUS_TAG.in_force };
   };
   const fixed = () => ({ status: t('settings.stFixed'), tag: STATUS_TAG.fixed });
+
+  // A rule value, shown the way the group reads it.
+  const fmtVal = (key, val) => {
+    if (!isSet(val)) return '—';
+    if (key === 'join_screening_questions') {
+      let n = 0;
+      try { const a = JSON.parse(val); n = Array.isArray(a) ? a.length : 0; } catch { n = 0; }
+      return t('settings.questionCount', n);
+    }
+    if (key.startsWith('include_')) return val === 'yes' ? t('common.yes') : t('common.no');
+    if (key === 'loan_multiplier') return `${val} × ${t('settings.savingsWord')}`;
+    if (MONEY_KEYS.has(key)) return money(Number(val || 0));
+    if (PERCENT_KEYS.has(key)) return `${val}%`;
+    return String(val);
+  };
+
+  // Everything the administrator has put to the chairperson about this page's
+  // rules, one row per rule: the value now, the value asked for, who asked, when,
+  // and who decided it.
+  const sectionKeys = SECTION_KEYS[section.id] || [];
+  const historyRows = [];
+  for (const c of changes) {
+    for (const key of (sectionKeys.length ? sectionKeys : Object.keys(c.payload || {}))) {
+      if (c.payload && Object.prototype.hasOwnProperty.call(c.payload, key)) historyRows.push({ change: c, key });
+    }
+  }
 
   const numFields = NUM_FIELDS[section.id] || [];
   const swFields = SWITCH_FIELDS[section.id] || [];
@@ -442,6 +498,48 @@ export default function VslaSettings() {
               {busy ? t('common.saving') : t('settings.proposeToChair')}
             </button>
           </form>
+        )}
+
+        {/* ---- the approval record: what was asked, by whom, and the verdict ---- */}
+        {sectionKeys.length > 0 && historyRows.length > 0 && (
+          <div className="settings__tableWrap">
+            <h3 className="settings__h2">{t('settings.historyTitle')}</h3>
+            <p className="settings__note">{t('settings.historyNote')}</p>
+            <table className="sysadmin__table">
+              <thead>
+                <tr>
+                  <th>{t('settings.tblSetting')}</th>
+                  <th>{t('settings.tblCurrent')}</th>
+                  <th>{t('settings.proposedValue')}</th>
+                  <th>{t('settings.proposedBy')}</th>
+                  <th>{t('settings.dateProposed')}</th>
+                  <th>{t('settings.tblStatus')}</th>
+                  <th>{t('settings.decidedBy')}</th>
+                  <th>{t('settings.decidedAt')}</th>
+                  <th>{t('settings.tblActions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyRows.map(({ change: c, key }) => (
+                  <tr key={`${c.id}-${key}`}>
+                    <td>{t(GROUP_LABELS[key] || key)}</td>
+                    <td>{fmtVal(key, group[key])}</td>
+                    <td>{fmtVal(key, c.payload[key])}</td>
+                    <td>{c.requested_by_name || '—'}</td>
+                    <td>{dateTime(c.created_at)}</td>
+                    <td><span className={`tag ${REQ_TAG_BY_STATUS[c.status] || STATUS_TAG.not_set}`}>{t(`settings.req_${c.status}`)}</span></td>
+                    <td>{c.decided_by_name || '—'}</td>
+                    <td>{c.decided_at ? dateTime(c.decided_at) : '—'}</td>
+                    <td>
+                      {c.status === 'pending'
+                        ? <button type="button" className="btn btn--ghost btn--small" disabled={busy} onClick={() => withdraw(c.id)}>{t('settings.withdraw')}</button>
+                        : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* ---- SMS: the administrator's own technical switch ---- */}
