@@ -670,6 +670,42 @@ function run(middleware, user) {
     'the phone navigation must keep every page reachable');
   assert.ok(topbar.includes('onMenu'), 'the phone topbar must be able to open the drawer');
 
+  // ---- the chairperson's own page: profile, and no role from there --------
+  const profileRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'profileRoutes.js'), 'utf8');
+  const profileCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'profileController.js'), 'utf8');
+  const profilePage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Profile.jsx'), 'utf8');
+  const authRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'authRoutes.js'), 'utf8');
+  assert.ok(profileRoutes.includes('router.use(protect)')
+    && profileRoutes.includes("router.get('/me'") && profileRoutes.includes("router.put('/me'"),
+    'she reads and updates her own record only');
+  assert.ok(authRoutes.includes("router.post('/change-password', protect"),
+    'changing her password stays behind a login and her current password');
+  assert.ok(profileCtrl.includes('UPDATE users SET phone = COALESCE($2, phone), email = COALESCE($3, email)'),
+    'her permitted personal information is her phone and her email');
+  assert.ok(!/UPDATE users SET[^`]*\brole\b\s*=/i.test(profileCtrl),
+    'the profile page can never change her own role');
+  assert.ok(profileCtrl.includes('account_status') && profileCtrl.includes("'suspended'")
+    && profileCtrl.includes("'locked'"),
+    'her account status is worked out for the page');
+  assert.ok(profilePage.includes('pd-email') && profilePage.includes("t('common.email')"),
+    'she can see and edit her email');
+  assert.ok(profilePage.includes('t(`roles.${user.role}`)') && profilePage.includes('ACCOUNT_TAG'),
+    'the page shows her VSLA role and her account status as badges');
+  assert.ok(!/setField\('role'\)/.test(profilePage), 'there is no field that could change her role');
+  for (const file of ['en.extra.js', 'ny.extra.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    for (const key of ['accountStatus:', 'statusActive:', 'statusSuspended:', 'statusLocked:']) {
+      assert.ok(dict.includes(`${key}`), `${file} must carry profile.${key.replace(':', '')}`);
+    }
+  }
+
+  for (const file of ['en.js', 'ny.js']) {
+    const base = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    assert.ok(/email: '/.test(base), `${file} must carry common.email`);
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

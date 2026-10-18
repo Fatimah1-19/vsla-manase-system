@@ -236,6 +236,7 @@ export default {
     photoHint: 'JPG, PNG or WEBP, up to 2 MB. It will show next to your name.',
     photoType: 'Choose a JPG, PNG or WEBP picture.',
     personal: 'About me', phoneHint: 'Texts about your money go to this number.',
+    accountStatus: 'Account status', statusActive: 'Active', statusSuspended: 'Suspended', statusLocked: 'Locked',
     shareholdingTitle: 'Shareholding summary',
     cycle: 'Cycle', totalSavings: 'Saved this cycle', shareValue: 'Value of one share',
     moneyInBox: 'Money available in the cash box',

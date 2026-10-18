@@ -20,7 +20,10 @@ const getMyProfile = wrap(async (req, res) => {
     `SELECT m.id, m.membership_number, m.date_joined, m.status, m.village, m.address,
             m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
             (m.avatar IS NOT NULL) AS has_avatar,
-            u.full_name, u.username, u.phone, u.email, u.role, u.language
+            u.full_name, u.username, u.phone, u.email, u.role, u.language,
+            CASE WHEN NOT u.is_active THEN 'suspended'
+                 WHEN u.locked_until IS NOT NULL AND u.locked_until > NOW() THEN 'locked'
+                 ELSE 'active' END AS account_status
        FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`, [memberId]
   );
 

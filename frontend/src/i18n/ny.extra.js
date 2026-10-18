@@ -234,6 +234,7 @@ export default {
     photoHint: 'JPG, PNG kapena WEBP, mpaka 2 MB. Chidzawoneka pafupi ndi dzina lanu.',
     photoType: 'Sankhani chithunzi cha JPG, PNG kapena WEBP.',
     personal: 'Za ine', phoneHint: 'Mauthenga okhudza ndalama zanu amapita ku nambala iyi.',
+    accountStatus: 'Mkhalidwe wa akaunti', statusActive: 'Akugwira ntchito', statusSuspended: 'Waimitsidwa', statusLocked: 'Yatsekedwa',
     shareholdingTitle: 'Chidule cha magawo anu',
     cycle: 'Nyengo', totalSavings: 'Zosunga mu nyengo ino', shareValue: 'Mtengo wa gawo limodzi',
     moneyInBox: 'Ndalama zanu zopezeka m\'bokosi',

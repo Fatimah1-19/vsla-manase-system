@@ -19,6 +19,8 @@ import '../styles.css';
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const MAX_BYTES = 2 * 1024 * 1024;
 const STATUS_TAG = { pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red' };
+const ACCOUNT_TAG = { active: 'green', suspended: 'grey', locked: 'gold' };
+const ACCOUNT_LABEL = { active: 'statusActive', suspended: 'statusSuspended', locked: 'statusLocked' };
 
 const toBase64 = (file) => new Promise((resolve, reject) => {
   const r = new FileReader();
@@ -292,10 +294,17 @@ export default function Profile() {
           <dl className="profile__rows profile__rows--static">
             <div><dt>{t('common.name')}</dt><dd>{user.full_name}</dd></div>
             <div><dt>{t('login.username')}</dt><dd><code>{user.username}</code></dd></div>
-            <div><dt>{t('common.phone')}</dt><dd>{user.phone || '—'}</dd></div>
-            <div><dt>{t('common.email')}</dt><dd>{user.email || '—'}</dd></div>
+            <div><dt>{t('common.phone')}</dt><dd>{m.phone || user.phone || '—'}</dd></div>
+            <div><dt>{t('common.email')}</dt><dd>{m.email || '—'}</dd></div>
             <div><dt>{t('common.role')}</dt><dd>{t(`roles.${user.role}`)}</dd></div>
-            <div><dt>{t('members.status')}</dt><dd>{m.status ? t(`members.${m.status}`) : '—'}</dd></div>
+            <div>
+              <dt>{t('profile.accountStatus')}</dt>
+              <dd>
+                <span className={`tag tag--${ACCOUNT_TAG[m.account_status] || 'grey'}`}>
+                  {t(`profile.${ACCOUNT_LABEL[m.account_status] || 'statusSuspended'}`)}
+                </span>
+              </dd>
+            </div>
             <div><dt>{t('members.number')}</dt><dd>{m.membership_number}</dd></div>
             <div><dt>{t('members.joined')}</dt><dd>{shortDate(m.date_joined)}</dd></div>
           </dl>
