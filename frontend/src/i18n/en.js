@@ -109,6 +109,8 @@ const base = {
       title: 'Members', number: 'Member number', joined: 'Joined', savings: 'Saved',
       historyTitle: 'Membership history',
       presentIn: (p, m) => `Present at ${p} of the last ${m} meetings`,
+      welfarePaid: (amount, n) => `Welfare paid: ${amount} in ${n} contributions`,
+      repaidOf: (paid, total) => `${paid} of ${total} repaid`,
     nextOfKin: 'Next of kin', addPerson: 'Add a person', empty: 'Nobody has been added yet.',
     suspend: 'Suspend', unlock: 'Unlock account', newPassword: 'Give a new password',
     tempPassword: 'Temporary password', writeItDown: 'Write this down. It is only shown once.',

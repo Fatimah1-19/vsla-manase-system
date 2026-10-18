@@ -224,6 +224,17 @@ function run(middleware, user) {
   const homePage = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Home.jsx'), 'utf8');
   assert.ok(homePage.includes("change('occupation')"), 'the public join form must collect the occupation');
 
+  // ---- the chairperson keeps the records, she never hands out standing -----
+  assert.ok(!/role\s*=\s*COALESCE/.test(userCtrl), 'the office edit screen must never write a role');
+  assert.ok(userCtrl.includes('Roles are given by a vote of the members'),
+    'a role change from the office screen must be refused');
+  assert.ok(userCtrl.includes("const role = 'member'"),
+    'everyone added from the office screen joins as an ordinary member');
+  assert.ok(!membersPage.includes('e-role') && !membersPage.includes('m-role') && !membersPage.includes('form.role'),
+    'the member forms must not offer a role to pick');
+  assert.ok(membersPage.includes('members.repaidOf') && membersPage.includes('members.welfarePaid'),
+    'the member record must show her repayments and her welfare contributions');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

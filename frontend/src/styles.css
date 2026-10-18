@@ -4012,6 +4012,8 @@ section[id] { scroll-margin-top: 4.5rem; }
   display: grid;
   gap: 0.35rem;
 }
+.members__histLoans { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.members__histLoans li { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.9rem; }
 .members__feeTitle { margin: 0; font-size: 0.95rem; }
 .members__feePaid { margin: 0; font-weight: 600; color: var(--leaf-dark); }
 .members__feeFor { margin: 0 0 0.9rem; font-weight: 700; }

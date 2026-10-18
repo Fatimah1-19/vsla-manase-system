@@ -5,11 +5,7 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
-const { canRemoveAdministrator, canManageAccount } = require('../utils/adminRules');
-
-// Roles the chairperson may hand out. The system administrator is deliberately
-// not here: that account is created when the group is set up, not from a page.
-const ROLES = ['admin', 'treasurer', 'secretary', 'member'];
+const { canManageAccount } = require('../utils/adminRules');
 
 // Suspending, dismissing or bringing back an ordinary member is the members' decision,
 // made by a vote (see controllers/memberCaseController.js). It cannot be done from here.
@@ -53,15 +49,19 @@ const listUsers = wrap(async (req, res) => {
 
 // POST /api/users  — the admin adds a member to the group
 const createUser = wrap(async (req, res) => {
-  const { full_name, phone, role = 'member', language = 'ny', village, address,
+  const { full_name, phone, language = 'ny', village, address,
           next_of_kin, next_of_kin_phone, gender, marital_status, date_of_birth, occupation,
           username: wantedUsername, password: wantedPassword } = req.body;
 
   if (!full_name || !String(full_name).trim()) {
     return res.status(400).json({ message: 'Enter their full name.' });
   }
-  if (!ROLES.includes(role)) {
-    return res.status(400).json({ message: 'Choose a valid role.' });
+  // Everyone added here joins as an ordinary member. The offices are won by a
+  // vote of the members and the system administrator is appointed in her own
+  // area, so this page never hands out standing.
+  const role = 'member';
+  if (req.body.role && req.body.role !== 'member') {
+    return res.status(400).json({ message: 'Officers are chosen by a vote of the members, not added from this page.' });
   }
 
   let username = String(wantedUsername || '').trim().toLowerCase();
@@ -135,20 +135,15 @@ const updateUser = wrap(async (req, res) => {
   const existing = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!existing) return res.status(404).json({ message: 'That person is not on the list.' });
 
-  if (role && !ROLES.includes(role)) {
-    return res.status(400).json({ message: 'Choose a valid role.' });
+  // A role is not a detail that gets edited here. The offices are won by a vote
+  // of the members and the system administrator is appointed in her own area, so
+  // this page keeps the records without handing out standing.
+  if (role && role !== existing.role) {
+    return res.status(403).json({ message: 'Roles are given by a vote of the members, not from this page.' });
   }
 
-  // The office screens never reach the System Administrator's account, and nobody
-  // changes their own role from here.
-  if (refuseAccount(req, res, id, existing.role, role)) return;
-
-  // Never leave the group without an admin.
-  if (existing.role === 'admin' && role && role !== 'admin') {
-    const admins = await one(`SELECT COUNT(*)::int AS c FROM users WHERE role = 'admin' AND is_active = TRUE`);
-    const removable = canRemoveAdministrator({ targetIsAdmin: true, activeAdministrators: admins.c });
-    if (!removable.ok) return res.status(400).json({ message: 'This is the only admin. Make someone else an admin first.' });
-  }
+  // The office screens never reach the System Administrator's account.
+  if (refuseAccount(req, res, id, existing.role)) return;
 
   // An ordinary member's standing in the group (active, suspended, dismissed) can only
   // change through a vote. Saving the same value again is fine.
@@ -168,11 +163,10 @@ const updateUser = wrap(async (req, res) => {
     `UPDATE users SET
        full_name = COALESCE($2, full_name),
        phone     = COALESCE($3, phone),
-       role      = COALESCE($4, role),
-       language  = COALESCE($5, language),
-       is_active = COALESCE($6, is_active)
+       language  = COALESCE($4, language),
+       is_active = COALESCE($5, is_active)
      WHERE id = $1`,
-    [id, full_name || null, phone || null, role || null, language || null,
+    [id, full_name || null, phone || null, language || null,
      typeof is_active === 'boolean' ? is_active : null]
   );
 

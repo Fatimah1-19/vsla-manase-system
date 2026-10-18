@@ -16,7 +16,7 @@ import { money, shortDate, inputDate, monthName, plainNumber } from '../utils/fo
 import '../styles.css';
 
 const blank = {
-  full_name: '', phone: '', role: 'member', language: 'ny',
+  full_name: '', phone: '', language: 'ny',
   village: '', next_of_kin: '', next_of_kin_phone: '', username: '',
   gender: '', marital_status: '', date_of_birth: '', occupation: '', address: '',
 };
@@ -126,7 +126,7 @@ export default function Members() {
 
   function startEdit(p) {
     setEditForm({
-      id: p.id, full_name: p.full_name || '', phone: p.phone || '', role: p.role, language: p.language || 'ny',
+      id: p.id, full_name: p.full_name || '', phone: p.phone || '', language: p.language || 'ny',
       village: p.village || '', next_of_kin: p.next_of_kin || '', next_of_kin_phone: p.next_of_kin_phone || '',
       gender: p.gender || '', marital_status: p.marital_status || '',
       date_of_birth: p.date_of_birth ? String(p.date_of_birth).slice(0, 10) : '',
@@ -408,16 +408,7 @@ export default function Members() {
             </div>
           </div>
 
-          <div className="form-row form-row--2">
-            <div>
-              <label className="field-label" htmlFor="m-role">{t('common.role')}</label>
-              <select id="m-role" value={form.role} onChange={change('role')}>
-                <option value="member">{t('roles.member')}</option>
-                <option value="secretary">{t('roles.secretary')}</option>
-                <option value="treasurer">{t('roles.treasurer')}</option>
-                <option value="admin">{t('roles.admin')}</option>
-              </select>
-            </div>
+          <div className="form-row">
             <div>
               <label className="field-label" htmlFor="m-lang">{t('common.language')}</label>
               <select id="m-lang" value={form.language} onChange={change('language')}>
@@ -484,15 +475,7 @@ export default function Members() {
                 <input id="e-village" value={editForm.village} onChange={changeEdit('village')} />
               </div>
             </div>
-            <div className="form-row form-row--2">
-              <div>
-                <label className="field-label" htmlFor="e-role">{t('common.role')}</label>
-                <select id="e-role" value={editForm.role} onChange={changeEdit('role')}>
-                  {['member', 'secretary', 'treasurer', 'admin'].map((r) => (
-                    <option key={r} value={r}>{t(`roles.${r}`)}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="form-row">
               <div>
                 <label className="field-label" htmlFor="e-lang">{t('common.language')}</label>
                 <select id="e-lang" value={editForm.language} onChange={changeEdit('language')}>
@@ -585,6 +568,25 @@ export default function Members() {
                       history.attendance.filter((a) => a.status === 'present').length,
                       history.attendance.length)}
                   </p>
+                )}
+                {history?.wrappers && (
+                  <p className="muted">
+                    {t('members.welfarePaid', money(history.wrappers.total_paid || 0), history.wrappers.payments || 0)}
+                  </p>
+                )}
+                {history?.loans?.length > 0 && (
+                  <ul className="members__histLoans">
+                    {history.loans.slice(0, 4).map((l) => {
+                      const due = l.with_interest ? l.amount + (l.amount * l.interest_rate) / 100 : l.amount;
+                      return (
+                        <li key={l.id}>
+                          <span>{money(l.amount)}</span>
+                          <span className="tag tag--grey">{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</span>
+                          <span className="muted">{t('members.repaidOf', money(l.total_repaid || 0), money(+due.toFixed(2)))}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
               </div>
             )}
