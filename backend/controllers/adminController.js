@@ -196,7 +196,7 @@ const listPending = wrap(async (req, res) => {
   const role = req.user.role;
   const args = [role];
   const pending = await query(
-    `SELECT cr.id, cr.kind, cr.status, cr.payload, cr.reason, cr.created_at, cr.target_user_id,
+    `SELECT cr.id, cr.kind, cr.status, cr.payload, cr.reason, cr.created_at, cr.target_user_id, cr.approver_role,
             r.full_name AS requested_by_name, t.full_name AS target_name
        FROM change_requests cr
        LEFT JOIN users r ON r.id = cr.requested_by

@@ -131,6 +131,7 @@ const base = {
     otherRecordings: 'Zolemba zina', notify: 'Uzani onse za msonkhanowu',
     empty: 'Palibe misonkhano yolembedwa.',
     presentCount: (n, t) => `${n} mwa ${t} analipo`,
+    statusUpcoming: 'Kubwera', statusHeld: 'Yachitika', viewRecord: 'Onani zolemba',
   },
 
   welfare: {

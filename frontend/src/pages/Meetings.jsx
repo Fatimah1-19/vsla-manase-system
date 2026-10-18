@@ -135,6 +135,14 @@ export default function Meetings() {
                   </span>
                 </div>
                 <div className="meetings__body">
+                  <p className="meetings__status">
+                    <span className={`tag ${upcoming ? 'tag--blue' : 'tag--grey'}`}>
+                      {upcoming ? t('meetings.statusUpcoming') : t('meetings.statusHeld')}
+                    </span>
+                    {m.marked_count > 0 && (
+                      <span className="tag tag--green">{t('meetings.markedAttendance')}</span>
+                    )}
+                  </p>
                   <p className="meetings__where">
                     {m.location || 'No place written down'}
                     {m.meeting_time ? <span className="muted"> · {m.meeting_time}</span> : null}
@@ -146,13 +154,15 @@ export default function Meetings() {
                       : <span className="muted">{t('meetings.attendance')} not marked</span>}
                   </p>
                 </div>
-                {isRecorder && (
+                {isCommittee && (
                   <button
                     type="button"
                     className={m.marked_count > 0 ? 'btn btn--ghost btn--small is-marked' : 'btn btn--ghost btn--small'}
                     onClick={() => openDetail(m.id)}
                   >
-                    {m.marked_count > 0 ? `\u2713 ${t('meetings.markedAttendance')}` : t('meetings.markAttendance')}
+                    {isRecorder
+                      ? (m.marked_count > 0 ? `\u2713 ${t('meetings.markedAttendance')}` : t('meetings.markAttendance'))
+                      : t('meetings.viewRecord')}
                   </button>
                 )}
               </li>
@@ -215,9 +225,11 @@ export default function Meetings() {
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setDetail(null)}>{t('common.cancel')}</button>
-            <button type="button" className="btn" onClick={saveAttendance} disabled={busy}>
-              {busy ? t('common.saving') : t('common.save')}
-            </button>
+            {isRecorder && (
+              <button type="button" className="btn" onClick={saveAttendance} disabled={busy}>
+                {busy ? t('common.saving') : t('common.save')}
+              </button>
+            )}
           </>
         }
       >
@@ -232,6 +244,7 @@ export default function Meetings() {
                       <button
                         key={s}
                         type="button"
+                        disabled={!isRecorder}
                         className={marks[a.member_id] === s ? `meetings__mark is-${s}` : 'meetings__mark'}
                         onClick={() => setMarks((m) => ({ ...m, [a.member_id]: s }))}
                         aria-pressed={marks[a.member_id] === s}
@@ -246,7 +259,8 @@ export default function Meetings() {
 
             <div className="meetings__minutes">
               <label className="field-label" htmlFor="mt-minutes">{t('meetings.minutes')}</label>
-              <textarea id="mt-minutes" rows={4} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+              <textarea id="mt-minutes" rows={4} value={minutes} disabled={!isRecorder}
+                onChange={(e) => setMinutes(e.target.value)} />
             </div>
           </>
         )}

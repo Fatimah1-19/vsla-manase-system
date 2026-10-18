@@ -6,10 +6,21 @@ import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
-import { shortDate, dateTime } from '../utils/format.js';
+import { shortDate, dateTime, money } from '../utils/format.js';
+import { GROUP_LABELS, SECTION_KEYS, CATEGORY_ORDER } from '../utils/groupRuleLabels.js';
 import '../styles.css';
 
-/** A friendly line for one value in a group-rule change. */
+const MONEY_KEYS = new Set(['weekly_share_value', 'monthly_levy', 'welfare_contribution', 'registration_fee', 'absence_fine']);
+const PERCENT_KEYS = new Set(['default_interest_rate', 'case_quorum_percent', 'case_dismiss_percent', 'office_quorum_percent']);
+const isSet = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+
+// Which category each setting belongs to, built from the settings page map.
+const KEY_CAT = {};
+for (const [cat, keys] of Object.entries(SECTION_KEYS)) {
+  for (const k of keys) KEY_CAT[k] = cat;
+}
+
+/** A friendly line for one value that is not a group rule. */
 function payloadValue(key, value) {
   if (key === 'join_screening_questions') {
     try {
@@ -21,9 +32,9 @@ function payloadValue(key, value) {
 }
 
 /**
- * What is waiting to be confirmed. The chairperson confirms the account and
- * group-rule changes the administrator asked for; the treasurer confirms the
- * group-rule changes the chairperson asks for.
+ * VSLA SETTINGS APPROVAL: what the administrator has proposed and the
+ * chairperson must confirm or reject — one row per setting with the value
+ * now, the value asked for, who asked, when, and what is still pending.
  */
 export default function Approvals() {
   const { t } = useLang();
@@ -31,9 +42,17 @@ export default function Approvals() {
   const confirm = useConfirm();
 
   const [data, setData] = useState(null);
+  const [current, setCurrent] = useState({});
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => { setData(await api.get('/approvals')); }, []);
+  const load = useCallback(async () => {
+    const [d, rules] = await Promise.all([
+      api.get('/approvals'),
+      api.get('/settings/group-rules').catch(() => []),
+    ]);
+    setData(d);
+    setCurrent(Object.fromEntries((rules || []).map((r) => [r.setting_key, r.setting_value])));
+  }, []);
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
   async function decideChange(id, decision) {
@@ -51,6 +70,40 @@ export default function Approvals() {
     }
   }
 
+  // A rule value, shown the way the group reads it.
+  const fmtVal = (key, val) => {
+    if (!isSet(val)) return '—';
+    if (key === 'join_screening_questions') {
+      let n = 0;
+      try { const a = JSON.parse(val); n = Array.isArray(a) ? a.length : 0; } catch { n = 0; }
+      return t('settings.questionCount', n);
+    }
+    if (key.startsWith('include_')) return val === 'yes' ? t('common.yes') : t('common.no');
+    if (key === 'loan_multiplier') return `${val} × ${t('settings.savingsWord')}`;
+    if (MONEY_KEYS.has(key)) return money(Number(val || 0));
+    if (PERCENT_KEYS.has(key)) return `${val}%`;
+    return String(val);
+  };
+
+  // The proposed settings, grouped under their category heading.
+  const groupedPayload = (payload) => {
+    const cats = new Map();
+    for (const [k, v] of Object.entries(payload || {})) {
+      const cat = KEY_CAT[k] || 'other';
+      if (!cats.has(cat)) cats.set(cat, []);
+      cats.get(cat).push([k, v]);
+    }
+    const ordered = [
+      ...CATEGORY_ORDER.filter((c) => cats.has(c)),
+      ...[...cats.keys()].filter((c) => !CATEGORY_ORDER.includes(c)),
+    ];
+    return ordered.map((c) => [c, cats.get(c)]);
+  };
+
+  const catTitle = (id) => (id === 'other'
+    ? t('admin.otherSettings')
+    : t(`settings.cat${id.charAt(0).toUpperCase()}${id.slice(1)}`));
+
   if (!data) return <Spinner />;
 
   const pending = data.pending || [];
@@ -58,7 +111,7 @@ export default function Approvals() {
 
   return (
     <div className="approvals">
-      <PageHeader title={t('admin.approvals')} subtitle={t('admin.approvalsSubtitle')} />
+      <PageHeader title={t('nav.settingsApproval')} subtitle={t('admin.approvalsSubtitle')} />
 
       {pending.length === 0 ? (
         <EmptyState title={t('admin.nothingWaiting')} />
@@ -68,7 +121,10 @@ export default function Approvals() {
             <li key={r.id} className="approvals__card">
               <header className="approvals__head">
                 <h2 className="approvals__kind">{t(`admin.kind_${r.kind}`)}</h2>
-                <span className="muted">{shortDate(r.created_at)}</span>
+                <span className="tag tag--gold">
+                  {r.approver_role === 'admin' ? t('admin.pendingChair') : t('admin.pendingTreasurer')}
+                </span>
+                <span className="muted">{t('admin.requestedOn')}: {shortDate(r.created_at)}</span>
               </header>
 
               <p className="approvals__line">
@@ -80,12 +136,22 @@ export default function Approvals() {
 
               {r.kind === 'group_rules' ? (
                 <div className="approvals__payload">
-                  <p className="approvals__payloadTitle">{t('admin.groupRulesPending')}</p>
-                  <ul className="approvals__payloadList">
-                    {Object.entries(r.payload || {}).map(([k, v]) => (
-                      <li key={k}><span className="muted">{k}</span> <strong>{payloadValue(k, v)}</strong></li>
-                    ))}
-                  </ul>
+                  {groupedPayload(r.payload).map(([cat, entries]) => (
+                    <div key={cat} className="approvals__cat">
+                      <h3 className="approvals__catTitle">{catTitle(cat)}</h3>
+                      <ul className="approvals__payloadList">
+                        {entries.map(([k, v]) => (
+                          <li key={k} className="approvals__rule">
+                            <span className="approvals__setting">{t(GROUP_LABELS[k] || k)}</span>
+                            <span className="approvals__values">
+                              <span className="muted">{t('admin.currentValue')}: {fmtVal(k, current[k])}</span>
+                              <span>{t('admin.proposedValue')}: <strong>{fmtVal(k, v)}</strong></span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="approvals__payload">

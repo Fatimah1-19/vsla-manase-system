@@ -125,6 +125,7 @@ const base = {
     otherRecordings: 'Other recordings',
     notify: 'Text everyone about this meeting', empty: 'No meetings recorded yet.',
     presentCount: (n, t) => `${n} of ${t} present`,
+    statusUpcoming: 'Upcoming', statusHeld: 'Held', viewRecord: 'View record',
   },
 
   welfare: {

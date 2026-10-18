@@ -4930,3 +4930,13 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .analytics__list--scroll { max-height: 420px; overflow: auto; }
 
+/* ---- VSLA settings approval: one row per proposed setting ---- */
+.approvals__cat + .approvals__cat { margin-top: 0.7rem; }
+.approvals__catTitle { margin: 0 0 0.35rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); }
+.approvals__rule { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.3rem 0.75rem; }
+.approvals__setting { font-weight: 600; }
+.approvals__values { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+
+/* ---- meetings: the status of each meeting ---- */
+.meetings__status { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.35rem; }
+

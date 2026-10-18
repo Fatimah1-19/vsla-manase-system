@@ -629,6 +629,8 @@ export default {
     kind_reactivate_user: 'Bwezani akaunti', kind_group_rules: 'Sinthani malamulo a gulu',
     groupRulesPending: 'Malamulo awa a gulu akudikira kutsimikiziridwa:',
     noPayload: 'Palibe zambiri.',
+    pendingChair: 'Kuyembekezera Chitsimikizo cha Mtsogoleri', pendingTreasurer: 'Kuyembekezera Chitsimikizo cha Msungichuma',
+    currentValue: 'Panopano', proposedValue: 'Choperekedwa', otherSettings: 'Zokhazikika zina',
     systemSubtitle: 'Izi zimayang\'anira dongosolo lokha. Malamulo a gulu amakhazikitsidwa ndi mtsogoleri.',
     actSearch: 'Fufuzani zochitika, munthu kapena zambiri',
     actAnyUser: 'Aliyense',

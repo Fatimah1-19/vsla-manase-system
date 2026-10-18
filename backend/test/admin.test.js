@@ -378,6 +378,72 @@ function run(middleware, user) {
   assert.ok(shareCtrl.includes("status = 'confirmed'") || shareCtrl.includes("'confirmed'"),
     'the share-out keeps its draft, confirmed and distributed statuses');
 
+  // ---- meetings: the schedule, the records and the attendance -------------
+  const meetingRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'meetingRoutes.js'), 'utf8');
+  assert.ok(meetingRoutes.includes("router.get('/', c.listMeetings)")
+    && meetingRoutes.includes("router.get('/:id', c.getMeeting)"),
+    'the schedule and the meeting records read openly within the group');
+  assert.ok(meetingRoutes.includes("router.post('/', requirePermission('meetings.record')"),
+    'scheduling a meeting needs the record permission');
+  assert.ok(meetingRoutes.includes("router.patch('/:id', requirePermission('meetings.record')"),
+    'writing the minutes needs the record permission');
+  assert.ok(meetingRoutes.includes("router.put('/:id/attendance', requirePermission('meetings.record')"),
+    'saving attendance needs the record permission');
+  assert.ok(!can('admin', 'meetings.record'), 'the chairperson does not run the meeting records');
+  const chairMeetings = await run(requirePermission('meetings.record'), { role: 'admin' });
+  assert.strictEqual(chairMeetings.status, 403);
+  const meetingsPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Meetings.jsx'), 'utf8');
+  assert.ok(meetingsPage.includes('is-upcoming'), 'upcoming meetings are marked as such');
+  assert.ok(meetingsPage.includes("t('meetings.statusUpcoming')") && meetingsPage.includes("t('meetings.statusHeld')"),
+    'every meeting shows its status');
+  assert.ok(meetingsPage.includes('presentCount') && meetingsPage.includes('meetings__minutes'),
+    'attendance and the meeting records are both on the page');
+  assert.ok(meetingsPage.includes("t('meetings.viewRecord')") && meetingsPage.includes('disabled={!isRecorder}'),
+    'the chairperson opens the record read-only');
+  assert.ok(!meetingsPage.includes('/settings'),
+    'the meetings page carries no system configuration');
+
+  // ---- VSLA settings approval: the chairperson's own section --------------
+  assert.ok(can('admin', 'approvals.view') && can('admin', 'approvals.decide'),
+    'the chairperson both sees and decides what is waiting');
+  const chairApprove = await run(requirePermission('approvals.decide'), { role: 'admin' });
+  assert.strictEqual(chairApprove.passed, true);
+  const approvalRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'approvalRoutes.js'), 'utf8');
+  assert.ok(approvalRoutes.includes("router.get('/', requirePermission('approvals.view')"),
+    'the waiting list needs the view permission');
+  assert.ok(approvalRoutes.includes("router.post('/:id/decide', requirePermission('approvals.decide')"),
+    'confirming needs the decide permission');
+  assert.ok(!/router\.(put|patch|delete)\s*\(/.test(approvalRoutes),
+    'a request is only ever decided, never edited');
+  assert.ok(adminCtrl.includes('cr.approver_role'), 'each request says whose confirmation it waits for');
+  assert.ok(adminCtrl.includes('You cannot confirm your own request.'),
+    'nobody confirms their own request');
+  assert.ok(adminCtrl.includes('already decided') && adminCtrl.includes('not yours to confirm'),
+    'a decided or foreign request must be refused');
+  const approvalsPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Approvals.jsx'), 'utf8');
+  assert.ok(approvalsPage.includes("t('nav.settingsApproval')"),
+    'the section is titled VSLA Settings Approval');
+  assert.ok(approvalsPage.includes("admin.pendingChair"),
+    'a pending request says it awaits the chairperson confirmation');
+  assert.ok(approvalsPage.includes("admin.currentValue") && approvalsPage.includes("admin.proposedValue"),
+    'every setting shows the current and the proposed value');
+  assert.ok(approvalsPage.includes('SECTION_KEYS') && approvalsPage.includes('CATEGORY_ORDER')
+    && approvalsPage.includes('GROUP_LABELS'),
+    'the proposed settings are grouped under their category with real names');
+  assert.ok(approvalsPage.includes("admin.requestedBy") && approvalsPage.includes('shortDate(r.created_at)'),
+    'the request shows who proposed it and when');
+  assert.ok(approvalsPage.includes("t('admin.approve')") && approvalsPage.includes("t('admin.reject')"),
+    'the actions are Confirm and Reject');
+  assert.ok(approvalsPage.includes("'/settings/group-rules'"),
+    'the current value comes from the live group rules');
+  const ruleLabels = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'utils', 'groupRuleLabels.js'), 'utf8');
+  for (const cat of ['savings', 'loans', 'fines', 'welfare', 'shareout', 'membership', 'voting', 'meetings']) {
+    assert.ok(ruleLabels.includes(`'${cat}'`), `the approval categories must include ${cat}`);
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

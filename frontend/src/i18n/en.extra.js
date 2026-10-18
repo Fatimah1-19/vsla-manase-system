@@ -636,6 +636,8 @@ export default {
     kind_reactivate_user: 'Reactivate account', kind_group_rules: 'Change the group rules',
     groupRulesPending: 'These group rules are waiting to be confirmed:',
     noPayload: 'No details.',
+    pendingChair: 'Pending Chairperson Confirmation', pendingTreasurer: 'Pending Treasurer Confirmation',
+    currentValue: 'Current', proposedValue: 'Proposed', otherSettings: 'Other settings',
     // System settings page
     systemSubtitle: 'These control the system itself. The rules of the group are set by the chairperson.',
     sessionTimeoutLabel: 'How long a quiet session stays open (minutes)',

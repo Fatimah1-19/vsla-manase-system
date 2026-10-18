@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import { money, dateTime } from '../utils/format.js';
-import { GROUP_LABELS } from '../utils/groupRuleLabels.js';
+import { GROUP_LABELS, SECTION_KEYS } from '../utils/groupRuleLabels.js';
 import '../styles.css';
 
 // savingRecorded -> "Saving recorded"; other_thing -> "Other thing".
@@ -44,17 +44,6 @@ const SWITCH_FIELDS = {
 
 const STATUS_TAG = {
   in_force: 'tag--green', waiting: 'tag--gold', not_set: 'tag--grey', fixed: 'tag--grey', off: 'tag--grey',
-};
-// Which settings each page owns, so a proposed change is shown on the page it
-// belongs to.
-const SECTION_KEYS = {
-  savings: ['weekly_share_value', 'monthly_levy'],
-  loans: ['loan_multiplier', 'default_interest_rate'],
-  fines: ['absence_fine'],
-  welfare: ['welfare_contribution'],
-  shareout: ['include_interest_in_shareout', 'include_fines_in_shareout', 'include_welfare_in_shareout'],
-  membership: ['registration_fee', 'join_screening_questions'],
-  voting: ['case_voting_days', 'case_quorum_percent', 'case_dismiss_percent', 'office_voting_days', 'office_quorum_percent'],
 };
 const MONEY_KEYS = new Set(['weekly_share_value', 'monthly_levy', 'welfare_contribution', 'registration_fee', 'absence_fine']);
 const PERCENT_KEYS = new Set(['default_interest_rate', 'case_quorum_percent', 'case_dismiss_percent', 'office_quorum_percent']);
