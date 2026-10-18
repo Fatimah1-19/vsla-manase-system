@@ -232,7 +232,8 @@ const getDashboard = wrap(async (req, res) => {
                 COALESCE((SELECT SUM(amount) FROM loan_repayments),0)::float AS repaid,
                 COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
-    one(`SELECT COUNT(*) FILTER (WHERE status='active')::int AS active,
+    one(`SELECT COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE status='active')::int  AS active,
                 COUNT(*) FILTER (WHERE status='inactive')::int AS inactive FROM members`),
     one(`SELECT COUNT(*) FILTER (WHERE status='pending')::int  AS pending,
                 COUNT(*) FILTER (WHERE status='approved')::int AS approved,
@@ -320,7 +321,8 @@ const getDashboard = wrap(async (req, res) => {
       `SELECT (SELECT COUNT(*)::int FROM member_cases WHERE status = 'open') AS open_cases,
               (SELECT COUNT(*)::int FROM member_cases WHERE status = 'passed' AND executed_at IS NULL) AS cases_to_carry,
               (SELECT COUNT(*)::int FROM office_votes WHERE status = 'open') AS open_elections,
-              (SELECT COUNT(*)::int FROM office_votes WHERE status IN ('passed','tie') AND executed_at IS NULL) AS elections_to_carry`
+              (SELECT COUNT(*)::int FROM office_votes WHERE status IN ('passed','tie') AND executed_at IS NULL) AS elections_to_carry,
+              (SELECT COUNT(*)::int FROM change_requests WHERE kind = 'group_rules' AND status = 'pending') AS rule_changes_waiting`
     ) : null,
 
     // The money crew charts what has been coming in for the last six months.
@@ -429,6 +431,7 @@ const getDashboard = wrap(async (req, res) => {
     payload.chair = {
       pending_joins: chairJoins || [],
       pending_rule_changes: chairRules || [],
+      rule_changes_waiting: chairVotes ? chairVotes.rule_changes_waiting : 0,
       open_cases: chairVotes ? chairVotes.open_cases : 0,
       cases_to_carry: chairVotes ? chairVotes.cases_to_carry : 0,
       open_elections: chairVotes ? chairVotes.open_elections : 0,

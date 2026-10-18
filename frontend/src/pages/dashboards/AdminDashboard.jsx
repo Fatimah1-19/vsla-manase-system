@@ -49,27 +49,25 @@ export default function AdminDashboard({ data }) {
 
   return (
     <>
+      {/* ---- THE HIGH-LEVEL PICTURE: seven summary cards ----------------- */}
       <div className="page-grid page-grid--stat">
-        <StatCard label={t('dashboard.cashInBox')}      value={money(m.cash_in_box)}     tone="gold" icon="savings" big />
-        <StatCard label={t('dashboard.totalSavings')}   value={money(m.total_savings)}   tone="green" icon="analytics" />
-        <StatCard label={t('dashboard.activeLoans')}    value={plainNumber(data.loans?.approved)} tone="red" icon="loans" />
-        <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)}   tone="red" icon="loans" />
-        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
-        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} tone="green" icon="welfare" />
+        <StatCard label={t('admin.totalMembers')} value={plainNumber(data.members?.total)} icon="members" big />
+        <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} tone="green" icon="members" />
         <StatCard
-          label={t('dashboard.finesOutstanding')}
-          value={money(m.fines_outstanding)}
-          tone="red"
-          icon="fines"
+          label={t('dashboard.pendingRequests')}
+          value={plainNumber(data.pending_join_requests)}
+          tone={data.pending_join_requests > 0 ? 'gold' : 'plain'}
+          icon="requests"
         />
-        {data.wrappers && (
-          <StatCard
-            label={t('dashboard.wrappersCollected')}
-            value={money(data.wrappers.collected_this_month)}
-            tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
-            icon="wrappers"
-          />
-        )}
+        <StatCard label={t('dashboard.totalSavings')} value={money(m.total_savings)} tone="green" icon="savings" />
+        <StatCard label={t('dashboard.activeLoans')} value={plainNumber(data.loans?.approved)} tone="gold" icon="loans" />
+        <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="red" icon="loans" />
+        <StatCard
+          label={t('admin.pendingConfigChanges')}
+          value={plainNumber(chair.rule_changes_waiting)}
+          tone={chair.rule_changes_waiting > 0 ? 'gold' : 'plain'}
+          icon="requests"
+        />
       </div>
 
       {/* ---- WHAT IS HERS TO SETTLE -------------------------------------- */}
@@ -190,11 +188,26 @@ export default function AdminDashboard({ data }) {
       </div>
 
       <section className="adash__group">
-        <h2 className="dash__sectionTitle">{t('nav.people')}</h2>
+        <h2 className="dash__sectionTitle">{t('chair.moneyTitle')}</h2>
         <div className="page-grid adash__people">
-          <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} icon="members" />
-          <StatCard label={t('dashboard.pendingRequests')} value={plainNumber(data.pending_join_requests)}
-            tone={data.pending_join_requests > 0 ? 'gold' : 'plain'} icon="requests" />
+          <StatCard label={t('dashboard.cashInBox')} value={money(m.cash_in_box)} tone="gold" icon="savings" />
+          <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
+          <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} tone="green" icon="welfare" />
+          <StatCard label={t('dashboard.finesOutstanding')} value={money(m.fines_outstanding)} tone="red" icon="fines" />
+          {data.wrappers && (
+            <StatCard
+              label={t('dashboard.wrappersCollected')}
+              value={money(data.wrappers.collected_this_month)}
+              tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
+              icon="wrappers"
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="adash__group">
+        <h2 className="dash__sectionTitle">{t('nav.loans')}</h2>
+        <div className="page-grid adash__people">
           <StatCard label={t('dashboard.pendingLoans')} value={plainNumber(data.loans?.pending)} icon="loans" />
           <StatCard label={t('dashboard.overdueLoans')} value={plainNumber(data.loans?.overdue)}
             tone={data.loans?.overdue > 0 ? 'red' : 'plain'} icon="fines" />

@@ -34,6 +34,7 @@ export default {
     committeeTitle: 'Committee and meetings',
     presentCount: (p, m) => `${p} of ${m} marked present`,
     confirmChanges: 'Confirm rule changes',
+    moneyTitle: 'Money at a glance',
   },
 
 

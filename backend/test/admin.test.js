@@ -155,6 +155,18 @@ function run(middleware, user) {
   const chairDash = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'dashboards', 'AdminDashboard.jsx'), 'utf8');
   assert.ok(chairDash.includes('chair.queueTitle'), 'the chairperson dashboard must open with her decision queue');
+
+  // ---- the seven summary cards, fed by real figures -----------------------
+  assert.ok(dashCtrl.includes('AS total') && dashCtrl.includes('FROM members'),
+    'the member count must come from the members table');
+  assert.ok(dashCtrl.includes('rule_changes_waiting'), 'the pending-configuration count must be asked for');
+  for (const card of ['admin.totalMembers', 'dashboard.activeMembers', 'dashboard.pendingRequests',
+                      'dashboard.totalSavings', 'dashboard.activeLoans', 'dashboard.groupOutstanding',
+                      'admin.pendingConfigChanges']) {
+    assert.ok(chairDash.includes(card), `the chair board must show the ${card} card`);
+  }
+  // No card invents a figure: every value reads from the dashboard payload.
+  assert.ok(chairDash.includes('data.members?.total'), 'total members must read the real count');
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

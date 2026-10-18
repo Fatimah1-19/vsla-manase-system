@@ -32,6 +32,7 @@ export default {
     committeeTitle: 'Akampani ndi misonkhano',
     presentCount: (p, m) => `${p} mwa ${m} adawera`,
     confirmChanges: 'Tsitsimulani malamulo',
+    moneyTitle: 'Ndalama mwachidule',
   },
 
 
