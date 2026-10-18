@@ -14,7 +14,7 @@ import { money, shortDate, monthLong, plainNumber } from '../utils/format.js';
 import '../styles.css';
 
 const STATUS_TAG = {
-  pending: 'gold', approved: 'green', rejected: 'grey', repaid: 'blue', defaulted: 'red',
+  pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red',
 };
 
 const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '' };

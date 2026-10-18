@@ -606,6 +606,70 @@ function run(middleware, user) {
     && !can('member', 'accounts.view') && !can('member', 'meetings.record'),
     'a member takes part and holds no office power');
 
+  // ---- the design language: one palette, one set of badges ---------------
+  const css = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'styles.css'), 'utf8');
+  for (const token of ['--leaf', '--maize', '--flame', '--paper', '--sky']) {
+    assert.ok(css.includes(`${token}:`), `the palette must define ${token}`);
+  }
+  for (const badge of ['.tag--green', '.tag--gold', '.tag--red', '.tag--grey', '.tag--blue']) {
+    assert.ok(css.includes(badge), `the app must offer the ${badge} badge`);
+  }
+  // Green means well, amber means waiting, red means refused.
+  for (const page of ['Loans.jsx', 'Profile.jsx']) {
+    const src = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', page), 'utf8');
+    assert.ok(/pending: 'gold'/.test(src) && /approved: 'green'/.test(src)
+      && /rejected: 'red'/.test(src) && /defaulted: 'red'/.test(src),
+      `${page} must colour each loan status: waiting amber, running green, refused red`);
+  }
+  assert.ok(joinPage.includes("'tag tag--red'"), 'a rejected join request wears the red badge');
+  const analyticsPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Analytics.jsx'), 'utf8');
+  assert.ok(analyticsPage.includes("b.overdue ? <span className=\"tag tag--red\">"),
+    'an overdue loan wears the red badge');
+
+  // ---- tables for the records, and they scroll on a narrow screen --------
+  const ledgerComp = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'Ledger.jsx'), 'utf8');
+  assert.ok(ledgerComp.includes('className="ledger"') && ledgerComp.includes('data-label='),
+    'the shared ledger is a real table that folds on a phone');
+  for (const page of ['Members.jsx', 'Loans.jsx', 'Savings.jsx', 'Fines.jsx', 'Welfare.jsx',
+                      'ShareOut.jsx', 'Reports.jsx']) {
+    const src = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', page), 'utf8');
+    assert.ok(src.includes('Ledger'), `${page} must read from the shared table`);
+  }
+  for (const [name, cls] of [['Activity.jsx', 'settings__tableWrap'],
+                             ['VslaSettings.jsx', 'settings__tableWrap'],
+                             ['SystemActivity.jsx', 'settings__tableWrap'],
+                             ['Reports.jsx', 'reports__tableWrap']]) {
+    const src = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', name), 'utf8');
+    const wrap = src.indexOf(cls);
+    assert.ok(wrap >= 0, `${name} must wrap its table for a narrow screen`);
+    assert.ok(src.indexOf('<table', wrap) > wrap,
+      `${name}: the table must sit inside the scroll wrapper`);
+  }
+  for (const wrap of ['.ledger-wrap', '.settings__tableWrap', '.reports__tableWrap']) {
+    const at = css.indexOf(wrap);
+    assert.ok(at >= 0 && css.slice(at, at + 200).includes('overflow-x: auto'),
+      `${wrap} must scroll sideways instead of crushing the columns`);
+  }
+
+  // ---- responsive: the drawer closes, the tabs stay, the type stays legible
+  assert.ok(/@media \(max-width: 899px\)[\s\S]{0,220}translateX\(-100%\)/.test(css)
+    && css.includes('.sidebar.is-open'),
+    'the sidebar must slide away on a tablet or phone and return on demand');
+  assert.ok(/@media \(min-width: 900px\)[\s\S]{0,60}\.tabbar[\s\S]{0,40}display: none/.test(css),
+    'the phone tab bar must step aside on a wide screen');
+  assert.ok(css.includes('--tap: 46px') && /\.btn \{[\s\S]{0,200}min-height: var\(--tap\)/.test(css),
+    'every action keeps a full-size touch target');
+  const tabbar = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'TabBar.jsx'), 'utf8');
+  const topbar = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'Topbar.jsx'), 'utf8');
+  assert.ok(tabbar.includes('onMore') && tabbar.includes("t('nav.more')"),
+    'the phone navigation must keep every page reachable');
+  assert.ok(topbar.includes('onMenu'), 'the phone topbar must be able to open the drawer');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

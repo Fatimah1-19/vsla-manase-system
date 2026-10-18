@@ -95,6 +95,7 @@ export default function SystemActivity() {
         <EmptyState title={t('activity.logEmpty')} />
       ) : (
         <>
+          <div className="settings__tableWrap">
           <table className="sysadmin__table">
             <thead>
               <tr>
@@ -145,6 +146,7 @@ export default function SystemActivity() {
               })}
             </tbody>
           </table>
+        </div>
 
           <div className="activity__pager">
             <button type="button" className="btn btn--ghost btn--small" disabled={page <= 1}

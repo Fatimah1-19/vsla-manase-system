@@ -18,7 +18,7 @@ import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const MAX_BYTES = 2 * 1024 * 1024;
-const STATUS_TAG = { pending: 'gold', approved: 'green', rejected: 'grey', repaid: 'blue', defaulted: 'red' };
+const STATUS_TAG = { pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red' };
 
 const toBase64 = (file) => new Promise((resolve, reject) => {
   const r = new FileReader();

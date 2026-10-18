@@ -181,7 +181,7 @@ export default function JoinRequests() {
             {decided.map((r) => (
               <li key={r.id}>
                 <span>{r.full_name}</span>
-                <span className={r.status === 'approved' ? 'tag tag--green' : 'tag tag--grey'}>
+                <span className={r.status === 'approved' ? 'tag tag--green' : 'tag tag--red'}>
                   {r.status === 'approved' ? t('common.yes') : t('common.no')}
                 </span>
                 <span className="muted">{shortDate(r.decided_at)}</span>
