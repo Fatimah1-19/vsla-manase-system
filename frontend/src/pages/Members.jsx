@@ -12,7 +12,7 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
-import { money, shortDate, inputDate, monthName } from '../utils/format.js';
+import { money, shortDate, inputDate, monthName, plainNumber } from '../utils/format.js';
 import '../styles.css';
 
 const blank = {
@@ -80,6 +80,7 @@ export default function Members() {
   const [busy, setBusy] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [history, setHistory] = useState(null);   // the full record behind one person
   const [fees, setFees] = useState(null);
   const [feeForm, setFeeForm] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
@@ -182,6 +183,23 @@ export default function Members() {
     (fees?.members || []).forEach((m) => { map[m.member_id] = m; });
     return map;
   }, [fees]);
+
+  // Opening one person also pulls her whole record: savings, loans, fines, meetings.
+  async function openPerson(p) {
+    setDetail(p);
+    setHistory(null);
+    if (!p.member_id) return;
+    try {
+      setHistory(await api.get(`/members/${p.member_id}`));
+    } catch {
+      setHistory(null);
+    }
+  }
+
+  function closePerson() {
+    setDetail(null);
+    setHistory(null);
+  }
 
   function startFee(person) {
     setFeeForm({
@@ -350,7 +368,7 @@ export default function Members() {
       <Ledger
         columns={columns}
         rows={filtered}
-        onRowClick={setDetail}
+        onRowClick={openPerson}
         groupBy={groupByJoin}
         empty={<EmptyState title={t('members.empty')} />}
       />
@@ -526,7 +544,7 @@ export default function Members() {
       <Modal
         open={!!detail}
         title={detail?.full_name || ''}
-        onClose={() => setDetail(null)}
+        onClose={closePerson}
       >
         {detail && (
           <div className="members__detail">
@@ -545,6 +563,31 @@ export default function Members() {
               <div><dt>{t('members.nextOfKin')}</dt><dd>{detail.next_of_kin ? `${detail.next_of_kin}${detail.next_of_kin_phone ? ' · ' + detail.next_of_kin_phone : ''}` : '—'}</dd></div>
               <div><dt>{t('members.lastLogin')}</dt><dd>{detail.last_login ? shortDate(detail.last_login) : t('members.never')}</dd></div>
             </dl>
+
+            {/* ---- membership history: what this person has done in the group ---- */}
+            {detail.member_id && (
+              <div className="members__hist">
+                <h3 className="members__feeTitle">{t('members.historyTitle')}</h3>
+                <dl className="members__credRows">
+                  <div><dt>{t('members.joined')}</dt><dd>{detail.date_joined ? shortDate(detail.date_joined) : '—'}</dd></div>
+                  <div><dt>{t('common.status')}</dt><dd>
+                    {!detail.is_active ? <span className="tag tag--red">{t('members.inactive')}</span>
+                      : isLocked(detail) ? <span className="tag tag--gold">{t('members.locked')}</span>
+                      : <span className="tag tag--green">{t('members.active')}</span>}
+                  </dd></div>
+                  <div><dt>{t('members.savings')}</dt><dd>{money(history?.total_savings ?? detail.total_savings ?? 0)}</dd></div>
+                  <div><dt>{t('dashboard.activeLoans')}</dt><dd>{plainNumber(history?.active_loans ?? detail.active_loans ?? 0)}</dd></div>
+                  <div><dt>{t('fines.unpaidFines')}</dt><dd>{money(history?.unpaid_fines ?? detail.unpaid_fines ?? 0)}</dd></div>
+                </dl>
+                {history?.attendance?.length > 0 && (
+                  <p className="muted">
+                    {t('members.presentIn',
+                      history.attendance.filter((a) => a.status === 'present').length,
+                      history.attendance.length)}
+                  </p>
+                )}
+              </div>
+            )}
 
             {detail.member_id && feeByMember[detail.member_id] && (
               <div className="members__fee">

@@ -180,6 +180,31 @@ function run(middleware, user) {
       && chairDash.indexOf('chair.alertRules') < chairDash.indexOf('chair.alertCarry'),
     'people waiting to join must be highlighted before anything else'
   );
+
+  // ---- membership decisions, kept apart from technical user management ----
+  const membersPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Members.jsx'), 'utf8');
+  assert.ok(membersPage.includes('members.historyTitle') && membersPage.includes("/members/"),
+    'a member profile must carry her membership history');
+  assert.ok(!membersPage.includes('/accounts') && !membersPage.includes('/roles'),
+    'the members page must never touch accounts or system roles');
+  const joinPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'JoinRequests.jsx'), 'utf8');
+  assert.ok(joinPage.includes('screening') && joinPage.includes('yes_votes'),
+    'the chairperson must see the applicant background and the voting results');
+  assert.ok(joinPage.includes("'approved'") && joinPage.includes("'rejected'"),
+    'join requests must be approvable and rejectable');
+  // The voting record cannot be rewritten: one ballot per person, kept forever.
+  const schemaVotes = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
+  assert.ok(/UNIQUE\s*\(\s*case_id\s*,\s*member_id\s*\)/.test(schemaVotes)
+    && /UNIQUE\s*\(\s*request_id\s*,\s*user_id\s*\)/.test(schemaVotes)
+    && /UNIQUE\s*\(\s*vote_id\s*,\s*voter_member_id\s*\)/.test(schemaVotes),
+    'one vote per member per decision');
+  for (const routeFile of ['memberCaseRoutes.js', 'officeVoteRoutes.js', 'joinRequestRoutes.js']) {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'routes', routeFile), 'utf8');
+    assert.ok(!src.includes('.delete('), `${routeFile} must offer no way to delete a vote`);
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

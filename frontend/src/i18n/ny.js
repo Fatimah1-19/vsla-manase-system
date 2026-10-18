@@ -111,8 +111,10 @@ const base = {
     repaidStatus: 'Yatha', defaulted: 'Sinabwezedwe',
   },
 
-  members: {
-    title: 'Mamembala', number: 'Nambala ya membala', joined: 'Analowa', savings: 'Wasunga',
+    members: {
+      title: 'Mamembala', number: 'Nambala ya membala', joined: 'Analowa', savings: 'Wasunga',
+      historyTitle: 'Mbiri ya mumembala',
+      presentIn: (p, m) => `Adawera ${p} mwa ${m} misonkhano yaposachedwa`,
     nextOfKin: 'Wachibale', addPerson: 'Onjezani munthu', empty: 'Palibe amene waonjezedwa.',
     suspend: 'Imitsani', unlock: 'Tsegulani akaunti', newPassword: 'Patsani achinsinsi atsopano',
     tempPassword: 'Achinsinsi a kanthawi', writeItDown: 'Lembani pansi. Zikuonetsedwa kamodzi kokha.',

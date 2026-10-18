@@ -4001,8 +4001,16 @@ section[id] { scroll-margin-top: 4.5rem; }
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   display: grid;
-  gap: 0.4rem;
-  justify-items: start;
+  gap: 0.35rem;
+}
+.members__hist {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.35rem;
 }
 .members__feeTitle { margin: 0; font-size: 0.95rem; }
 .members__feePaid { margin: 0; font-weight: 600; color: var(--leaf-dark); }
