@@ -49,7 +49,7 @@ export default function Profile() {
     setData(res);
     const m = res.member;
     setDetails({
-      phone: m.phone || '', gender: m.gender || '', marital_status: m.marital_status || '',
+      phone: m.phone || '', email: m.email || '', gender: m.gender || '', marital_status: m.marital_status || '',
       date_of_birth: m.date_of_birth ? String(m.date_of_birth).slice(0, 10) : '',
       occupation: m.occupation || '', village: m.village || '', address: m.address || '',
       next_of_kin: m.next_of_kin || '', next_of_kin_phone: m.next_of_kin_phone || '',
@@ -292,7 +292,10 @@ export default function Profile() {
           <dl className="profile__rows profile__rows--static">
             <div><dt>{t('common.name')}</dt><dd>{user.full_name}</dd></div>
             <div><dt>{t('login.username')}</dt><dd><code>{user.username}</code></dd></div>
+            <div><dt>{t('common.phone')}</dt><dd>{user.phone || '—'}</dd></div>
+            <div><dt>{t('common.email')}</dt><dd>{user.email || '—'}</dd></div>
             <div><dt>{t('common.role')}</dt><dd>{t(`roles.${user.role}`)}</dd></div>
+            <div><dt>{t('members.status')}</dt><dd>{m.status ? t(`members.${m.status}`) : '—'}</dd></div>
             <div><dt>{t('members.number')}</dt><dd>{m.membership_number}</dd></div>
             <div><dt>{t('members.joined')}</dt><dd>{shortDate(m.date_joined)}</dd></div>
           </dl>
@@ -305,12 +308,8 @@ export default function Profile() {
                 <span className="field-hint">{t('profile.phoneHint')}</span>
               </div>
               <div>
-                <label className="field-label" htmlFor="pd-gender">{t('profile.gender')}</label>
-                <select id="pd-gender" value={details.gender} onChange={setField('gender')}>
-                  <option value="">—</option>
-                  <option value="female">{t('profile.female')}</option>
-                  <option value="male">{t('profile.male')}</option>
-                </select>
+                <label className="field-label" htmlFor="pd-email">{t('common.email')}</label>
+                <input id="pd-email" type="email" inputMode="email" value={details.email} onChange={setField('email')} />
               </div>
             </div>
             <div className="form-row form-row--2">

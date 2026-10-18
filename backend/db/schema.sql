@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   role              VARCHAR(20) NOT NULL CHECK (role IN ('admin','treasurer','secretary','member')),
   full_name         VARCHAR(120) NOT NULL,
   phone             VARCHAR(20),
+  email             VARCHAR(160),
   language          VARCHAR(5) NOT NULL DEFAULT 'ny' CHECK (language IN ('en','ny')),
   is_active         BOOLEAN NOT NULL DEFAULT TRUE,
   must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
@@ -234,6 +235,9 @@ CREATE INDEX IF NOT EXISTS idx_audit_created  ON audit_logs(created_at DESC);
 --  Everything below is safe to run again and again. It upgrades an
 --  existing database without deleting any data.
 -- =====================================================================
+
+-- The account's own email address, shown on the profile page.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(160);
 
 -- Personal details kept for every member.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS gender         VARCHAR(10);

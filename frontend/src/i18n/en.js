@@ -36,10 +36,10 @@ const base = {
   common: {
     save: 'Save', cancel: 'Cancel', close: 'Close', add: 'Add', edit: 'Edit', del: 'Remove',
     search: 'Search', loading: 'Loading…', none: 'Nothing here yet', back: 'Back',
-    amount: 'Amount', date: 'Date', name: 'Name', phone: 'Phone number', reason: 'Reason',
+    amount: 'Amount', date: 'Date', name: 'Name', phone: 'Phone number', email: 'Email', reason: 'Reason',
     status: 'Status', total: 'Total', actions: 'Actions', notes: 'Notes', yes: 'Yes', no: 'No',
     confirm: 'Are you sure?', sending: 'Sending…', saving: 'Saving…', all: 'All',
-    village: 'Village', role: 'Role', language: 'Language', optional: 'optional',
+    village: 'Village', role: 'Role', language: 'Language', optional: 'optional', email: 'Email',
     retry: 'Try again', view: 'View', today: 'Today',
   },
 

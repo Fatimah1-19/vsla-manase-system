@@ -38,10 +38,10 @@ const base = {
   common: {
     save: 'Sungani', cancel: 'Lekani', close: 'Tsekani', add: 'Onjezani', edit: 'Sinthani',
     del: 'Chotsani', search: 'Fufuzani', loading: 'Tikutenga\u2026', none: 'Palibe kanthu pano',
-    back: 'Bwererani', amount: 'Ndalama', date: 'Tsiku', name: 'Dzina', phone: 'Nambala ya foni',
+    back: 'Bwererani', amount: 'Ndalama', date: 'Tsiku', name: 'Dzina', phone: 'Nambala ya foni', email: 'Imelo',
     reason: 'Chifukwa', status: 'Mkhalidwe', total: 'Zonse', actions: 'Zochita', notes: 'Zolemba',
     yes: 'Inde', no: 'Ayi', confirm: 'Mukutsimikiza?', sending: 'Tikutumiza\u2026',
-    saving: 'Tikusunga\u2026', all: 'Zonse', village: 'Mudzi', role: 'Udindo', language: 'Chilankhulo',
+    saving: 'Tikusunga\u2026', all: 'Zonse',     village: 'Mudzi', role: 'Udindo', language: 'Chilankhulo', email: 'Imelo',
     optional: 'mukafuna', retry: 'Yesaninso', view: 'Onani', today: 'Lero',
   },
 

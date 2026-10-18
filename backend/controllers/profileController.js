@@ -20,7 +20,7 @@ const getMyProfile = wrap(async (req, res) => {
     `SELECT m.id, m.membership_number, m.date_joined, m.status, m.village, m.address,
             m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
             (m.avatar IS NOT NULL) AS has_avatar,
-            u.full_name, u.username, u.phone, u.role, u.language
+            u.full_name, u.username, u.phone, u.email, u.role, u.language
        FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = $1`, [memberId]
   );
 
@@ -87,7 +87,7 @@ const updateMyProfile = wrap(async (req, res) => {
   const memberId = req.user.member_id;
   if (!memberId) return res.status(404).json({ message: 'You do not have a member record yet.' });
 
-  const { phone, gender, marital_status, date_of_birth, village, address,
+  const { phone, email, gender, marital_status, date_of_birth, village, address,
           next_of_kin, next_of_kin_phone, occupation } = req.body;
 
   if (gender && !GENDERS.includes(gender)) return res.status(400).json({ message: 'Choose female or male.' });
@@ -100,10 +100,14 @@ const updateMyProfile = wrap(async (req, res) => {
   if (phone && !/^[0-9+\s-]{7,20}$/.test(phone)) {
     return res.status(400).json({ message: 'Enter a phone number with digits only.' });
   }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+    return res.status(400).json({ message: 'Enter a valid email address.' });
+  }
 
   const clean = (v) => (v === undefined ? null : (String(v).trim() || null));
 
-  await query(`UPDATE users SET phone = COALESCE($2, phone) WHERE id = $1`, [req.user.id, clean(phone)]);
+  await query(`UPDATE users SET phone = COALESCE($2, phone), email = COALESCE($3, email) WHERE id = $1`,
+    [req.user.id, clean(phone), clean(email)]);
   await query(
     `UPDATE members SET
        gender = COALESCE($2, gender), marital_status = COALESCE($3, marital_status),
