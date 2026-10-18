@@ -452,6 +452,9 @@ export default {
     reportAttendance: 'Attendance',
     reportOverview: 'Overview', reportContributions: 'Contributions',
     reportLoans: 'Loans', reportFines: 'Fines', reportMembers: 'Members',
+    reportSavings: 'Savings report', reportRepayments: 'Repayment report',
+    reportWelfare: 'Welfare report', reportShareout: 'Share-out report',
+    reportStatus: 'Membership status', reportRequests: 'Join requests',
     reportNumber: 'Membership number', reportVillage: 'Village', reportPhone: 'Phone',
     reportJoined: 'Joined', reportShares: 'Shares', reportSaved: 'Savings recorded',
     reportWrappers: 'Wrappers paid', reportLoansGiven: 'Loans given',
@@ -477,6 +480,12 @@ export default {
     totalAbsences: 'Absences', attendanceRate: 'Attendance rate',
     serPresent: 'Present', serAbsences: 'Absent',
     groupMembersTitle: 'Membership report', memberTotal: 'Members now', memberNew: 'New in period',
+    groupSavingsTitle: 'Savings over the period',
+    groupRepaymentsTitle: 'Repayments received',
+    groupWelfareTitle: 'Welfare fund movements',
+    groupShareoutTitle: 'Share-out history',
+    groupOnlyNote: 'This report covers the whole group.',
+    repaid: 'Repaid', cycleName: 'Cycle', shareFund: 'Share-out fund', decidedBy: 'Decided by',
   },
 
   home: {

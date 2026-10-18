@@ -449,6 +449,9 @@ export default {
     reportAttendance: 'Kupezeka',
     reportOverview: 'Chidule', reportContributions: 'Zolipira',
     reportLoans: 'Ngongole', reportFines: 'Zindapusa', reportMembers: 'Mamembala',
+    reportSavings: 'Masavingu', reportRepayments: 'Kubwezera ngongole',
+    reportWelfare: 'Thandizo', reportShareout: 'Kugawana',
+    reportStatus: 'Mawu a mamembala', reportRequests: 'Zopemphera',
     reportNumber: 'Nambala ya membala', reportVillage: 'Mudzi', reportPhone: 'Foni',
     reportJoined: 'Adalowa', reportShares: 'Magawo', reportSaved: 'Zosunga zolembedwa',
     reportWrappers: 'Zolipira za mwezi', reportLoansGiven: 'Ngongole zoperekedwa',
@@ -474,6 +477,12 @@ export default {
     totalAbsences: 'Osapezeka', attendanceRate: 'Mlingo wa kupezeka',
     serPresent: 'Opezeka', serAbsences: 'Osapezeka',
     groupMembersTitle: 'Lipoti la mamembala', memberTotal: 'Mamembala pano', memberNew: 'Atsopano mu nthawi imeneyi',
+    groupSavingsTitle: 'Masavingu pa nthawi imeneyi',
+    groupRepaymentsTitle: 'Zobwezedwa',
+    groupWelfareTitle: 'Zosintha za thumba la thandizo',
+    groupShareoutTitle: 'Zaka za kugawana',
+    groupOnlyNote: 'Ili lipoti ndi la gulu lonse.',
+    repaid: 'Zobwezedwa', cycleName: 'Nyengo', shareFund: 'Thumba la kugawana', decidedBy: 'Anasankha',
   },
 
   home: {

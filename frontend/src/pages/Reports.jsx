@@ -26,10 +26,19 @@ const CATEGORIES = [
   { key: 'attendance', label: 'reportAttendance' },
   { key: 'overview', label: 'reportOverview' },
   { key: 'contributions', label: 'reportContributions' },
+  { key: 'savings', label: 'reportSavings' },
   { key: 'loans', label: 'reportLoans' },
+  { key: 'repayments', label: 'reportRepayments' },
   { key: 'fines', label: 'reportFines' },
+  { key: 'welfare', label: 'reportWelfare' },
+  { key: 'shareout', label: 'reportShareout' },
   { key: 'members', label: 'reportMembers' },
+  { key: 'status', label: 'reportStatus' },
+  { key: 'requests', label: 'reportRequests' },
 ];
+
+// Reports that only make sense for the whole group.
+const GROUP_ONLY = ['welfare', 'shareout', 'status', 'requests'];
 
 const loanStatusKey = (status) => (status === 'repaid' ? 'repaidStatus' : status);
 
@@ -62,17 +71,34 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   const [granularity, setGranularity] = useState('month');
   const [group, setGroup] = useState(null);
 
+  // Group-only reports bring their own lists, fetched when their chip opens.
+  const [shareouts, setShareouts] = useState(null);
+  const [allMembers, setAllMembers] = useState(null);
+  const [joinReqs, setJoinReqs] = useState(null);
+
   const load = useCallback(async () => {
     const q = new URLSearchParams({ status });
     if (from) q.set('from', from);
     if (to) q.set('to', to);
+    if (scope === 'member' && memberId) q.set('memberId', memberId);
     const path = view === 'register' ? '/reports/absentee-register' : '/reports/absentees';
     setRows(await api.get(`${path}?${q.toString()}`));
-  }, [view, status, from, to]);
+  }, [view, status, from, to, scope, memberId]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
   useEffect(() => { api.get('/members').then(setMembers).catch(() => {}); }, []);
   useEffect(() => { api.get('/analytics').then(setTotals).catch(() => {}); }, []);
+  useEffect(() => {
+    if (category === 'shareout' && shareouts === null) {
+      api.get('/shareout').then(setShareouts).catch((e) => toast.error(e.message));
+    }
+    if (category === 'status' && allMembers === null) {
+      api.get('/members?all=true').then(setAllMembers).catch((e) => toast.error(e.message));
+    }
+    if (category === 'requests' && joinReqs === null) {
+      api.get('/requests').then((d) => setJoinReqs(d.requests)).catch((e) => toast.error(e.message));
+    }
+  }, [category, shareouts, allMembers, joinReqs, toast]);
 
   const chartYear = year || CURRENT_YEAR;
   useEffect(() => {
@@ -287,6 +313,118 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     </section>
   );
 
+  const groupSavingsPanel = group && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.groupSavingsTitle')}</h2>
+      <p className="reports__repNote">{t('reports.groupNote')} · {periodNote}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('dashboard.totalSavings')} value={money(group.totals.savings)} tone="green" icon="savings" />
+      </div>
+      <LineChart tone="purple" data={gb.map((b) => ({ label: b.label, value: b.savings }))} />
+      {totals && totals.savings.by_member.length ? (
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead><tr><th>{t('common.name')}</th><th className="is-num">{t('common.amount')}</th></tr></thead>
+            <tbody>
+              {totals.savings.by_member.map((r) => (
+                <tr key={r.full_name}><td>{r.full_name}</td><td className="is-num money">{money(r.total)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="muted">{t('reports.reportEmpty')}</p>}
+    </section>
+  );
+
+  const groupRepaymentsPanel = group && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.groupRepaymentsTitle')}</h2>
+      <p className="reports__repNote">{t('reports.groupNote')} · {periodNote}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('analytics.totalRepayments')} value={money(group.totals.repayments)} tone="green" icon="loans" />
+      </div>
+      <LineChart tone="teal" data={gb.map((b) => ({ label: b.label, value: b.repayments }))} />
+      {group.loans.length ? (
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.date')}</th>
+                <th>{t('common.name')}</th>
+                <th className="is-num">{t('common.amount')}</th>
+                <th className="is-num">{t('reports.repaid')}</th>
+                <th className="is-num">{t('loans.outstanding')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.loans.map((l) => (
+                <tr key={l.id}>
+                  <td>{shortDate(l.applied_at)}</td>
+                  <td>{l.full_name}</td>
+                  <td className="is-num money">{money(l.amount)}</td>
+                  <td className="is-num money">{l.total_repaid > 0 ? money(l.total_repaid) : '—'}</td>
+                  <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="muted">{t('reports.reportEmpty')}</p>}
+    </section>
+  );
+
+  const groupWelfarePanel = group && totals && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.groupWelfareTitle')}</h2>
+      <p className="reports__repNote">{t('reports.groupNote')} · {periodNote}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('analytics.welfareIn')} value={money(totals.welfare.contributions)} tone="green" icon="welfare" />
+        <StatCard label={t('analytics.welfareOut')} value={money(totals.welfare.payouts)} tone="red" icon="welfare" />
+        <StatCard label={t('dashboard.welfareBalance')} value={money(totals.welfare.balance)} tone="gold" icon="welfare" />
+      </div>
+      <LineChart tone="maize" data={gb.map((b) => ({ label: b.label, value: b.welfare }))} />
+    </section>
+  );
+
+  const groupShareoutPanel = shareouts !== null && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.groupShareoutTitle')}</h2>
+      <div className="reports__tableWrap">
+        <table className="reports__table">
+          <thead>
+            <tr>
+              <th>{t('reports.cycleName')}</th>
+              <th>{t('common.status')}</th>
+              <th className="is-num">{t('reports.reportSaved')}</th>
+              <th className="is-num">{t('dashboard.interestEarned')}</th>
+              <th className="is-num">{t('reports.shareFund')}</th>
+              <th>{t('common.date')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shareouts.map((so) => (
+              <tr key={so.id}>
+                <td>{so.cycle_name || <span className="muted">—</span>}</td>
+                <td>
+                  <span className={`tag tag--${so.status === 'distributed' ? 'green'
+                    : so.status === 'confirmed' ? 'blue' : 'gold'}`}>
+                    {so.status === 'distributed' ? shortDate(so.date_distributed)
+                      : so.status === 'confirmed' ? t('shareout.confirmedTag') : so.status}
+                  </span>
+                </td>
+                <td className="is-num money">{money(so.total_savings)}</td>
+                <td className="is-num money">{money(so.total_interest)}</td>
+                <td className="is-num money">{money(so.total_fund)}</td>
+                <td>{shortDate(so.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!shareouts.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+      </div>
+    </section>
+  );
+
   const attendanceSeen = group
     ? group.totals.present + group.totals.absences + group.totals.excused : 0;
   const attendanceRate = attendanceSeen > 0
@@ -325,6 +463,152 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     </>
   );
 
+  const statusPanel = allMembers !== null && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.reportStatus')}</h2>
+      <p className="reports__repNote">{t('reports.reportMembersNote')}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('members.active')}
+          value={plainNumber(allMembers.filter((m) => m.status === 'active').length)}
+          tone="green" icon="members" />
+        <StatCard label={t('members.inactive')}
+          value={plainNumber(allMembers.filter((m) => m.status !== 'active').length)}
+          tone="red" icon="members" />
+      </div>
+      <div className="reports__tableWrap">
+        <table className="reports__table">
+          <thead>
+            <tr>
+              <th>{t('common.name')}</th>
+              <th>{t('reports.reportNumber')}</th>
+              <th>{t('common.status')}</th>
+              <th>{t('reports.reportJoined')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allMembers.map((m) => (
+              <tr key={m.id}>
+                <td>{m.full_name}</td>
+                <td>{m.membership_number}</td>
+                <td>
+                  <span className={`tag tag--${m.status === 'active' ? 'green' : 'red'}`}>
+                    {m.status === 'active' ? t('members.active') : t('members.inactive')}
+                  </span>
+                </td>
+                <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!allMembers.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+      </div>
+    </section>
+  );
+
+  const requestsPanel = joinReqs !== null && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.reportRequests')}</h2>
+      <p className="reports__repNote">{t('requests.groupDecides')}</p>
+      <div className="reports__tableWrap">
+        <table className="reports__table">
+          <thead>
+            <tr>
+              <th>{t('common.name')}</th>
+              <th>{t('common.date')}</th>
+              <th>{t('common.status')}</th>
+              <th className="is-num">{t('requests.acceptVotes')}</th>
+              <th className="is-num">{t('requests.rejectVotes')}</th>
+              <th>{t('reports.decidedBy')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {joinReqs.map((r) => (
+              <tr key={r.id}>
+                <td>{r.full_name}</td>
+                <td>{shortDate(r.created_at)}</td>
+                <td>
+                  <span className={`tag tag--${r.status === 'approved' ? 'green'
+                    : r.status === 'rejected' ? 'grey' : 'gold'}`}>
+                    {r.status === 'pending' ? t('requests.votingOpen')
+                      : r.status === 'approved' ? t('common.yes') : t('common.no')}
+                  </span>
+                </td>
+                <td className="is-num">{r.yes_votes}</td>
+                <td className="is-num">{r.no_votes}</td>
+                <td>{r.decided_by_name || <span className="muted">—</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!joinReqs.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+      </div>
+    </section>
+  );
+
+  const memberSavingsPanel = report && (
+    <section className="panel reports__panel">
+      {memberHead}
+      <div className="reports__tableWrap">
+        <table className="reports__table">
+          <thead>
+            <tr>
+              <th>{t('common.date')}</th>
+              <th className="is-num">{t('common.amount')}</th>
+              <th className="is-num">{t('reports.reportShares')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.savings.map((r) => (
+              <tr key={r.id}>
+                <td>{shortDate(r.date)}</td>
+                <td className="is-num money">{money(r.amount)}</td>
+                <td className="is-num">{plainNumber(r.shares)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!report.savings.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+      </div>
+    </section>
+  );
+
+  const memberRepaymentsPanel = report && (
+    <section className="panel reports__panel">
+      {memberHead}
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('reports.reportLoansGiven')} value={money(report.totals.loans_given)} tone="blue" icon="loans" />
+        <StatCard label={t('analytics.totalRepayments')}
+          value={money(report.loans.reduce((a, l) => a + Number(l.total_repaid || 0), 0))}
+          tone="green" icon="loans" />
+        <StatCard label={t('reports.reportOwing')} value={money(report.totals.loans_outstanding)} tone="red" icon="loans" />
+      </div>
+      {report.loans.length ? (
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.date')}</th>
+                <th className="is-num">{t('common.amount')}</th>
+                <th className="is-num">{t('reports.repaid')}</th>
+                <th className="is-num">{t('loans.outstanding')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.loans.map((l) => (
+                <tr key={l.id}>
+                  <td>{shortDate(l.applied_at)}</td>
+                  <td className="is-num money">{money(l.amount)}</td>
+                  <td className="is-num money">{l.total_repaid > 0 ? money(l.total_repaid) : '—'}</td>
+                  <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="muted">{t('reports.reportEmpty')}</p>}
+    </section>
+  );
+
   const renderMemberReport = () => {
     if (category === 'members') return scope === 'group' ? groupMembersPanel : membersTable;
 
@@ -345,11 +629,25 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
       );
     }
 
+    if (GROUP_ONLY.includes(category) && isMember) {
+      return <p className="notice">{t('reports.groupOnlyNote')}</p>;
+    }
+
     if (!isMember) {
-      if (!group) return <Spinner />;
+      if (category === 'shareout' && shareouts === null) return <Spinner />;
+      if (category === 'status' && allMembers === null) return <Spinner />;
+      if (category === 'requests' && joinReqs === null) return <Spinner />;
+      if (category !== 'shareout' && category !== 'status' && category !== 'requests'
+        && !group) return <Spinner />;
       if (category === 'contributions') return groupContributions;
+      if (category === 'savings') return groupSavingsPanel;
       if (category === 'loans') return groupLoans;
+      if (category === 'repayments') return groupRepaymentsPanel;
       if (category === 'fines') return groupFines;
+      if (category === 'welfare') return groupWelfarePanel;
+      if (category === 'shareout') return groupShareoutPanel;
+      if (category === 'status') return statusPanel;
+      if (category === 'requests') return requestsPanel;
       return null;
     }
 
@@ -386,6 +684,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
         </section>
       );
     }
+
+    if (category === 'savings') return memberSavingsPanel;
+
+    if (category === 'repayments') return memberRepaymentsPanel;
 
     if (category === 'loans') {
       return (

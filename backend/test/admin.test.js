@@ -444,6 +444,69 @@ function run(middleware, user) {
     assert.ok(ruleLabels.includes(`'${cat}'`), `the approval categories must include ${cat}`);
   }
 
+  // ---- the important-setting approval rule --------------------------------
+  const applyCall = 'await applyGroupRules(payload, req.user.id)';
+  const rejectReturn = "return res.json({ message: 'Request rejected.' })";
+  assert.ok(adminCtrl.includes(applyCall), 'a confirmed setting request applies the new rules');
+  assert.ok(adminCtrl.indexOf(rejectReturn) !== -1
+    && adminCtrl.indexOf(rejectReturn) < adminCtrl.indexOf(applyCall),
+    'a rejected request returns before anything is applied, so the old value stands');
+  assert.ok(adminCtrl.indexOf(applyCall) < adminCtrl.indexOf("SET status = 'approved'"),
+    'the new rules are applied before the request is marked in force');
+  assert.ok(adminCtrl.includes("audit(req.user.id, 'REJECT_CHANGE_REQUEST'")
+    && adminCtrl.includes("audit(req.user.id, 'APPROVE_CHANGE_REQUEST'"),
+    'both decisions are written to the audit log');
+  const settingsRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'settingsRoutes.js'), 'utf8');
+  assert.ok(settingsRoutes.includes("router.put('/system', requirePermission('system.settings')"),
+    'the technical system settings stay behind their own permission');
+  assert.ok(routeLine('admin/settings/:section').includes('system_admin')
+    && !routeLine('admin/settings/:section').includes("'admin'"),
+    'the chairperson cannot open the technical settings page');
+
+  // ---- reports: viewed, filtered and printed, never written --------------
+  const reportRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'reportRoutes.js'), 'utf8');
+  assert.ok(reportRoutes.includes("requirePermission('reports.view')")
+    && !/router\.(post|put|patch|delete)\s*\(/.test(reportRoutes),
+    'the reports read saved records and never write them');
+  assert.ok(can('admin', 'reports.view') && can('treasurer', 'reports.view')
+    && can('secretary', 'reports.view'),
+    'the whole committee can open the reports');
+  const reportsPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Reports.jsx'), 'utf8');
+  for (const key of ['reportSavings', 'reportRepayments', 'reportWelfare', 'reportShareout',
+                     'reportStatus', 'reportRequests']) {
+    assert.ok(reportsPage.includes(`'${key}'`), `the reports must offer ${key}`);
+  }
+  assert.ok(reportsPage.includes('window.print()') && reportsPage.includes("t('reports.print')")
+    && reportsPage.includes("t('reports.reportExport')"),
+    'a report can be printed and exported');
+  assert.ok(reportsPage.includes("q.set('memberId'"),
+    'the register can be filtered down to one member');
+  assert.ok(reportsPage.includes('groupOnlyNote') && reportsPage.includes('/members?all=true')
+    && reportsPage.includes("'/shareout'") && reportsPage.includes("'/requests'"),
+    'the group-only reports bring their own data');
+  assert.ok(reportsPage.includes("t('members.active')") && reportsPage.includes("t('members.inactive')"),
+    'membership status uses the real member labels');
+  assert.ok(reportsPage.includes("t('requests.votingOpen')") && reportsPage.includes("t('requests.acceptVotes')"),
+    'join requests show the group decision and its votes');
+  assert.ok(reportsPage.includes('shareout.confirmedTag') && reportsPage.includes('total_fund'),
+    'the share-out history shows each cycle with its fund');
+  assert.ok(reportsPage.includes("t('reports.repaid')"),
+    'the repayment reports show what was paid back');
+  assert.ok(routeLine('analytics').includes('COMMITTEE')
+    && routeLine('reports').includes('analytics?tab=reports'),
+    'the reports live behind the committee route and redirect to their tab');
+  for (const file of ['en.extra.js', 'ny.extra.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    for (const key of ['reportSavings', 'reportRepayments', 'reportWelfare', 'reportShareout',
+                       'reportStatus', 'reportRequests', 'groupSavingsTitle', 'groupRepaymentsTitle',
+                       'groupWelfareTitle', 'groupShareoutTitle', 'groupOnlyNote', 'repaid',
+                       'cycleName', 'shareFund', 'decidedBy']) {
+      assert.ok(dict.includes(`${key}:`), `${file} must carry ${key}`);
+    }
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
