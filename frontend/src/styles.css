@@ -4841,6 +4841,17 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .settings__tableWrap { overflow-x: auto; margin: 0.6rem 0 1.2rem; }
 .settings__tableWrap .sysadmin__table { min-width: 620px; }
+
+/* The chairperson's decision queue at the top of her board. */
+.chair__queue { margin-top: 1.4rem; }
+.chair__queueGrid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+.chair__sub { font-size: 0.95rem; font-weight: 700; margin: 0 0 0.3rem; color: var(--ink); }
+.chair__rule { display: block; }
+.chair__carry { list-style: none; margin: 0.4rem 0 0.9rem; padding: 0; }
+.chair__carry li { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0; border-bottom: 1px solid var(--rule); }
+.chair__carry li:last-child { border-bottom: 0; }
+.chair__carryNum { font-weight: 700; min-width: 1.6rem; }
+.chair__queue .settings__tableWrap .sysadmin__table { min-width: 360px; }
 .settings__desc { color: var(--slate); font-size: 0.85rem; max-width: 22rem; }
 .settings__groupCard { background: var(--leaf-wash); border-radius: var(--radius); padding: var(--card-pad); margin: 0.6rem 0 1.2rem; }
 .settings__flow { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; display: grid; gap: 0.35rem; }

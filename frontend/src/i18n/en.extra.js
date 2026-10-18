@@ -12,6 +12,23 @@ export default {
 
   roles: { system_admin: 'Administrator' },
 
+  chair: {
+    queueTitle: 'Waiting for your decision',
+    joinsTitle: 'Join requests to decide',
+    rulesTitle: 'VSLA rule changes to confirm',
+    carryTitle: 'Votes to carry out',
+    memberVotes: 'Member votes',
+    rulesChanged: 'Rules being changed',
+    proposedBy: 'Proposed by',
+    open: 'Open',
+    casesToCarry: 'Case votes passed',
+    electionsToCarry: 'Elections passed',
+    carryOut: 'Carry out',
+    committeeTitle: 'Committee and meetings',
+    presentCount: (p, m) => `${p} of ${m} marked present`,
+    confirmChanges: 'Confirm rule changes',
+  },
+
 
   common: { showPassword: 'Show password', hidePassword: 'Hide password', noResults: 'Nothing matches your search' },
 

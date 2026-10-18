@@ -224,6 +224,7 @@ const getDashboard = wrap(async (req, res) => {
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
     recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
+    chairJoins, chairRules, chairVotes,
     monthlyFlow, todayTick, contribMonthly, expectedFines,
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
@@ -291,12 +292,35 @@ const getDashboard = wrap(async (req, res) => {
         ORDER BY a.created_at DESC LIMIT 8`
     ) : null,
 
-    // The admin also watches the system itself.
+    // The admin also watches the system itself, and carries the chairperson's
+    // own queue: the joins, the rule changes and the finished votes that are
+    // hers to settle.
     isAdmin ? one(
       `SELECT (SELECT COUNT(*)::int FROM users WHERE is_active = TRUE) AS active_users,
               (SELECT COUNT(*)::int FROM users WHERE locked_until > NOW()) AS locked_users,
               (SELECT COUNT(*)::int FROM sms_notifications WHERE sent_at::date = CURRENT_DATE) AS sms_today,
               (SELECT COUNT(*)::int FROM sms_notifications WHERE status = 'failed') AS sms_failed`
+    ) : null,
+    isAdmin ? query(
+      `SELECT jr.id, jr.full_name, jr.phone, jr.created_at,
+              (SELECT COUNT(*)::int FROM join_request_votes v WHERE v.request_id = jr.id AND v.vote = 'yes') AS yes_votes,
+              (SELECT COUNT(*)::int FROM join_request_votes v WHERE v.request_id = jr.id AND v.vote = 'no')  AS no_votes
+         FROM join_requests jr
+        WHERE jr.status = 'pending'
+        ORDER BY jr.created_at LIMIT 6`
+    ) : null,
+    isAdmin ? query(
+      `SELECT cr.id, cr.payload, cr.reason, cr.created_at, u.full_name AS requested_by_name
+         FROM change_requests cr
+         LEFT JOIN users u ON u.id = cr.requested_by
+        WHERE cr.kind = 'group_rules' AND cr.status = 'pending'
+        ORDER BY cr.created_at LIMIT 6`
+    ) : null,
+    isAdmin ? one(
+      `SELECT (SELECT COUNT(*)::int FROM member_cases WHERE status = 'open') AS open_cases,
+              (SELECT COUNT(*)::int FROM member_cases WHERE status = 'passed' AND executed_at IS NULL) AS cases_to_carry,
+              (SELECT COUNT(*)::int FROM office_votes WHERE status = 'open') AS open_elections,
+              (SELECT COUNT(*)::int FROM office_votes WHERE status IN ('passed','tie') AND executed_at IS NULL) AS elections_to_carry`
     ) : null,
 
     // The money crew charts what has been coming in for the last six months.
@@ -399,7 +423,18 @@ const getDashboard = wrap(async (req, res) => {
     payload.attendance_rate = attendance.rate;
     payload.recent_activity = recentActivity;
   }
-  if (isAdmin) payload.system = system;
+  if (isAdmin) {
+    payload.system = system;
+    // The chairperson's own work: what she alone (or first of all) must settle.
+    payload.chair = {
+      pending_joins: chairJoins || [],
+      pending_rule_changes: chairRules || [],
+      open_cases: chairVotes ? chairVotes.open_cases : 0,
+      cases_to_carry: chairVotes ? chairVotes.cases_to_carry : 0,
+      open_elections: chairVotes ? chairVotes.open_elections : 0,
+      elections_to_carry: chairVotes ? chairVotes.elections_to_carry : 0,
+    };
+  }
 
   res.json(payload);
 });

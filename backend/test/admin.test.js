@@ -134,6 +134,33 @@ function run(middleware, user) {
     'the administrator–chairperson conflict must say so in the exact words'
   );
 
+  // ---- the chairperson's own module ---------------------------------------
+  // She leads the group: decides joins, carries out votes, confirms rules.
+  for (const perm of ['cases.manage', 'officeVotes.manage', 'joinRequests.decide',
+                      'approvals.decide', 'groupRules.view', 'groupRules.propose',
+                      'cycles.manage', 'audit.view']) {
+    assert.ok(can('admin', perm), `the chairperson must hold ${perm}`);
+  }
+  // ...and she is never the system administrator.
+  for (const perm of ['accounts.view', 'accounts.manage', 'system.settings']) {
+    assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
+  }
+  const chairAccounts = await run(requirePermission('accounts.manage'), { role: 'admin' });
+  assert.strictEqual(chairAccounts.status, 403);
+  // Her board carries the queue of what is hers to settle.
+  const dashCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'dashboardController.js'), 'utf8');
+  assert.ok(dashCtrl.includes('pending_rule_changes'), 'the chair board must show the rule changes to confirm');
+  assert.ok(dashCtrl.includes("kind = 'group_rules'"), 'the chair queue must ask for the pending group-rule changes');
+  assert.ok(dashCtrl.includes('cases_to_carry'), 'the chair board must show the votes waiting to be carried out');
+  const chairDash = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'dashboards', 'AdminDashboard.jsx'), 'utf8');
+  assert.ok(chairDash.includes('chair.queueTitle'), 'the chairperson dashboard must open with her decision queue');
+  // The administrator's own pages stay out of the chairperson's routes.
+  assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
+    'the chairperson cannot open the user management page');
+  assert.ok(routeLine('admin/roles').includes('system_admin') && !routeLine('admin/roles').includes("'admin'"),
+    'the chairperson cannot open the roles page');
+
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);
   assert.deepStrictEqual(resetAttempt({ attempts: 2, maxTries: 3, expired: false }).remaining, 1);

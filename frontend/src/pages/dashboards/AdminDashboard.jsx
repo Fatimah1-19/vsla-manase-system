@@ -4,19 +4,40 @@ import StatCard from '../../components/StatCard.jsx';
 import { BarChart, Pie } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
+import { groupRuleLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 
+/** A proposed rule value in plain words, for the queue table. */
+function shown(value, t) {
+  if (value === 'yes' || value === 'no') return value === 'yes' ? t('common.yes') : t('common.no');
+  if (value === true || value === false) return value ? t('common.yes') : t('common.no');
+  return value === undefined || value === null || String(value).trim() === '' ? '—' : String(value);
+}
+
 /**
- * The chairperson sees the whole group: the money, the people and the
- * system itself (locked accounts, texts going out).
+ * The chairperson's board. She leads the group: she watches the money and the
+ * people, and at the top sits the queue of things that are hers to settle —
+ * join requests after the members have voted, VSLA rule changes the
+ * administrator proposed, and votes that have passed and await carrying out.
+ * She is not the system administrator: accounts and technical settings are
+ * never shown here.
  */
 export default function AdminDashboard({ data }) {
   const { t } = useLang();
   const m = data.money || {};
   const sys = data.system || {};
   const flow = data.monthly_flow || [];
+  const chair = data.chair || {};
+
+  const joinQueue = chair.pending_joins || [];
+  const ruleQueue = chair.pending_rule_changes || [];
+  const carryQueue = [
+    { n: chair.cases_to_carry, label: t('chair.casesToCarry'), to: '/app/cases' },
+    { n: chair.elections_to_carry, label: t('chair.electionsToCarry'), to: '/app/leadership' },
+  ].filter((c) => c.n > 0);
+  const somethingWaiting = joinQueue.length > 0 || ruleQueue.length > 0 || carryQueue.length > 0;
 
   const monthContribs = data.contributions_by_month || [];
   const contributions = monthContribs.map((c) => ({
@@ -50,6 +71,89 @@ export default function AdminDashboard({ data }) {
           />
         )}
       </div>
+
+      {/* ---- WHAT IS HERS TO SETTLE -------------------------------------- */}
+      {somethingWaiting && (
+        <section className="dash__card chair__queue">
+          <h2 className="dash__sectionTitle">{t('chair.queueTitle')}</h2>
+          <div className="chair__queueGrid">
+            {joinQueue.length > 0 && (
+              <div>
+                <h3 className="chair__sub">{t('chair.joinsTitle')}</h3>
+                <div className="settings__tableWrap">
+                  <table className="sysadmin__table">
+                    <thead>
+                      <tr>
+                        <th>{t('common.name')}</th>
+                        <th>{t('common.phone')}</th>
+                        <th>{t('chair.memberVotes')}</th>
+                        <th>{t('chair.open')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {joinQueue.map((j) => (
+                        <tr key={j.id}>
+                          <td>{j.full_name || '—'}</td>
+                          <td>{j.phone || '—'}</td>
+                          <td>{t('cases.voteTally', j.yes_votes, j.no_votes)}</td>
+                          <td><Link to="/app/requests" className="adash__viewAll">{t('chair.open')}</Link></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {ruleQueue.length > 0 && (
+              <div>
+                <h3 className="chair__sub">{t('chair.rulesTitle')}</h3>
+                <div className="settings__tableWrap">
+                  <table className="sysadmin__table">
+                    <thead>
+                      <tr>
+                        <th>{t('chair.rulesChanged')}</th>
+                        <th>{t('chair.proposedBy')}</th>
+                        <th>{t('chair.open')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ruleQueue.map((c) => (
+                        <tr key={c.id}>
+                          <td>
+                            {Object.entries(c.payload || {}).map(([k, v]) => (
+                              <span key={k} className="chair__rule">
+                                {t(groupRuleLabel(k))}: <strong>{shown(v, t)}</strong>
+                              </span>
+                            ))}
+                          </td>
+                          <td>{c.requested_by_name || '—'}</td>
+                          <td><Link to="/app/approvals" className="adash__viewAll">{t('chair.open')}</Link></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {carryQueue.length > 0 && (
+              <div>
+                <h3 className="chair__sub">{t('chair.carryTitle')}</h3>
+                <ul className="chair__carry">
+                  {carryQueue.map((c) => (
+                    <li key={c.to}>
+                      <span className="chair__carryNum">{plainNumber(c.n)}</span>
+                      <span>{c.label}</span>
+                      <Link to={c.to} className="btn btn--small">{t('chair.carryOut')}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <div className="adash__overview">
         <section className="dash__card adash__pieCard">
@@ -96,6 +200,26 @@ export default function AdminDashboard({ data }) {
             tone={data.loans?.overdue > 0 ? 'red' : 'plain'} icon="fines" />
         </div>
       </section>
+
+      {/* ---- SUPERVISING THE COMMITTEE: meetings and attendance ---------- */}
+      {(data.recent_meetings?.length > 0 || data.attendance_rate != null) && (
+        <section className="adash__group">
+          <h2 className="dash__sectionTitle">{t('chair.committeeTitle')}</h2>
+          <div className="page-grid adash__people">
+            {data.attendance_rate != null && (
+              <StatCard label={t('dashboard.attendanceRate')} value={`${plainNumber(data.attendance_rate)}%`} icon="members" />
+            )}
+            {data.recent_meetings?.slice(0, 4).map((mt) => (
+              <StatCard
+                key={mt.id}
+                label={shortDate(mt.meeting_date)}
+                value={t('chair.presentCount', mt.present_count, mt.marked)}
+                icon="meetings"
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {flow.length > 0 && (
         <section className="dash__card">
@@ -145,7 +269,8 @@ export default function AdminDashboard({ data }) {
       <section className="adash__quick">
         <h2 className="dash__sectionTitle">{t('dashboard.commonJobs')}</h2>
         <div className="adash__links">
-          <Link to="/app/members" className="btn">{t('members.addPerson')}</Link>
+          <Link to="/app/approvals" className="btn">{t('chair.confirmChanges')}</Link>
+          <Link to="/app/members" className="btn btn--sky">{t('members.addPerson')}</Link>
           <Link to="/app/analytics" className="btn btn--sky">{t('nav.analytics')}</Link>
           <Link to="/app/messages" className="btn btn--gold">{t('messages.send')}</Link>
           <Link to="/app/shareout" className="btn btn--ghost">{t('shareout.title')}</Link>

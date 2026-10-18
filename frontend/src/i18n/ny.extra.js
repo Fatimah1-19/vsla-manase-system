@@ -10,6 +10,23 @@ export default {
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
+  chair: {
+    queueTitle: 'Zodikira chigamulo chanu',
+    joinsTitle: 'Opempha kulowa okhudza chigamulo',
+    rulesTitle: 'Malamulo a gulu okhudzidwa osintsidwa',
+    carryTitle: 'Mavoti okwaniritsidwa',
+    memberVotes: 'Mavoti a mamembala',
+    rulesChanged: 'Malamulo omwe akusinthidwa',
+    proposedBy: 'Wapereka',
+    open: 'Tsegulani',
+    casesToCarry: 'Mavoti a milandu yapambana',
+    electionsToCarry: 'Kusankha kudzaza udindo kwapambana',
+    carryOut: 'Kwaniritsani',
+    committeeTitle: 'Akampani ndi misonkhano',
+    presentCount: (p, m) => `${p} mwa ${m} adawera`,
+    confirmChanges: 'Tsitsimulani malamulo',
+  },
+
 
   common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu' },
 
