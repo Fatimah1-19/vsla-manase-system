@@ -5,7 +5,7 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
-const { canRemoveAdministrator } = require('../utils/adminRules');
+const { canRemoveAdministrator, canManageAccount } = require('../utils/adminRules');
 
 // Roles the chairperson may hand out. The system administrator is deliberately
 // not here: that account is created when the group is set up, not from a page.
@@ -15,6 +15,23 @@ const ROLES = ['admin', 'treasurer', 'secretary', 'member'];
 // made by a vote (see controllers/memberCaseController.js). It cannot be done from here.
 const VOTE_MESSAGE =
   'Suspending, dismissing or bringing back a member is decided by a vote of the members. Open a vote on the Votes page.';
+
+// The System Administrator's account lives in the administrator area. The
+// chairperson's office screens never touch it, so the two responsibilities stay
+// apart and one office cannot seize the other's account.
+const SYSTEM_ADMIN_MESSAGE = 'The System Administrator account is managed from the administrator area and cannot be changed here.';
+
+/** Refuse the office screens' reach over an account they may not touch. */
+function refuseAccount(req, res, targetId, targetRole, newRole) {
+  const verdict = canManageAccount({ actorId: req.user.id, targetId, targetRole, newRole });
+  if (verdict.ok) return false;
+  res.status(403).json({
+    message: verdict.reason === 'own_role'
+      ? 'You cannot change your own role.'
+      : SYSTEM_ADMIN_MESSAGE,
+  });
+  return true;
+}
 
 // GET /api/users
 const listUsers = wrap(async (req, res) => {
@@ -122,6 +139,10 @@ const updateUser = wrap(async (req, res) => {
     return res.status(400).json({ message: 'Choose a valid role.' });
   }
 
+  // The office screens never reach the System Administrator's account, and nobody
+  // changes their own role from here.
+  if (refuseAccount(req, res, id, existing.role, role)) return;
+
   // Never leave the group without an admin.
   if (existing.role === 'admin' && role && role !== 'admin') {
     const admins = await one(`SELECT COUNT(*)::int AS c FROM users WHERE role = 'admin' AND is_active = TRUE`);
@@ -180,6 +201,7 @@ const adminResetPassword = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
+  if (refuseAccount(req, res, id, user.role)) return;
 
   const plain = tempPassword();
   const hashed = await bcrypt.hash(plain, 10);
@@ -209,6 +231,10 @@ const adminResetPassword = wrap(async (req, res) => {
 // POST /api/users/:id/unlock — clear a lockout before the 5 minutes are up
 const unlockUser = wrap(async (req, res) => {
   const id = Number(req.params.id);
+  const user = await one(`SELECT role FROM users WHERE id = $1`, [id]);
+  if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
+  if (refuseAccount(req, res, id, user.role)) return;
+
   await query(`UPDATE users SET locked_until = NULL, failed_attempts = 0 WHERE id = $1`, [id]);
   await audit(req.user.id, 'UNLOCK_USER', 'users', id, null);
   res.json({ message: 'Account unlocked.' });
@@ -221,6 +247,7 @@ const deactivateUser = wrap(async (req, res) => {
 
   const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
+  if (refuseAccount(req, res, id, user.role)) return;
 
   // An ordinary member is suspended or dismissed by a vote of the members, not from here.
   if (user.role === 'member') return res.status(400).json({ message: VOTE_MESSAGE });
@@ -246,6 +273,7 @@ const reactivateUser = wrap(async (req, res) => {
 
   const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
+  if (refuseAccount(req, res, id, user.role)) return;
 
   // Like suspension, an ordinary member is brought back by a vote of the members, not from here.
   if (user.role === 'member') return res.status(400).json({ message: VOTE_MESSAGE });

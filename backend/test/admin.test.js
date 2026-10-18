@@ -5,7 +5,7 @@ const path = require('path');
 const {
   ROLES, PERMISSIONS, MONEY_PERMISSIONS, can, touchesMoney, requirePermission, blockSystemAdmin,
 } = require('../config/permissions.js');
-const { canDecideChange, canRemoveAdministrator, canSetSystemRole, resetAttempt } = require('../utils/adminRules.js');
+const { canDecideChange, canRemoveAdministrator, canSetSystemRole, canManageAccount, resetAttempt } = require('../utils/adminRules.js');
 
 // Run one express middleware with a fake user and see what it answers.
 function run(middleware, user) {
@@ -96,6 +96,24 @@ function run(middleware, user) {
   );
   assert.ok(!/if \(req\.user\.role === 'system_admin'\)\s*\{\s*\n\s*await applyGroupRules/.test(settings),
     'the administrator must not save VSLA rules directly');
+
+  // ---- the office screens never reach the administrator's account -----------
+  // The chairperson may not edit, reset, lock or suspend the System
+  // Administrator's account, and nobody changes their own role from here.
+  assert.strictEqual(canManageAccount({ actorId: 3, targetId: 16, targetRole: 'system_admin' }).reason, 'system_admin_account');
+  assert.strictEqual(canManageAccount({ actorId: 3, targetId: 7, targetRole: 'admin', newRole: 'member' }).ok, true);
+  assert.strictEqual(canManageAccount({ actorId: 7, targetId: 7, targetRole: 'admin', newRole: 'member' }).reason, 'own_role');
+  assert.strictEqual(canManageAccount({ actorId: 7, targetId: 7, targetRole: 'admin', newRole: 'admin' }).ok, true);
+
+  const userCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'userController.js'), 'utf8');
+  assert.ok(userCtrl.includes('canManageAccount'), 'the user route must consult the account guard');
+  const guarded = userCtrl.match(/refuseAccount\(req, res/g) || [];
+  assert.ok(guarded.length >= 6, `every account action must be guarded (found ${guarded.length})`);
+
+  // ---- a vote belongs to a member, on every vote route ---------------------
+  const joinCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'joinRequestController.js'), 'utf8');
+  assert.ok(joinCtrl.includes('rules.canVote'), 'a join-request vote must use the member voting rule');
+  assert.ok(joinCtrl.includes("if (!me) return res.status(403)"), 'a voter with no member record must be refused');
 
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);

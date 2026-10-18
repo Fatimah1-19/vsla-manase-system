@@ -19,6 +19,25 @@ function canDecideChange({ status, approverRoleRequired, approverRole, requested
 }
 
 /**
+ * May the chairperson's account screen act on this account at all?
+ *
+ * The System Administrator is looked after from her own area, never from the
+ * office screens. So the chairperson may not touch that account in any way:
+ * not its details, not its role, not its password, not its lock. Keeping the
+ * two responsibilities apart stops one office from seizing the other's account.
+ *
+ * A person may also not change their own role from here, so nobody can rewrite
+ * their own standing in the group.
+ */
+function canManageAccount({ actorId, targetId, targetRole, newRole }) {
+  if (targetRole === 'system_admin') return { ok: false, reason: 'system_admin_account' };
+  if (newRole && newRole !== targetRole && Number(actorId) === Number(targetId)) {
+    return { ok: false, reason: 'own_role' };
+  }
+  return { ok: true };
+}
+
+/**
  * May this account be switched off? The group must always keep one active
  * administrator of each kind: the last one may never be removed.
  */
@@ -64,4 +83,4 @@ function resetAttempt({ attempts, maxTries, expired }) {
   return { ok: true, remaining: Math.max(limit - used, 0) };
 }
 
-module.exports = { canDecideChange, canRemoveAdministrator, canSetSystemRole, resetAttempt };
+module.exports = { canDecideChange, canRemoveAdministrator, canSetSystemRole, canManageAccount, resetAttempt };

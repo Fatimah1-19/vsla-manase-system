@@ -6,6 +6,7 @@ const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { normalisePhone } = require('../utils/sms');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
+const rules = require('../utils/cases');
 const { getScreeningQuestions } = require('../utils/screening');
 
 // POST /api/join-requests — public, no login
@@ -94,6 +95,17 @@ const vote = wrap(async (req, res) => {
   if (!['yes', 'no'].includes(choice)) {
     return res.status(400).json({ message: 'Vote yes or no.' });
   }
+
+  // A vote belongs to a member. Someone with no member record (for example a
+  // System Administrator who is not also a member) or a suspended member may not
+  // vote; the same rule the member-case votes use.
+  const me = req.user.member_id;
+  if (!me) return res.status(403).json({ message: 'Only members can vote.' });
+  const mine = await one(`SELECT status FROM members WHERE id = $1`, [me]);
+  const verdict = rules.canVote({
+    memberStatus: mine && mine.status, userActive: req.user.is_active, memberId: me, subjectMemberId: null,
+  });
+  if (!verdict.ok) return res.status(403).json({ message: verdict.message });
 
   const request = await one(`SELECT * FROM join_requests WHERE id = $1`, [id]);
   if (!request) return res.status(404).json({ message: 'That request does not exist.' });
