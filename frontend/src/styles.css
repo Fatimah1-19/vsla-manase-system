@@ -4927,3 +4927,6 @@ section[id] { scroll-margin-top: 4.5rem; }
 @media (min-width: 720px) {
   .rolecards { grid-template-columns: 1fr 1fr; }
 }
+
+.analytics__list--scroll { max-height: 420px; overflow: auto; }
+

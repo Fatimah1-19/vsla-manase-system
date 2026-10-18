@@ -54,6 +54,8 @@ function AnalyticsView() {
           <StatCard label={t('dashboard.interestEarned')} value={money(d.loans.interest_earned)} hint={t('analytics.interestNote')} />
           <StatCard label={t('analytics.avgSavings')} value={money(d.members.avg_savings)} hint={t('analytics.median', money(d.members.median_savings))} />
           <StatCard label={t('dashboard.activeMembers')} value={plainNumber(d.members.active)} />
+          <StatCard label={t('analytics.totalIssued')} value={money(d.loans.lent_principal)} tone="blue" />
+          <StatCard label={t('analytics.totalRepayments')} value={money(d.repayments.total)} tone="green" />
         </div>
 
         <Panel title={t('analytics.flowTitle')} note={t('analytics.flowNote')}>
@@ -95,6 +97,16 @@ function AnalyticsView() {
             <LineChart data={d.members.growth.map((g) => ({ label: monthLabel(g.month), value: g.members }))} />
           </Panel>
         </div>
+
+        <Panel title={t('analytics.savingsByMember')} note={t('analytics.savingsByMemberNote')}>
+          {d.savings.by_member.length ? (
+            <ul className="analytics__list analytics__list--scroll">
+              {d.savings.by_member.map((s) => (
+                <li key={s.full_name}><span>{s.full_name}</span><span className="money">{money(s.total)}</span></li>
+              ))}
+            </ul>
+          ) : <p className="muted">{t('savings.empty')}</p>}
+        </Panel>
 
         <Panel title={t('analytics.borrowers')}>
           {d.loans.borrowers.length ? (
@@ -144,7 +156,8 @@ function AnalyticsView() {
         <div className="analytics__cols">
           <Panel title={t('analytics.finesWelfare')} note={t('analytics.keptNote')}>
             <dl className="analytics__facts">
-              <div><dt>{t('fines.collected')}</dt><dd className="money">{money(d.fines.collected)}</dd></div>
+              <div className="is-strong"><dt>{t('analytics.totalFines')}</dt><dd className="money">{money(d.fines.total)}</dd></div>
+              <div><dt>{t('fines.collected')}</dt><dd className="money">{money(d.fines.paid)}</dd></div>
               <div><dt>{t('dashboard.finesOutstanding')}</dt><dd className="money money--neg">{money(d.fines.outstanding)}</dd></div>
               <div><dt>{t('analytics.welfareIn')}</dt><dd className="money">{money(d.welfare.contributions)}</dd></div>
               <div><dt>{t('analytics.welfareOut')}</dt><dd className="money">{money(d.welfare.payouts)}</dd></div>

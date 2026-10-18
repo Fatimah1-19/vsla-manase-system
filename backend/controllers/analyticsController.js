@@ -150,7 +150,10 @@ const analytics = wrap(async (req, res) => {
       top_savers: ranking.slice(0, 5),
       growth,
     },
-    savings: { total: round(totalSavings) },
+    savings: {
+      total: round(totalSavings),
+      by_member: ranking.map((r) => ({ full_name: r.full_name, total: round(r.total) })),
+    },
     loans: {
       status: statusCount, lent_principal: round(lentPrincipal), outstanding: round(outstanding),
       overdue_outstanding: round(overdueOutstanding),
@@ -160,9 +163,15 @@ const analytics = wrap(async (req, res) => {
       box_in_use: pct(outstanding, cash + outstanding),
       borrowers: borrowers.slice(0, 10),
     },
+    repayments: {
+      total: round(paidSum), outstanding: round(outstanding), collection_rate: pct(paidSum, dueSum),
+    },
     cash_in_box: cash,
     meetings: { recent: meetings, attendance_rate: attendanceRate },
-    fines: { collected: round(fines.collected), outstanding: round(fines.outstanding), count: fines.count },
+    fines: {
+      total: round(fines.collected + fines.outstanding), paid: round(fines.collected),
+      outstanding: round(fines.outstanding), count: fines.count,
+    },
     welfare: {
       contributions: round(welfare.contributions), payouts: round(welfare.payouts),
       balance: round(welfare.contributions - welfare.payouts), by_category: welfareByCategory,
