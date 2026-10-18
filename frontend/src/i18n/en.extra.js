@@ -7,6 +7,7 @@ export default {
     users: 'Users', roles: 'Roles & permissions', vslaSettings: 'VSLA settings', auditTrail: 'Audit trail', systemActivity: 'System activity',
     myProfile: 'My profile', changePassword: 'Change password',
     gDashboard: 'Dashboard', gUserMgmt: 'User management', gVsla: 'VSLA settings', gSystem: 'System', gProfile: 'Profile',
+    gParticipation: 'Member participation',
   },
 
   roles: { system_admin: 'Administrator' },

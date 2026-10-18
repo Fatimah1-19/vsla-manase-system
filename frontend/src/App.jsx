@@ -61,9 +61,11 @@ export default function App() {
         <Route path="welfare"  element={<ProtectedRoute roles={EVERYONE}><Welfare /></ProtectedRoute>} />
         <Route path="fines"    element={<ProtectedRoute roles={EVERYONE}><Fines /></ProtectedRoute>} />
         <Route path="shareout" element={<ProtectedRoute roles={EVERYONE}><ShareOut /></ProtectedRoute>} />
+        {/* An administrator who is also a member keeps the member's say in the
+            group's votes; the money pages above stay closed to her. */}
         <Route path="requests" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><JoinRequests /></ProtectedRoute>} />
-        <Route path="cases"    element={<ProtectedRoute roles={EVERYONE}><Cases /></ProtectedRoute>} />
-        <Route path="leadership" element={<ProtectedRoute roles={EVERYONE}><Leadership /></ProtectedRoute>} />
+        <Route path="cases"    element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Cases /></ProtectedRoute>} />
+        <Route path="leadership" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Leadership /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
         <Route path="activity" element={<ProtectedRoute roles={[...COMMITTEE, 'system_admin']}><Activity /></ProtectedRoute>} />

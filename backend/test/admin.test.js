@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const {
-  ROLES, PERMISSIONS, MONEY_PERMISSIONS, can, touchesMoney, requirePermission, blockSystemAdmin,
+  ROLES, PERMISSIONS, MONEY_PERMISSIONS, can, touchesMoney, requirePermission, blockSystemAdmin, OFFICES,
 } = require('../config/permissions.js');
 const { canDecideChange, canRemoveAdministrator, canSetSystemRole, canManageAccount, resetAttempt } = require('../utils/adminRules.js');
 
@@ -114,6 +114,25 @@ function run(middleware, user) {
   const joinCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'joinRequestController.js'), 'utf8');
   assert.ok(joinCtrl.includes('rules.canVote'), 'a join-request vote must use the member voting rule');
   assert.ok(joinCtrl.includes("if (!me) return res.status(403)"), 'a voter with no member record must be refused');
+
+  // ---- the final role structure -------------------------------------------
+  // Administrator + member is allowed: the voting pages open for her and the
+  // votes themselves are keyed to the member row, never to the role.
+  assert.ok(!OFFICES.includes('system_admin'),
+    'the system role is not one of the three offices');
+  const appJsx = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'App.jsx'), 'utf8');
+  const routeLine = (name) => appJsx.split('\n').find((l) => l.includes(`path="${name}"`)) || '';
+  assert.ok(routeLine('cases').includes('EVERYONE_AND_ADMIN'), 'a member-administrator must reach the case votes');
+  assert.ok(routeLine('leadership').includes('EVERYONE_AND_ADMIN'), 'a member-administrator must reach the office votes');
+  assert.ok(routeLine('requests').includes('EVERYONE_AND_ADMIN'), 'a member-administrator must reach the join-request votes');
+  assert.ok(!routeLine('loans').includes('EVERYONE_AND_ADMIN'), 'the money pages stay closed to the administrator');
+  assert.ok(!routeLine('savings').includes('EVERYONE_AND_ADMIN'), 'the money pages stay closed to the administrator');
+  // ...and the Chairperson seat is refused with the wording from the spec.
+  const adminCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'adminController.js'), 'utf8');
+  assert.ok(
+    adminCtrl.includes('A user cannot simultaneously hold the System Administrator and Chairperson roles'),
+    'the administrator–chairperson conflict must say so in the exact words'
+  );
 
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);

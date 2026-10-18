@@ -14,6 +14,8 @@ export const NAV_ITEMS = [
   { to: '/app/admin/system',  key: 'nav.systemSettings', group: 'nav.gSystem', icon: 'settings', roles: ['system_admin'] },
   { to: '/app/activity',      key: 'nav.auditTrail',     group: 'nav.gSystem', icon: 'audit',    roles: ['system_admin'] },
   { to: '/app/admin/activity', key: 'nav.systemActivity', group: 'nav.gSystem', icon: 'activity', roles: ['system_admin'] },
+  { to: '/app/cases',      key: 'nav.cases',     group: 'nav.gParticipation', icon: 'cases',     roles: ['system_admin'] },
+  { to: '/app/leadership', key: 'nav.leadership', group: 'nav.gParticipation', icon: 'leadership', roles: ['system_admin'] },
   { to: '/app/profile',            key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['system_admin'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', group: 'nav.gProfile', icon: 'lock',    roles: ['system_admin'] },
 

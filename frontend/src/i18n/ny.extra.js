@@ -5,7 +5,8 @@ const fmt = (n) => Number(n).toLocaleString('en-US');
 export default {
   nav: { analytics: 'Ziwerengero', reports: 'Malipoti', wrappers: 'Zovala za mwezi', cases: 'Milandu ya mamembala', approvals: 'Zoyenera kutsimikizira', accounts: 'Maakaunti', systemSettings: 'Zokhazikika za dongosolo',
     users: 'Ogwiritsa', roles: 'Maudindo ndi zoletsedwa', vslaSettings: 'Zokhazikika za gulu', auditTrail: 'Mbiri ya kafukufuku', systemActivity: 'Zochitika za dongosolo', myProfile: 'Mbiri yanga', changePassword: 'Sinthani achinsinsi',
-    gDashboard: 'Chiwonetsero', gUserMgmt: 'Kasamalidwe ka ogwiritsa', gVsla: 'Zokhazikika za gulu', gSystem: 'Dongosolo', gProfile: 'Mbiri yanga' },
+    gDashboard: 'Chiwonetsero', gUserMgmt: 'Kasamalidwe ka ogwiritsa', gVsla: 'Zokhazikika za gulu', gSystem: 'Dongosolo', gProfile: 'Mbiri yanga',
+    gParticipation: 'Kugwiritsidwa ntchito kwa mamembala' },
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
