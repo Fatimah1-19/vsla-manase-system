@@ -133,17 +133,20 @@ const markPaid = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
   if (!updated) return res.status(404).json({ message: 'That fine is not in the book.' });
-  await audit(req.user.id, 'FINE_PAID', 'fines', id, `Amount ${updated.amount}`);
+  await audit(req.user.id, 'FINE_PAID', 'fines', id,
+    `paid unpaid -> paid, amount ${updated.amount}, reason: payment received`);
   res.json({ message: 'Fine marked as paid.' });
 });
 
 // DELETE /api/fines/:id
 const deleteFine = wrap(async (req, res) => {
   const id = Number(req.params.id);
+  const reason = String((req.body && req.body.reason) || '').trim().slice(0, 300);
   const existing = await one(`SELECT * FROM fines WHERE id = $1`, [id]);
   if (!existing) return res.status(404).json({ message: 'That fine is not in the book.' });
   await query(`DELETE FROM fines WHERE id = $1`, [id]);
-  await audit(req.user.id, 'DELETE_FINE', 'fines', id, `Removed ${existing.amount}`);
+  await audit(req.user.id, 'DELETE_FINE', 'fines', id,
+    `amount ${existing.amount} (${existing.paid ? 'paid' : 'unpaid'}), member ${existing.member_id} -> removed; reason: ${reason || 'not given'}`);
   res.json({ message: 'Fine removed.' });
 });
 

@@ -277,6 +277,40 @@ function run(middleware, user) {
   assert.ok(savingsPage.includes('{isAdmin && (') && savingsPage.includes("t('common.del')"),
     'removing an entry stays an explicit, authorised action');
 
+  // ---- the fines book: watched in full, changed only in the open ----------
+  assert.ok(can('admin', 'fines.viewAll'), 'the chairperson may see every fine');
+  assert.ok(!can('admin', 'fines.record'), 'the chairperson does not record or settle fines');
+  const chairFinesView = await run(requirePermission('fines.viewAll'), { role: 'admin' });
+  assert.strictEqual(chairFinesView.passed, true);
+  const chairFinesRecord = await run(requirePermission('fines.record'), { role: 'admin' });
+  assert.strictEqual(chairFinesRecord.status, 403);
+  const fineRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'fineRoutes.js'), 'utf8');
+  assert.ok(fineRoutes.includes("router.get('/', c.listFines)"),
+    'the fine history reads openly within the group');
+  assert.ok(fineRoutes.includes("router.post('/', requirePermission('fines.record')"),
+    'recording a fine needs the record permission');
+  assert.ok(fineRoutes.includes("router.patch('/:id/pay', requirePermission('fines.record')"),
+    'settling a fine needs the record permission');
+  assert.ok(fineRoutes.includes("router.delete('/:id', requirePermission('fines.delete')"),
+    'removing a fine is its own explicit permission');
+  const fineCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'fineController.js'), 'utf8');
+  assert.ok(fineCtrl.includes("req.user.role === 'member'"), 'a member only ever sees her own fines');
+  assert.ok(fineCtrl.includes('unpaid -> paid') && fineCtrl.includes('reason: payment received'),
+    'marking paid must record the previous value, the new value and the reason');
+  assert.ok(fineCtrl.includes("audit(req.user.id, 'DELETE_FINE'") && /reason: \$\{reason/.test(fineCtrl),
+    'a removed fine must record who, what, the old figures and the reason');
+  const finesPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Fines.jsx'), 'utf8');
+  assert.ok(finesPage.includes("key: 'reason'"), 'the fine type is on the page');
+  assert.ok(finesPage.includes('outstanding') && finesPage.includes('collected') && finesPage.includes('rows.length'),
+    'recorded, paid and outstanding fines must all be shown');
+  assert.ok(finesPage.includes(': isRecorder'), 'only a recorder can settle a fine');
+  assert.ok(finesPage.includes('isAdmin ? ['), 'only the chairperson sees the remove button');
+  assert.ok(finesPage.includes('removeReason') && finesPage.includes('{ reason: removeReason.trim() }'),
+    'a removal must carry a written reason into the audit trail');
+  assert.ok(finesPage.includes("t('fines.removeTitle')"),
+    'the removal asks for the reason in its own dialog');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');

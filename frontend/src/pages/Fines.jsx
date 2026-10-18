@@ -3,7 +3,6 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -20,13 +19,14 @@ export default function Fines() {
   const { t } = useLang();
   const { isCommittee, isRecorder, isAdmin } = useAuth();
   const toast = useToast();
-  const confirm = useConfirm();
 
   const [rows, setRows] = useState(null);
   const [members, setMembers] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState(null);
+  const [removeReason, setRemoveReason] = useState('');
 
   const load = useCallback(async () => {
     setRows(await api.get('/fines'));
@@ -53,13 +53,18 @@ export default function Fines() {
     }
   }
 
-  async function remove(id) {
-    if (!(await confirm({ message: t('fines.confirmRemove'), danger: true }))) return;
+  async function remove(e) {
+    e.preventDefault();
+    setBusy(true);
     try {
-      toast.success((await api.del(`/fines/${id}`)).message);
+      toast.success((await api.del(`/fines/${removing.id}`, { reason: removeReason.trim() })).message);
+      setRemoving(null);
+      setRemoveReason('');
       await load();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -122,7 +127,7 @@ export default function Fines() {
     ...(isAdmin ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (
         <button type="button" className="btn btn--small btn--ghost"
-          onClick={(e) => { e.stopPropagation(); remove(r.id); }}>{t('common.del')}</button>
+          onClick={(e) => { e.stopPropagation(); setRemoveReason(''); setRemoving(r); }}>{t('common.del')}</button>
       ) }] : []),
   ];
 
@@ -228,6 +233,36 @@ export default function Fines() {
               onChange={(e) => setForm((f) => ({ ...f, paid: e.target.checked }))} />
             <span>{t('fines.alreadyPaid')}</span>
           </label>
+        </form>
+      </Modal>
+
+      <Modal
+        open={!!removing}
+        title={t('fines.removeTitle')}
+        onClose={() => setRemoving(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => setRemoving(null)}>{t('common.cancel')}</button>
+            <button type="submit" form="fine-remove-form" className="btn btn--danger"
+              disabled={busy || !removeReason.trim()}>
+              {busy ? t('common.saving') : t('common.del')}
+            </button>
+          </>
+        }
+      >
+        <form id="fine-remove-form" onSubmit={remove} noValidate>
+          <p className="notice">
+            {removing ? t('fines.removeNote', removing.full_name, money(removing.amount)) : ''}
+          </p>
+          <div className="form-row">
+            <div>
+              <label className="field-label" htmlFor="f-del-reason">{t('fines.removeReason')}</label>
+              <input id="f-del-reason" value={removeReason}
+                onChange={(e) => setRemoveReason(e.target.value)}
+                placeholder={t('fines.removeReasonExample')} required />
+              <span className="field-hint">{t('fines.removeReasonHint')}</span>
+            </div>
+          </div>
         </form>
       </Modal>
     </div>

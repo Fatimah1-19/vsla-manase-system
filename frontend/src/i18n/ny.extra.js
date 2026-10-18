@@ -190,6 +190,11 @@ export default {
     allPaid: 'Mulibe zindapusa zolipira.',
     toCollectTitle: 'Amene ayenera kulipira',
     toCollectNote: 'Mamembala awa akadali ndi chindapusa choti alipire.',
+    removeTitle: 'Chotsani chindapusa',
+    removeNote: (name, amount) => `Chotsani chindapusa cha ${amount} chikugwirizidwa ndi ${name}? Sizingabwezedwe.`,
+    removeReason: 'Chifukwa chakuchotsa',
+    removeReasonExample: 'Analembedwa kawiri mwachisautso',
+    removeReasonHint: 'Chifukwa chakuchotsa ndi mtengo wakale zikusungidwa ku mbiri yantchito.',
   },
 
   members: {

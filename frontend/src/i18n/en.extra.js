@@ -192,6 +192,11 @@ export default {
     allPaid: 'You have no fines to pay.',
     toCollectTitle: 'Who must pay',
     toCollectNote: 'These members still have a fine to settle.',
+    removeTitle: 'Remove a fine',
+    removeNote: (name, amount) => `Remove the ${amount} fine recorded for ${name}? This cannot be undone.`,
+    removeReason: 'Reason for removing',
+    removeReasonExample: 'Recorded twice by mistake',
+    removeReasonHint: 'The reason and the old amount are kept in the activity history.',
   },
 
   members: {
