@@ -311,6 +311,73 @@ function run(middleware, user) {
   assert.ok(finesPage.includes("t('fines.removeTitle')"),
     'the removal asks for the reason in its own dialog');
 
+  // ---- the welfare fund: watched in full, the arithmetic stays put --------
+  assert.ok(can('admin', 'welfare.record') === false, 'the chairperson does not move welfare money');
+  const chairWelfareRecord = await run(requirePermission('welfare.record'), { role: 'admin' });
+  assert.strictEqual(chairWelfareRecord.status, 403);
+  const welfareRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'welfareRoutes.js'), 'utf8');
+  assert.ok(welfareRoutes.includes("router.get('/balance', c.getBalance)"),
+    'the total fund is there for the chairperson to read');
+  assert.ok(welfareRoutes.includes("router.get('/', c.listWelfare)"),
+    'the transaction history reads openly within the group');
+  assert.ok(welfareRoutes.includes("router.post('/contribution', requirePermission('welfare.record')"),
+    'recording a contribution needs the record permission');
+  assert.ok(welfareRoutes.includes("router.post('/payout', requirePermission('welfare.record')"),
+    'recording a payment needs the record permission');
+  assert.ok(!/router\.(patch|delete|put)\s*\(/.test(welfareRoutes),
+    'nothing in the welfare book can be edited or removed over HTTP');
+  const welfareCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'welfareController.js'), 'utf8');
+  assert.ok(welfareCtrl.includes('BALANCE_SQL') && welfareCtrl.includes("type='contribution'"),
+    'the welfare calculation logic is left exactly as it was');
+  const welfarePage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Welfare.jsx'), 'utf8');
+  for (const card of ['welfare.balance', 'welfare.contribution', 'welfare.payout']) {
+    assert.ok(welfarePage.includes(card), `the welfare page must show the ${card} figure`);
+  }
+  assert.ok(welfarePage.includes("key: 'full_name'") && welfarePage.includes("key: 'type'"),
+    'contributions are listed per member with their status');
+  assert.ok(welfarePage.includes('action={isRecorder &&'), 'the chairperson sees no way to record');
+
+  // ---- share-out: monitored, confirmed by the chair, calculated by the system
+  assert.ok(can('admin', 'shareout.view'), 'the chairperson may watch the share-out');
+  assert.ok(can('admin', 'shareout.record') === false, 'the chairperson does not run the share-out');
+  const chairShareView = await run(requirePermission('shareout.view'), { role: 'admin' });
+  assert.strictEqual(chairShareView.passed, true);
+  const chairShareRecord = await run(requirePermission('shareout.record'), { role: 'admin' });
+  assert.strictEqual(chairShareRecord.status, 403);
+  const shareRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'shareOutRoutes.js'), 'utf8');
+  assert.ok(shareRoutes.includes("router.get('/preview', requirePermission('shareout.view')"),
+    'the share-out calculations are there to look at');
+  assert.ok(shareRoutes.includes("router.get('/', requirePermission('shareout.view')"),
+    'the share-out history is there to look at');
+  assert.ok(shareRoutes.includes("router.post('/', requirePermission('shareout.record')"),
+    'creating a share-out needs the record permission');
+  assert.ok(shareRoutes.includes("router.post('/:id/confirm', requirePermission('shareout.view')"),
+    'the existing confirmation step stays with anyone who may view');
+  assert.ok(shareRoutes.includes("router.post('/:id/distribute', requirePermission('shareout.record')"),
+    'handing out the money needs the record permission');
+  assert.ok(!/router\.(patch|delete|put)\s*\(/.test(shareRoutes),
+    'a share-out cannot be edited or removed over HTTP');
+  const shareCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'shareOutController.js'), 'utf8');
+  assert.ok(shareCtrl.includes('computeShareOut') && shareCtrl.includes('module.exports'),
+    'the one calculation method is the one the system already had');
+  assert.ok(shareCtrl.includes("'CONFIRM_SHAREOUT'"), 'the chairperson confirmation is recorded');
+  const sharePage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'ShareOut.jsx'), 'utf8');
+  assert.ok(sharePage.includes("api.get('/shareout/preview')") && sharePage.includes('shareout__breakdown'),
+    'the committee view shows the calculations and the current cycle');
+  assert.ok(sharePage.includes('preview?.shares') && sharePage.includes('shareout.perMember'),
+    'member share-out information is listed');
+  assert.ok(sharePage.includes('shareout.interestBack') && sharePage.includes('shareout.interestReturned'),
+    'the interest and profit distribution is shown');
+  assert.ok(sharePage.includes('shareout__historyList'), 'the share-out history is shown');
+  assert.ok(sharePage.includes("t('shareout.confirmFigures')"),
+    'the existing confirm step is offered to the chairperson');
+  assert.ok(sharePage.includes('canRun && !draft && preview') && sharePage.includes('canRun && ('),
+    'calculating and distributing stay with the recorders');
+  assert.ok(shareCtrl.includes("status = 'confirmed'") || shareCtrl.includes("'confirmed'"),
+    'the share-out keeps its draft, confirmed and distributed statuses');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
