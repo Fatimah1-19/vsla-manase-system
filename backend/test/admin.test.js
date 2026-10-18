@@ -235,6 +235,16 @@ function run(middleware, user) {
   assert.ok(membersPage.includes('members.repaidOf') && membersPage.includes('members.welfarePaid'),
     'the member record must show her repayments and her welfare contributions');
 
+  // ---- the chairperson watches loans without inventing new approval paths ----
+  const loansPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Loans.jsx'), 'utf8');
+  assert.ok(loansPage.includes('outstanding') && loansPage.includes('due_date'),
+    'the loans page must show balances and overdue status');
+  assert.ok(loansPage.includes('repayments') && loansPage.includes('canDecide'),
+    'the chairperson sees repayments and any existing approval controls');
+  assert.ok(loansPage.includes('status === \'approved\''), 'the loan status is shown clearly');
+  // Approval stays with the authorised committee; we do not invent new workflow.
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
