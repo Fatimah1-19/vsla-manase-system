@@ -10,7 +10,7 @@ import '../styles.css';
 
 const PAGE_SIZE = 50;
 const EMPTY_FILTERS = { q: '', action: '', from: '', to: '' };
-const FAILED = /FAILED|LOCKED|BLOCKED|REJECT|DENIED/;
+const FAILED = /FAILED|LOCKED|BLOCKED|DENIED/;
 
 // users #16  — the record an event touched.
 const prettyRecord = (type, id) => {

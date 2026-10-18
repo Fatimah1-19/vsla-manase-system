@@ -13,7 +13,7 @@ const base = {
     dashboard: 'Chiyambi', savings: 'Zosunga', loans: 'Ngongole', members: 'Mamembala',
     people: 'Anthu', meetings: 'Misonkhano', welfare: 'Thumba la chithandizo', fines: 'Zindapusa',
     shareout: 'Kugawana', requests: 'Opempha kulowa', messages: 'Mauthenga',
-    activity: 'Zomwe zachitika', settings: 'Malamulo', profile: 'Akaunti yanga',
+    activity: 'Zomwe zachitika mu gulu', settings: 'Malamulo', profile: 'Akaunti yanga',
     cycles: 'Nyengo zosunga', logout: 'Tulukani', menu: 'Menyu', more: 'Zina',
     savingsManagement: 'Kusamalira zosunga', loanManagement: 'Kusamalira ngongole',
     memberManagement: 'Kusamalira mamembala', welfareManagement: 'Kusamalira thumba la chithandizo',
@@ -23,7 +23,7 @@ const base = {
   },
 
   activity: {
-    subtitle: 'Amene analowa, nthawi yomwe anatuluka, ndi zomwe anachita.',
+    subtitle: 'Zopemphera, zosunga, ngongole, zindapusa, chithandizo, kugawana, misonkhano ndi zotsimikizira, pamodzi ndi amene adalowa nawo.',
     signedIn: 'Analowa',
     signedOut: 'Anatuluka',
     noSignOut: 'Sanalembedwe kutuluka',

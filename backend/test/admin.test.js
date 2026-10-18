@@ -496,6 +496,54 @@ function run(middleware, user) {
   assert.ok(routeLine('analytics').includes('COMMITTEE')
     && routeLine('reports').includes('analytics?tab=reports'),
     'the reports live behind the committee route and redirect to their tab');
+
+  // ---- group activity: the group's doings, in her own log -----------------
+  const meetingCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'meetingController.js'), 'utf8');
+  const listeners = fs.readFileSync(
+    path.join(__dirname, '..', 'events', 'listeners.js'), 'utf8');
+  for (const [what, src, action] of [
+    ['a new join request', joinCtrl, "'SUBMIT_JOIN_REQUEST'"],
+    ['a join-request vote', joinCtrl, "'VOTE_JOIN_REQUEST'"],
+    ['an approved request', joinCtrl, "'APPROVE_JOIN_REQUEST'"],
+    ['a rejected request', joinCtrl, "'REJECT_JOIN_REQUEST'"],
+    ['a saving', listeners, "'RECORD_SAVING'"],
+    ['a loan application', listeners, "'APPLY_LOAN'"],
+    ['a loan decision', listeners, "'APPROVE_LOAN'"],
+    ['a repayment', listeners, "'RECORD_REPAYMENT'"],
+    ['a fine', listeners, "'RECORD_FINE'"],
+    ['a welfare movement', listeners, "'WELFARE_CONTRIBUTION'"],
+    ['a share-out', shareCtrl, "'CREATE_SHAREOUT'"],
+    ['a meeting', meetingCtrl, "'CREATE_MEETING'"],
+    ['a confirmed setting', adminCtrl, "'APPROVE_CHANGE_REQUEST'"],
+  ]) {
+    assert.ok(src.includes(action), `the activity log must carry ${what}`);
+  }
+  const activityPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Activity.jsx'), 'utf8');
+  for (const col of ['colUser', 'colAction', 'colDate', 'colTime', 'colStatus']) {
+    assert.ok(activityPage.includes(`'activity.${col}'`), `the activity table must show ${col}`);
+  }
+  assert.ok(activityPage.includes("'activity.readOnly'"),
+    'the group activity must say it is read-only');
+  assert.ok(!/api\.(post|put|patch|del)\s*\(/.test(activityPage),
+    'nothing on the activity page may change what it shows');
+  assert.ok(!/const FAILED = .*REJECT/.test(activityPage),
+    'a rejection is a decision of the group, not a failed action');
+
+  // ---- audit history: read by the chairperson, changed by nobody ----------
+  assert.ok(can('admin', 'audit.view') && can('secretary', 'audit.view')
+    && can('treasurer', 'audit.view') && can('system_admin', 'audit.view'),
+    'the offices and the administrator may read the history');
+  const systemActivity = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'SystemActivity.jsx'), 'utf8');
+  assert.ok(!/api\.(post|put|patch|del)\s*\(/.test(systemActivity),
+    'the administrator reads the trail too and never rewrites it');
+  assert.ok(routeLine('activity').includes('COMMITTEE') && routeLine('activity').includes('system_admin'),
+    'the committee and the administrator may open the group activity');
+  assert.ok(routeLine('admin/activity').includes('system_admin')
+    && !routeLine('admin/activity').includes("'admin'"),
+    'the technical audit management stays with the administrator alone');
   for (const file of ['en.extra.js', 'ny.extra.js']) {
     const dict = fs.readFileSync(
       path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');

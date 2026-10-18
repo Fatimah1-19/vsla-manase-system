@@ -38,6 +38,8 @@ const submitRequest = wrap(async (req, res) => {
      reason || null, JSON.stringify(answers)]
   );
 
+  await audit(null, 'SUBMIT_JOIN_REQUEST', 'join_requests', row.id, full_name);
+
   res.status(201).json({
     message: 'Your request has been sent. The group will talk about it at the next meeting.',
     request_id: row.id,

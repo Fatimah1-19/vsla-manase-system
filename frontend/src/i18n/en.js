@@ -11,7 +11,7 @@ const base = {
     dashboard: 'Dashboard', savings: 'Savings', loans: 'Loans', members: 'Members',
     people: 'People', meetings: 'Meetings', welfare: 'Welfare fund', fines: 'Fines',
     shareout: 'Share-out', requests: 'Join requests', messages: 'Messages',
-    activity: 'Activity log', settings: 'Settings', profile: 'My account',
+    activity: 'Group Activity', settings: 'Settings', profile: 'My account',
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
     savingsManagement: 'Savings management', loanManagement: 'Loan management',
     memberManagement: 'Member management', welfareManagement: 'Welfare fund management',
@@ -21,7 +21,7 @@ const base = {
   },
 
   activity: {
-    subtitle: 'Who signed in, when they left, and everything they did in between.',
+    subtitle: 'Requests, savings, loans, fines, welfare, share-outs, meetings and approvals, and who signed in to do what.',
     signedIn: 'Signed in',
     signedOut: 'Signed out',
     noSignOut: 'No sign-out was recorded',
