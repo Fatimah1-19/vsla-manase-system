@@ -555,6 +555,57 @@ function run(middleware, user) {
     }
   }
 
+  // ---- access control is enforced by the server, not by the buttons --------
+  // The chairperson cannot record money anywhere, whatever a screen offers.
+  for (const perm of ['savings.record', 'contributions.record', 'welfare.record', 'fines.record',
+                      'registration.record', 'shareout.record', 'loans.record', 'meetings.record']) {
+    const refused = await run(requirePermission(perm), { role: 'admin' });
+    assert.strictEqual(refused.status, 403, `the chairperson must be refused ${perm} at the server`);
+    assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
+  }
+  // The administrator cannot lead the VSLA: no case, no vote, no office, no
+  // membership decision, no meeting record, no money.
+  for (const perm of ['cases.manage', 'joinRequests.decide', 'officeVotes.manage',
+                      'approvals.decide', 'cycles.manage', 'meetings.record', 'savings.record']) {
+    assert.ok(!can('system_admin', perm), `the administrator must not hold ${perm}`);
+  }
+  // A ballot always belongs to the signed-in member, never to the request body.
+  const officeCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'officeVoteController.js'), 'utf8');
+  const caseCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'memberCaseController.js'), 'utf8');
+  for (const [name, src] of [['office votes', officeCtrl], ['member cases', caseCtrl],
+                             ['join requests', joinCtrl]]) {
+    assert.ok(src.includes('req.user.id') || src.includes('req.user.member_id'),
+      `${name} must read the voter from the session`);
+    assert.ok(!/req\.body\.(userId|user_id|memberId|member_id)/.test(src),
+      `${name} must never take a voter from the request body`);
+  }
+  // A membership decision follows the group's vote: quorum first, then a yes
+  // majority to approve. The chairperson records it, she does not bypass it.
+  assert.ok(joinCtrl.includes('quorumNeeded') && joinCtrl.includes('still voting'),
+    'a join request cannot be decided before the group has voted');
+  assert.ok(/yes <= votes\.no/.test(joinCtrl),
+    'an approval cannot override a vote the group did not carry');
+
+  // ---- the five roles, each with its own powers ---------------------------
+  assert.ok(can('system_admin', 'accounts.manage') && can('system_admin', 'system.settings'),
+    'the administrator keeps the system and the accounts');
+  assert.ok(can('admin', 'cases.manage') && can('admin', 'joinRequests.decide')
+    && can('admin', 'approvals.decide') && can('admin', 'groupRules.propose')
+    && !can('admin', 'accounts.manage'),
+    'the chairperson leads the group and confirms the rules, without the system');
+  assert.ok(can('treasurer', 'savings.record') && can('treasurer', 'loans.record')
+    && can('treasurer', 'welfare.record') && !can('treasurer', 'cases.manage'),
+    'the treasurer records the money and does not lead');
+  assert.ok(can('secretary', 'meetings.record') && can('secretary', 'savings.record')
+    && can('secretary', 'joinRequests.decide') && !can('secretary', 'cases.manage')
+    && !can('secretary', 'accounts.view'),
+    'the secretary keeps the records and does not lead');
+  assert.ok(!can('member', 'savings.record') && !can('member', 'cases.manage')
+    && !can('member', 'accounts.view') && !can('member', 'meetings.record'),
+    'a member takes part and holds no office power');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
