@@ -161,6 +161,22 @@ function run(middleware, user) {
   assert.ok(routeLine('admin/roles').includes('system_admin') && !routeLine('admin/roles').includes("'admin'"),
     'the chairperson cannot open the roles page');
 
+  // Her sidebar is the leadership menu: membership, money, group, reports,
+  // activity, profile — and never one of the administrator's pages.
+  const navSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'navItems.js'), 'utf8');
+  const chairLines = navSrc.split('\n').filter((l) => l.includes("roles: ['admin']"));
+  assert.ok(chairLines.length >= 20, `the chairperson must keep her leadership menu (found ${chairLines.length})`);
+  for (const line of chairLines) {
+    assert.ok(!line.includes('/app/admin/'), `the chairperson menu must not offer the administrator's page: ${line.trim()}`);
+    assert.ok(!line.includes('/app/messages'), 'the chairperson menu follows the leadership layout');
+  }
+  const chairTargets = chairLines.join('\n');
+  for (const page of ['/app/members', '/app/requests', '/app/cases', '/app/leadership', '/app/cycles',
+                      '/app/savings', '/app/loans', '/app/fines', '/app/welfare', '/app/shareout',
+                      '/app/meetings', '/app/approvals', '/app/analytics', '/app/activity', '/app/profile']) {
+    assert.ok(chairTargets.includes(`to: '${page}`), `the chairperson menu must include ${page}`);
+  }
+
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);
   assert.deepStrictEqual(resetAttempt({ attempts: 2, maxTries: 3, expired: false }).remaining, 1);

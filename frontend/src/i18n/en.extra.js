@@ -8,6 +8,13 @@ export default {
     myProfile: 'My profile', changePassword: 'Change password',
     gDashboard: 'Dashboard', gUserMgmt: 'User management', gVsla: 'VSLA settings', gSystem: 'System', gProfile: 'Profile',
     gParticipation: 'Member participation',
+    gMembership: 'Membership', gFinancial: 'Financial management', gGroup: 'Group management',
+    gReports: 'Reports', gActivity: 'Activity',
+    membershipVoting: 'Membership Voting', officeElections: 'Office Elections', memberDetails: 'Member Details',
+    loanRepayments: 'Loan Repayments', attendance: 'Attendance', settingsApproval: 'VSLA Settings Approval',
+    financialReports: 'Financial Reports', membershipReports: 'Membership Reports', loanReports: 'Loan Reports',
+    savingsReports: 'Savings Reports', shareoutReports: 'Share-Out Reports',
+    groupActivity: 'Group Activity', auditHistory: 'Relevant Audit History',
   },
 
   roles: { system_admin: 'Administrator' },

@@ -6,7 +6,14 @@ export default {
   nav: { analytics: 'Ziwerengero', reports: 'Malipoti', wrappers: 'Zovala za mwezi', cases: 'Milandu ya mamembala', approvals: 'Zoyenera kutsimikizira', accounts: 'Maakaunti', systemSettings: 'Zokhazikika za dongosolo',
     users: 'Ogwiritsa', roles: 'Maudindo ndi zoletsedwa', vslaSettings: 'Zokhazikika za gulu', auditTrail: 'Mbiri ya kafukufuku', systemActivity: 'Zochitika za dongosolo', myProfile: 'Mbiri yanga', changePassword: 'Sinthani achinsinsi',
     gDashboard: 'Chiwonetsero', gUserMgmt: 'Kasamalidwe ka ogwiritsa', gVsla: 'Zokhazikika za gulu', gSystem: 'Dongosolo', gProfile: 'Mbiri yanga',
-    gParticipation: 'Kugwiritsidwa ntchito kwa mamembala' },
+    gParticipation: 'Kugwiritsidwa ntchito kwa mamembala',
+    gMembership: 'Kusamalira mamembala', gFinancial: 'Kusamalira ndalama', gGroup: 'Kusamalira gulu',
+    gReports: 'Malipoti', gActivity: 'Zochitika',
+    membershipVoting: 'Kuvota kwa mamembala', officeElections: 'Kusankha oyendetsa gulu', memberDetails: 'Zambiri za membala',
+    loanRepayments: 'Kubwezera ngongole', attendance: 'Kupezeka', settingsApproval: 'Kutsimikizira zokhazikika za gulu',
+    financialReports: 'Malipoti a ndalama', membershipReports: 'Malipoti a mamembala', loanReports: 'Malipoti a ngongole',
+    savingsReports: 'Malipoti a kusunga', shareoutReports: 'Malipoti a kugawana',
+    groupActivity: 'Zochitika za gulu', auditHistory: 'Mbiri yofunikira ya kafukufuku' },
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
