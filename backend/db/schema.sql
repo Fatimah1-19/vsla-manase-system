@@ -457,7 +457,8 @@ ON CONFLICT (setting_key) DO NOTHING;
 -- The applicant answers the background questions in the join form and the
 -- answers are kept on the request. Added after the first release, so bring
 -- older databases up to date too.
-ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;
+  ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS screening JSONB NOT NULL DEFAULT '{}'::jsonb;
+  ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS occupation VARCHAR(120);
 
 -- Older databases collected the background per member vote; that column is no
 -- longer written, but it is left in place so nothing is lost.

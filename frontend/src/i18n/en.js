@@ -156,8 +156,9 @@ const base = {
 
     requests: {
       title: 'People waiting to join', vote: 'Your vote', voteYes: 'Accept',
-      voteNo: 'Not this cycle', tally: 'Group votes', accept: 'Record: the group accepted',
-      decline: 'Record: the group declined', whyJoin: 'Why they want to join',
+      voteNo: 'Not this cycle', tally: 'Group votes', accept: 'Approve Membership',
+      decline: 'Reject Membership', votingOpen: 'Voting open',
+      acceptVotes: 'Accept votes', rejectVotes: 'Reject votes', whyJoin: 'Why they want to join',
       empty: 'No one is waiting to join.', decided: 'Decided',
       groupDecides: 'Every member can vote. A committee member records what the group decided.',
       background: 'Applicant background',
@@ -244,7 +245,7 @@ const base = {
     joinBody: 'Submit a request to join. The VSLA committee and members will assess the application. Approval is based on factors such as good character, being a trustworthy citizen of the area, repaying loans reliably, and a positive history if previously in another group. If approved, you must pay the agreed registration fee before the committee records you in the system and provides account access.',
     joinFeeNote: (fee) => `A one-off registration fee of ${fee} is paid when you join the group.`,
     joinName: 'Your full name', joinPhone: 'Your phone number',
-    joinVillage: 'Your village', joinReason: 'Why do you want to join?',
+    joinVillage: 'Your village', joinOccupation: 'Your occupation', joinReason: 'Why do you want to join?',
     joinBackground: 'A few questions about you',
     joinBackgroundHint: 'The group reads your answers before it votes. Please answer every question.',
     joinBackgroundRequired: 'Please answer every question before sending.',

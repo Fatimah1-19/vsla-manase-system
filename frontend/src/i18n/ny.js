@@ -163,8 +163,9 @@ const base = {
 
     requests: {
       title: 'Anthu odikira kulowa', vote: 'Voti yanu', voteYes: 'Mumvomereze',
-      voteNo: 'Osati nyengo ino', tally: 'Mavoti a gulu', accept: 'Lembani: gulu lavomereza',
-      decline: 'Lembani: gulu lakana', whyJoin: 'Chifukwa chake akufuna kulowa',
+      voteNo: 'Osati nyengo ino', tally: 'Mavoti a gulu', accept: 'Vomerezani Umembera',
+      decline: 'Kanani Umembera', votingOpen: 'Kuvota kukuyenda',
+      acceptVotes: 'Mavoti ovomereza', rejectVotes: 'Mavoti akana', whyJoin: 'Chifukwa chake akufuna kulowa',
       empty: 'Palibe amene akudikira.', decided: 'Zagamulidwa',
       groupDecides: 'Membala aliyense akhoza kuvota. Wa komiti alemba chomwe gulu lagamula.',
       background: 'Mbiri ya wopempha',
@@ -253,7 +254,7 @@ const base = {
     joinBody: 'Lembani apa ndipo gulu likambirana pa msonkhano wotsatira. Wina adzakutumizirani uthenga.',
     joinFeeNote: (fee) => `Membala watsopano amalipira ndalama zolembetsa za ${fee}.`,
     joinName: 'Dzina lanu lonse', joinPhone: 'Nambala yanu ya foni',
-    joinVillage: 'Mudzi wanu', joinReason: 'Mukufuna kulowa chifukwa chiyani?',
+    joinVillage: 'Mudzi wanu', joinOccupation: 'Ntchito yanu', joinReason: 'Mukufuna kulowa chifukwa chiyani?',
     joinBackground: 'Mafunso angapo okhudza inu',
     joinBackgroundHint: 'Gulu limawerenga mayankho anu lisanavote. Chonde yankhani funso lililonse.',
     joinBackgroundRequired: 'Chonde yankhani funso lililonse musanatumize.',

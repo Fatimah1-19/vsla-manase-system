@@ -83,9 +83,10 @@ export default function JoinRequests() {
                   <div>
                     <h2 className="joinreq__name">{r.full_name}</h2>
                     <p className="joinreq__meta">
-                      {r.phone}{r.village ? ` · ${r.village}` : ''} · {shortDate(r.created_at)}
+                      {r.phone}{r.village ? ` · ${r.village}` : ''}{r.occupation ? ` · ${r.occupation}` : ''} · {shortDate(r.created_at)}
                     </p>
                   </div>
+                  <span className="tag tag--gold">{t('requests.votingOpen')}</span>
                 </header>
 
                 {r.reason && (
@@ -125,8 +126,8 @@ export default function JoinRequests() {
                     <div className="joinreq__barYes" style={{ width: `${yesPct}%` }} />
                   </div>
                   <p className="joinreq__tallyText">
-                    {t('requests.tally')}: <strong>{r.yes_votes}</strong> {t('common.yes').toLowerCase()} ·{' '}
-                    <strong>{r.no_votes}</strong> {t('common.no').toLowerCase()}
+                    {t('requests.acceptVotes')}: <strong>{r.yes_votes}</strong> ·{' '}
+                    {t('requests.rejectVotes')}: <strong>{r.no_votes}</strong>
                     <span className="muted"> ({total} of {voters})</span>
                   </p>
                 </div>

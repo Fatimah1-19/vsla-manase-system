@@ -17,7 +17,7 @@ const ROLE_ICONS = ['leadership', 'savings', 'reports', 'members'];
 export default function Home() {
   const { t, lang } = useLang();
   const [stats, setStats] = useState(null);
-  const [form, setForm] = useState({ full_name: '', phone: '', village: '', reason: '' });
+  const [form, setForm] = useState({ full_name: '', phone: '', village: '', occupation: '', reason: '' });
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [qOpen, setQOpen] = useState(false);
@@ -269,14 +269,18 @@ export default function Home() {
                     value={form.phone} onChange={change('phone')} required disabled={busy} />
                   <span className="field-hint">{t('home.joinPhoneHint')}</span>
                 </div>
-                <div className="home__field">
-                  <label className="field-label" htmlFor="jvillage">{t('home.joinVillage')}</label>
-                  <input id="jvillage" value={form.village} onChange={change('village')} disabled={busy} />
-                </div>
-                <div className="home__field">
-                  <label className="field-label" htmlFor="jreason">{t('home.joinReason')}</label>
-                  <textarea id="jreason" rows={3} value={form.reason} onChange={change('reason')} disabled={busy} />
-                </div>
+                  <div className="home__field">
+                    <label className="field-label" htmlFor="jvillage">{t('home.joinVillage')}</label>
+                    <input id="jvillage" value={form.village} onChange={change('village')} disabled={busy} />
+                  </div>
+                  <div className="home__field">
+                    <label className="field-label" htmlFor="joccupation">{t('home.joinOccupation')}</label>
+                    <input id="joccupation" value={form.occupation} onChange={change('occupation')} disabled={busy} />
+                  </div>
+                  <div className="home__field">
+                    <label className="field-label" htmlFor="jreason">{t('home.joinReason')}</label>
+                    <textarea id="jreason" rows={3} value={form.reason} onChange={change('reason')} disabled={busy} />
+                  </div>
 
                 {questions.length > 0 && (
                   <div className="home__field home__bg">

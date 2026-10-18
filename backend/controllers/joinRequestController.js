@@ -11,7 +11,7 @@ const { getScreeningQuestions } = require('../utils/screening');
 
 // POST /api/join-requests — public, no login
 const submitRequest = wrap(async (req, res) => {
-  const { full_name, phone, village, reason, screening } = req.body;
+  const { full_name, phone, village, occupation, reason, screening } = req.body;
   if (!full_name || !phone) {
     return res.status(400).json({ message: 'Enter your name and phone number.' });
   }
@@ -32,8 +32,10 @@ const submitRequest = wrap(async (req, res) => {
   const answers = cleanScreening(screening, questions.map((q) => q.id));
 
   const row = await one(
-    `INSERT INTO join_requests (full_name, phone, village, reason, screening) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING id`,
-    [String(full_name).trim(), phone, village || null, reason || null, JSON.stringify(answers)]
+    `INSERT INTO join_requests (full_name, phone, village, occupation, reason, screening) VALUES ($1,$2,$3,$4,$5,$6::jsonb) RETURNING id`,
+    [String(full_name).trim(), phone, village || null,
+     occupation ? String(occupation).trim().slice(0, 120) : null,
+     reason || null, JSON.stringify(answers)]
   );
 
   res.status(201).json({

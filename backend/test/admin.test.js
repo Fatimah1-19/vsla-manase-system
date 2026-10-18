@@ -205,6 +205,25 @@ function run(middleware, user) {
     assert.ok(!src.includes('.delete('), `${routeFile} must offer no way to delete a vote`);
   }
 
+  // ---- the join-request workflow, exactly as the group runs it -----------
+  assert.ok(/ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS occupation/.test(schemaVotes),
+    'the applicant must be able to give her occupation');
+  assert.ok(joinCtrl.includes('occupation'), 'the occupation must be stored with the request');
+  assert.ok(joinCtrl.includes("'APPROVE_JOIN_REQUEST'") && joinCtrl.includes("'REJECT_JOIN_REQUEST'"),
+    'the chairperson decision must be recorded in the audit trail');
+  assert.ok(joinCtrl.includes('ON CONFLICT (request_id, user_id)'),
+    'a member may only change her own ballot, never another person\'s');
+  const joinRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'joinRequestRoutes.js'), 'utf8');
+  assert.ok(!joinRoutes.includes('.put('), 'there is no way to rewrite a vote over HTTP');
+  assert.ok(joinPage.includes('requests.votingOpen'), 'the card must show the voting status');
+  assert.ok(joinPage.includes('r.occupation'), 'the occupation sits on the card line');
+  assert.ok(joinPage.includes('requests.acceptVotes') && joinPage.includes('requests.rejectVotes'),
+    'the accept and reject counts must both be shown');
+  assert.ok(joinPage.includes('requests.accept') && joinPage.includes('requests.decline'),
+    'the chairperson approves or rejects from the card');
+  const homePage = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Home.jsx'), 'utf8');
+  assert.ok(homePage.includes("change('occupation')"), 'the public join form must collect the occupation');
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
