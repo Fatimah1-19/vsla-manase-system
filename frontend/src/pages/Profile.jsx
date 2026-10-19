@@ -22,6 +22,15 @@ const STATUS_TAG = { pending: 'gold', approved: 'green', rejected: 'red', repaid
 const ACCOUNT_TAG = { active: 'green', suspended: 'grey', locked: 'gold' };
 const ACCOUNT_LABEL = { active: 'statusActive', suspended: 'statusSuspended', locked: 'statusLocked' };
 
+// The empty shape a person without a member record still sees, so every
+// "My account" page keeps the same tabs and layout.
+const EMPTY_PROFILE = {
+  member: null, savings: [], loans: [], fines: [], documents: [], welfare: [], months: [], shareouts: [],
+  cycle: null,
+  totals: { savings: 0, shares: 0, active_loans: 0, outstanding: 0, unpaid_fines: 0, net: 0, documents: 0 },
+  loan_limit: { multiplier: 0, max_loan: 0 },
+};
+
 const toBase64 = (file) => new Promise((resolve, reject) => {
   const r = new FileReader();
   r.onload = () => resolve(String(r.result).split(',')[1]);
@@ -37,7 +46,10 @@ export default function Profile() {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState(() =>
     (new URLSearchParams(window.location.search).get('tab') === 'account' ? 'account' : 'details'));
-  const [details, setDetails] = useState(null);
+  const [details, setDetails] = useState({
+    phone: '', email: '', gender: '', marital_status: '', date_of_birth: '',
+    occupation: '', village: '', address: '', next_of_kin: '', next_of_kin_phone: '',
+  });
   const [pass, setPass] = useState({ current_password: '', new_password: '', confirm: '' });
   const [docType, setDocType] = useState('national_id');
   const [busy, setBusy] = useState(false);
@@ -46,7 +58,7 @@ export default function Profile() {
   const photoRef = useRef(null);
 
   const load = useCallback(async () => {
-    if (!user.member_id) { setData({ member: null }); return; }
+    if (!user.member_id) { setData(EMPTY_PROFILE); return; }
     const res = await api.get('/profile/me');
     setData(res);
     const m = res.member;
@@ -58,7 +70,7 @@ export default function Profile() {
     });
   }, [user.member_id]);
 
-  useEffect(() => { load().catch((e) => { toast.error(e.message); setData({ member: null }); }); }, [load, toast]);
+  useEffect(() => { load().catch((e) => { toast.error(e.message); setData(EMPTY_PROFILE); }); }, [load, toast]);
 
   const setField = (k) => (e) => setDetails((d) => ({ ...d, [k]: e.target.value }));
 
@@ -172,7 +184,9 @@ export default function Profile() {
   if (!data) return <Spinner />;
   const m = data.member;
 
-  const tabs = m ? ['details', 'report', 'savings', 'loans', 'fines', 'documents', 'account'] : ['account'];
+  // Every person in the group is a member, so everyone's "My account" page is
+  // the same: the committee sees exactly what an ordinary member sees.
+  const tabs = ['details', 'report', 'savings', 'loans', 'fines', 'documents', 'account'];
   const active = tabs.includes(tab) ? tab : tabs[0];
 
   const savingsColumns = [
@@ -249,14 +263,12 @@ export default function Profile() {
 
       {user.must_change_password && <p className="notice notice--warn">{t('profile.mustChange')}</p>}
 
-      {m && (
-        <div className="page-grid page-grid--stat">
-          <StatCard label={t('dashboard.mySavings')} value={money(data.totals.savings)} hint={`${data.totals.shares} ${t('savings.shares').toLowerCase()}`} tone="gold" />
-          <StatCard label={t('dashboard.canBorrow')} value={money(data.loan_limit.max_loan)} hint={t('dashboard.canBorrowHint', data.loan_limit.multiplier)} tone="green" />
-          <StatCard label={t('profile.stillOwe')} value={money(data.totals.outstanding)} tone={data.totals.outstanding > 0 ? 'red' : 'plain'} />
-          <StatCard label={t('dashboard.unpaidFines')} value={money(data.totals.unpaid_fines)} tone={data.totals.unpaid_fines > 0 ? 'red' : 'plain'} />
-        </div>
-      )}
+      <div className="page-grid page-grid--stat">
+        <StatCard label={t('dashboard.mySavings')} value={money(data.totals.savings)} hint={`${data.totals.shares} ${t('savings.shares').toLowerCase()}`} tone="gold" />
+        <StatCard label={t('dashboard.canBorrow')} value={money(data.loan_limit.max_loan)} hint={t('dashboard.canBorrowHint', data.loan_limit.multiplier)} tone="green" />
+        <StatCard label={t('profile.stillOwe')} value={money(data.totals.outstanding)} tone={data.totals.outstanding > 0 ? 'red' : 'plain'} />
+        <StatCard label={t('dashboard.unpaidFines')} value={money(data.totals.unpaid_fines)} tone={data.totals.unpaid_fines > 0 ? 'red' : 'plain'} />
+      </div>
 
       <div className="profile__tabs" role="tablist">
         {tabs.map((k) => (
@@ -267,7 +279,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {active === 'details' && m && details && (
+      {active === 'details' && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.personal')}</h2>
 
@@ -279,9 +291,9 @@ export default function Profile() {
               <div className="profile__photoBtns">
                 <button type="button" className="btn btn--small" disabled={photoBusy}
                   onClick={() => photoRef.current?.click()}>
-                  {photoBusy ? t('common.saving') : (m.has_avatar ? t('profile.changePhoto') : t('profile.addPhoto'))}
+                  {photoBusy ? t('common.saving') : (m?.has_avatar ? t('profile.changePhoto') : t('profile.addPhoto'))}
                 </button>
-                {m.has_avatar && (
+                {m?.has_avatar && (
                   <button type="button" className="btn btn--small btn--danger" disabled={photoBusy} onClick={removePhoto}>
                     {t('profile.removePhoto')}
                   </button>
@@ -294,19 +306,17 @@ export default function Profile() {
           <dl className="profile__rows profile__rows--static">
             <div><dt>{t('common.name')}</dt><dd>{user.full_name}</dd></div>
             <div><dt>{t('login.username')}</dt><dd><code>{user.username}</code></dd></div>
-            <div><dt>{t('common.phone')}</dt><dd>{m.phone || user.phone || '—'}</dd></div>
-            <div><dt>{t('common.email')}</dt><dd>{m.email || '—'}</dd></div>
             <div><dt>{t('common.role')}</dt><dd>{t(`roles.${user.role}`)}</dd></div>
             <div>
               <dt>{t('profile.accountStatus')}</dt>
               <dd>
-                <span className={`tag tag--${ACCOUNT_TAG[m.account_status] || 'grey'}`}>
-                  {t(`profile.${ACCOUNT_LABEL[m.account_status] || 'statusSuspended'}`)}
+                <span className={`tag tag--${ACCOUNT_TAG[m?.account_status] || 'grey'}`}>
+                  {t(`profile.${ACCOUNT_LABEL[m?.account_status] || 'statusSuspended'}`)}
                 </span>
               </dd>
             </div>
-            <div><dt>{t('members.number')}</dt><dd>{m.membership_number}</dd></div>
-            <div><dt>{t('members.joined')}</dt><dd>{shortDate(m.date_joined)}</dd></div>
+            <div><dt>{t('members.number')}</dt><dd>{m?.membership_number || '—'}</dd></div>
+            <div><dt>{t('members.joined')}</dt><dd>{m?.date_joined ? shortDate(m.date_joined) : '—'}</dd></div>
           </dl>
 
           <form onSubmit={saveDetails} noValidate className="profile__form">
@@ -323,28 +333,36 @@ export default function Profile() {
             </div>
             <div className="form-row form-row--2">
               <div>
+                <label className="field-label" htmlFor="pd-gender">{t('profile.gender')}</label>
+                <select id="pd-gender" value={details.gender} onChange={setField('gender')}>
+                  <option value="">—</option>
+                  <option value="female">{t('profile.female')}</option>
+                  <option value="male">{t('profile.male')}</option>
+                </select>
+              </div>
+              <div>
                 <label className="field-label" htmlFor="pd-marital">{t('profile.marital')}</label>
                 <select id="pd-marital" value={details.marital_status} onChange={setField('marital_status')}>
                   <option value="">—</option>
                   {['single', 'married', 'divorced', 'widowed'].map((x) => <option key={x} value={x}>{t(`profile.${x}`)}</option>)}
                 </select>
               </div>
+            </div>
+            <div className="form-row form-row--2">
               <div>
                 <label className="field-label" htmlFor="pd-dob">{t('profile.dob')}</label>
                 <input id="pd-dob" type="date" max={inputDate()} value={details.date_of_birth} onChange={setField('date_of_birth')} />
               </div>
-            </div>
-            <div className="form-row form-row--2">
               <div>
                 <label className="field-label" htmlFor="pd-job">{t('profile.occupation')}</label>
                 <input id="pd-job" value={details.occupation} onChange={setField('occupation')} />
               </div>
+            </div>
+            <div className="form-row form-row--2">
               <div>
                 <label className="field-label" htmlFor="pd-village">{t('common.village')}</label>
                 <input id="pd-village" value={details.village} onChange={setField('village')} />
               </div>
-            </div>
-            <div className="form-row">
               <div>
                 <label className="field-label" htmlFor="pd-addr">{t('profile.address')}</label>
                 <input id="pd-addr" value={details.address} onChange={setField('address')} />
@@ -365,14 +383,14 @@ export default function Profile() {
         </section>
       )}
 
-      {active === 'savings' && m && (
+      {active === 'savings' && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_savings')}</h2>
           <Ledger rows={data.savings} columns={savingsColumns} />
         </section>
       )}
 
-      {active === 'loans' && m && (
+      {active === 'loans' && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_loans')}</h2>
           <p className="muted">{t('profile.loanRule', data.loan_limit.multiplier)}</p>
@@ -380,14 +398,14 @@ export default function Profile() {
         </section>
       )}
 
-      {active === 'fines' && m && (
+      {active === 'fines' && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_fines')}</h2>
           <Ledger rows={data.fines} columns={finesColumns} />
         </section>
       )}
 
-      {active === 'documents' && m && (
+      {active === 'documents' && (
         <section className="profile__card">
           <h2 className="profile__h2">{t('profile.tab_documents')}</h2>
           <p className="muted">{t('profile.docsNote')}</p>
@@ -427,7 +445,7 @@ export default function Profile() {
         </section>
       )}
 
-      {active === 'report' && m && (
+      {active === 'report' && (
         <>
           <div className="profile__toolbar no-print">
             <button type="button" className="btn btn--small" onClick={load} disabled={busy}>

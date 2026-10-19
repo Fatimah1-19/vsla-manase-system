@@ -16,7 +16,7 @@ export const NAV_ITEMS = [
   { to: '/app/admin/activity', key: 'nav.systemActivity', group: 'nav.gSystem', icon: 'activity', roles: ['system_admin'] },
   { to: '/app/cases',      key: 'nav.cases',     group: 'nav.gParticipation', icon: 'cases',     roles: ['system_admin'] },
   { to: '/app/leadership', key: 'nav.leadership', group: 'nav.gParticipation', icon: 'leadership', roles: ['system_admin'] },
-  { to: '/app/profile',            key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['system_admin'] },
+  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['system_admin'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', group: 'nav.gProfile', icon: 'lock',    roles: ['system_admin'] },
 
   // ---- chairperson: leadership menu, never the administrator's pages -----
@@ -50,7 +50,7 @@ export const NAV_ITEMS = [
   { to: '/app/activity',   key: 'nav.activity',  label: 'nav.groupActivity', group: 'nav.gActivity', icon: 'activity', roles: ['admin'] },
   { to: '/app/activity?view=audit', key: 'nav.auditHistory', icon: 'audit', roles: ['admin'] },
 
-  { to: '/app/profile',    key: 'nav.myProfile', group: 'nav.gProfile', icon: 'profile', roles: ['admin'] },
+  { to: '/app/profile',    key: 'nav.profile', group: 'nav.gProfile', icon: 'profile', roles: ['admin'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['admin'] },
 
   // ---- treasurer: the money menu, and only the money menu ----------------
@@ -88,7 +88,7 @@ export const NAV_ITEMS = [
 
   { to: '/app/financial-activity', key: 'nav.financialActivity', group: 'nav.gActivity', icon: 'activity', roles: ['treasurer'] },
 
-  { to: '/app/profile',            key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['treasurer'], phone: true },
+  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['treasurer'], phone: true },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['treasurer'] },
 
   // ---- the ordinary member -------------------------------------------------
@@ -102,7 +102,8 @@ export const NAV_ITEMS = [
   { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',      roles: ['member'] },
   { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['member'] },
   { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',   roles: ['member'] },
-  { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',    roles: ['member'], phone: true },
+  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['member'], phone: true },
+  { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['member'] },
 
   // ---- secretary: records, meetings, reports — never the admin's pages ---
   { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['secretary'], phone: true, end: true },
@@ -125,7 +126,7 @@ export const NAV_ITEMS = [
 
   { to: '/app/activity/administrative', key: 'nav.adminActivity', group: 'nav.gActivity', icon: 'activity', roles: ['secretary'] },
 
-  { to: '/app/profile',    key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['secretary'] },
+  { to: '/app/profile',    key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['secretary'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['secretary'] },
 ];
 
