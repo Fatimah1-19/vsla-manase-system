@@ -87,7 +87,7 @@ export default function Loans() {
   // A search over the loan list, so one member's history can be found quickly.
   const [listSearch, setListSearch] = useState('');
 
-  const canDecide = ['admin', 'treasurer', 'secretary'].includes(user.role);
+  const canDecide = ['admin', 'treasurer'].includes(user.role);
   const canRecordRepayment = isRecorder;
 
   // How much she may borrow: her savings times the group's multiplier.

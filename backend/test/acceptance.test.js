@@ -333,7 +333,9 @@ async function check(n, title, fn) {
 
   await check(34, 'the secretary keeps her own work', async () => {
     assert.ok(can('secretary', 'meetings.record') && can('secretary', 'savings.record')
-      && can('secretary', 'registration.record') && can('secretary', 'joinRequests.decide'));
+      && can('secretary', 'registration.record'), 'the secretary keeps the meeting and membership records');
+    assert.ok(!can('secretary', 'joinRequests.decide') && !can('secretary', 'loans.decide'),
+      'membership and loan decisions stay with the chairperson and treasurer');
     const chairOnly = await run(requirePermission('cycles.manage'), { role: 'secretary' });
     assert.strictEqual(chairOnly.status, 403, 'leading the cycle stays with the chairperson');
   });

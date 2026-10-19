@@ -599,7 +599,7 @@ function run(middleware, user) {
     && can('treasurer', 'welfare.record') && !can('treasurer', 'cases.manage'),
     'the treasurer records the money and does not lead');
   assert.ok(can('secretary', 'meetings.record') && can('secretary', 'savings.record')
-    && can('secretary', 'joinRequests.decide') && !can('secretary', 'cases.manage')
+    && !can('secretary', 'joinRequests.decide') && !can('secretary', 'cases.manage')
     && !can('secretary', 'accounts.view'),
     'the secretary keeps the records and does not lead');
   assert.ok(!can('member', 'savings.record') && !can('member', 'cases.manage')
@@ -705,6 +705,56 @@ function run(middleware, user) {
     const base = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
     assert.ok(/email: '/.test(base), `${file} must carry common.email`);
   }
+
+  // ---- the secretary module: records and administration, no leading ------
+  // §1 role and separation of powers.
+  assert.ok(ROLES.includes('secretary'), 'the secretary role must exist');
+  for (const perm of ['accounts.view', 'accounts.manage', 'system.settings', 'users.manage',
+                      'cases.manage', 'cycles.manage', 'approvals.decide', 'groupRules.propose',
+                      'joinRequests.decide', 'loans.decide', 'savings.delete', 'fines.delete',
+                      'contributions.delete', 'registration.delete']) {
+    assert.ok(!can('secretary', perm), `the secretary must not hold ${perm}`);
+  }
+  // §2 her own work: meetings, membership records and the paperwork.
+  for (const perm of ['meetings.record', 'registration.view', 'registration.record',
+                      'users.view', 'reports.view', 'analytics.view', 'audit.view',
+                      'messages.view', 'messages.send', 'savings.view']) {
+    assert.ok(can('secretary', perm), `the secretary must hold ${perm}`);
+  }
+  // The meeting book and the membership register are hers at the server.
+  const meetingsPassed = await run(requirePermission('meetings.record'), { role: 'secretary' });
+  assert.ok(meetingsPassed.passed, 'the secretary may write the minutes and the attendance');
+  const registerPassed = await run(requirePermission('registration.record'), { role: 'secretary' });
+  assert.ok(registerPassed.passed, 'the secretary may record the membership fees');
+  const noAccounts = await run(requirePermission('users.manage'), { role: 'secretary' });
+  assert.strictEqual(noAccounts.status, 403, 'the accounts door is shut to her');
+  const noCaseOpens = await run(requirePermission('cases.manage'), { role: 'secretary' });
+  assert.strictEqual(noCaseOpens.status, 403, 'leading a case is the chairperson\'s alone');
+  // She still votes on join requests like any member — only the decision moved.
+  assert.ok(joinRoutes.includes("router.post('/:id/vote', protect, c.vote)")
+    && joinRoutes.includes("router.patch('/:id', protect, requirePermission('joinRequests.decide')"),
+    'the secretary votes; only the chairperson and treasurer decide');
+  // The screens agree with the server: the decide buttons are not hers.
+  const authContext = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'context', 'AuthContext.jsx'), 'utf8');
+  assert.ok(authContext.includes("isDecider: !!user && ['admin', 'treasurer']"),
+    'the app must know who may decide');
+  assert.ok(joinPage.includes('{isDecider && (') && !joinPage.includes('{isCommittee && ('),
+    'the join-request decide buttons must not reach the secretary');
+  const loansScreen = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Loans.jsx'), 'utf8');
+  assert.ok(/canDecide = \['admin', 'treasurer'\]\.includes\(user\.role\)/.test(loansScreen),
+    'loan decisions must agree with the server');
+  // Her dashboard is the people-and-meetings board, not the money board.
+  const dashSrc = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'dashboardController.js'), 'utf8');
+  assert.ok(/wantsMoney = role === 'treasurer' \|\| role === 'admin'/.test(dashSrc)
+    && /wantsPeople = role === 'secretary' \|\| role === 'admin'/.test(dashSrc),
+    'the secretary board is built from the people data, the money flow is not hers');
+  const secDash = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'dashboards', 'SecretaryDashboard.jsx'), 'utf8');
+  assert.ok(secDash.includes('attendance_rate') && secDash.includes('next_meeting')
+    && secDash.includes('recent_meetings'),
+    'her board shows the attendance and the meetings');
 
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),

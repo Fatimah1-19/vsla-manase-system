@@ -190,6 +190,8 @@ export function AuthProvider({ children }) {
       isCommittee: !!user && ['admin', 'treasurer', 'secretary'].includes(user.role),
       // Treasurer and secretary: the two who write everything in the books.
       isRecorder: !!user && ['treasurer', 'secretary'].includes(user.role),
+      // Only the chairperson and the treasurer settle join requests and loans.
+      isDecider: !!user && ['admin', 'treasurer'].includes(user.role),
       isAdmin: user?.role === 'admin',
       // The administrator looks after accounts and the system, never the books.
       isSystemAdmin: user?.role === 'system_admin',

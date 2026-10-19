@@ -35,7 +35,7 @@ const PERMISSIONS = {
 
   // ---- loans ----
   'loans.viewAll': ['admin', 'treasurer', 'secretary'],
-  'loans.decide': ['admin', 'treasurer', 'secretary'],
+  'loans.decide': ['admin', 'treasurer'],
   'loans.record': ['treasurer', 'secretary'],
 
   // ---- fines ----
@@ -82,7 +82,7 @@ const PERMISSIONS = {
   // The rules the group lives by: the administrator keeps every one of them now.
   'groupRules.view': ['admin', 'treasurer', 'system_admin'],
   'groupRules.propose': ['admin', 'system_admin'],
-  'joinRequests.decide': ['admin', 'treasurer', 'secretary'],
+  'joinRequests.decide': ['admin', 'treasurer'],
   'cases.manage': ['admin'],
   'cases.settlement': ['treasurer', 'secretary'],
   'officeVotes.manage': ['admin', 'treasurer', 'secretary'],

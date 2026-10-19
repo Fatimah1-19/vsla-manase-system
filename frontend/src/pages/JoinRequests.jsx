@@ -14,7 +14,7 @@ import '../styles.css';
 /** Every member votes; a committee member records what the group decided. */
 export default function JoinRequests() {
   const { t } = useLang();
-  const { isCommittee, isSystemAdmin } = useAuth();
+  const { isDecider, isSystemAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -158,7 +158,7 @@ export default function JoinRequests() {
                 </div>
                 )}
 
-                {isCommittee && (
+                {isDecider && (
                   <div className="joinreq__decide">
                     <button type="button" className="btn" disabled={busy} onClick={() => decide(r, 'approved')}>
                       {t('requests.accept')}
