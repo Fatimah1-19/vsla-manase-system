@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import SectionTabs from '../components/SectionTabs.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -209,6 +210,7 @@ export default function Fines() {
           <button type="button" className="btn" onClick={() => setOpen(true)}>{t('fines.record')}</button>
         )}
       />
+      <SectionTabs />
 
       <p className="notice">{t('fines.keptNote')}</p>
 

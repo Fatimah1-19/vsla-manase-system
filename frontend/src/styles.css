@@ -4240,6 +4240,17 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .profile__field { margin-bottom: 0.9rem; }
 
+.section__tabs {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.1rem;
+  padding-bottom: 2px; border-bottom: 1px solid var(--rule);
+}
+.section__tab {
+  flex: 0 0 auto; min-height: 40px; display: inline-flex; align-items: center;
+  padding: 0.35rem 0.9rem; text-decoration: none; color: var(--slate);
+  font-weight: 600; border-bottom: 3px solid transparent;
+}
+.section__tab:hover { color: var(--leaf-dark); }
+.section__tab.is-on { color: var(--leaf-dark); border-bottom-color: var(--leaf); }
 .profile__tabs { display: flex; gap: 0.35rem; overflow-x: auto; margin-bottom: 1rem; padding-bottom: 2px; border-bottom: 1px solid var(--rule); }
 .profile__tab {
   flex: 0 0 auto; min-height: 42px; padding: 0.4rem 0.95rem; background: none; cursor: pointer;

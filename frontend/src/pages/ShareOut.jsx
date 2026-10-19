@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import SectionTabs from '../components/SectionTabs.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -169,6 +170,7 @@ export default function ShareOut() {
           </button>
         )}
       />
+      <SectionTabs />
 
       {!preview && <EmptyState title={t('shareout.noCycle')} />}
 

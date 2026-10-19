@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import SectionTabs from '../components/SectionTabs.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -227,6 +228,7 @@ export default function Savings() {
         subtitle={t('savings.smsNote')}
         action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
       />
+      <SectionTabs />
 
       {summary?.cycle && (
         <div className="savings__cycle">

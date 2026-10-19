@@ -11,10 +11,16 @@ import '../styles.css';
 export default function Sidebar({ open, onNavigate }) {
   const { user, logout, avatar } = useAuth();
   const { t } = useLang();
+  const { pathname } = useLocation();
   if (!user) return null;
 
-  const items = navFor(user.role);
+  // The sidebar shows only the main entry of each section. The extra views
+  // (history, summary, record, change password…) live inside the page itself.
+  const items = navFor(user.role).filter((i) => !i.sub);
   const icon = (name) => <Icon name={name} size={22} className="sidebar__icon" />;
+  // A main entry is on whenever its page is open, even if its own address
+  // carries a query (e.g. the treasurer's loan applications).
+  const on = (to) => to.split('?')[0] === pathname;
 
   return (
     <nav className={open ? 'sidebar is-open' : 'sidebar'} aria-label={t('nav.menu')}>
@@ -30,8 +36,12 @@ export default function Sidebar({ open, onNavigate }) {
             )}
             <li>
               {item.to.includes('?') ? (
-                /* A link with a tab query never owns the page, so it is a plain link. */
-                <Link to={item.to} onClick={onNavigate} className="sidebar__link">
+                /* A link with a tab query is a plain link, but its page still lights up. */
+                <Link
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={on(item.to) ? 'sidebar__link is-on' : 'sidebar__link'}
+                >
                   {icon(item.icon)}
                   <span>{t(item.key)}</span>
                 </Link>

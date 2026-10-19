@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import SectionTabs from '../components/SectionTabs.jsx';
 import Icon from '../components/Icon.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -368,6 +369,7 @@ export default function Members() {
     return (
       <div className="members">
         <PageHeader title={t('nav.membershipHistory')} subtitle={t('members.histNote')} />
+        <SectionTabs />
         <Ledger
           columns={[
             { key: 'member_name', label: t('common.name') },
@@ -479,6 +481,7 @@ export default function Members() {
           <button type="button" className="btn" onClick={() => setAddOpen(true)}>{t('members.addPerson')}</button>
         )}
       />
+      <SectionTabs />
 
       {leadership?.can_open && leadership.vacant_offices?.length > 0 && (
         <div className="members__vacant">
