@@ -66,8 +66,11 @@ function PersonalFields({ values, onChange, t, prefix }) {
 
 export default function Members() {
   const { t } = useLang();
-  const { isAdmin, isRecorder } = useAuth();
+  const { user, isAdmin, isRecorder } = useAuth();
   const navigate = useNavigate();
+  // Adding a member record is the chairperson's and the secretary's work;
+  // every other button here needs users.manage, which is the chairperson's alone.
+  const canAddMember = !!user && ['admin', 'secretary'].includes(user.role);
   const [editForm, setEditForm] = useState(null);
   const toast = useToast();
   const confirm = useConfirm();
@@ -75,6 +78,7 @@ export default function Members() {
   const [people, setPeople] = useState(null);
   const [leadership, setLeadership] = useState(null);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(blank);
   const [busy, setBusy] = useState(false);
@@ -92,6 +96,11 @@ export default function Members() {
   }, []);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+
+  // "Add member record" from the secretary's dashboard opens the form at once.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('add') === '1' && canAddMember) setAddOpen(true);
+  }, [canAddMember]);
 
   // Is any committee office empty? If so the chairperson (or, if the chairperson
   // seat itself is empty, a treasurer or secretary) can start an election from here.
@@ -237,9 +246,21 @@ export default function Members() {
     if (!people) return [];
     const q = search.trim().toLowerCase();
     const rows = q
-      ? people.filter((p) => p.full_name.toLowerCase().includes(q) || p.username.includes(q))
+      ? people.filter((p) => (p.full_name || '').toLowerCase().includes(q)
+          || (p.username || '').includes(q)
+          || (p.phone || '').includes(q)
+          || (p.membership_number || '').toLowerCase().includes(q))
       : people.slice();
-    return rows.sort((a, b) => {
+    const wanted = statusFilter === 'all'
+      ? rows
+      : rows.filter((p) => {
+          if (!p.member_status) return false;   // the offices hold no member record
+          if (statusFilter === 'active') return p.member_status === 'active';
+          if (statusFilter === 'inactive') return p.member_status !== 'active';
+          const jd = p.date_joined ? String(p.date_joined).slice(0, 10) : '';
+          return !!jd && Date.now() - new Date(`${jd}T00:00:00Z`).getTime() <= 30 * 86400000;
+        });
+    return wanted.sort((a, b) => {
       const da = a.date_joined || '';
       const db = b.date_joined || '';
       if (!da && !db) return 0;
@@ -247,7 +268,7 @@ export default function Members() {
       if (!db) return -1;
       return db.localeCompare(da);
     });
-  }, [people, search]);
+  }, [people, search, statusFilter]);
 
   const groupByJoin = (p) => {
     const jd = p.date_joined ? String(p.date_joined).slice(0, 10) : '';
@@ -328,12 +349,16 @@ export default function Members() {
       } },
   ];
 
+  // Suspending, unlocking and case motions need powers the secretary does not
+  // hold, so the action column stays with the chairperson.
+  if (!isAdmin) columns.pop();
+
   return (
     <div className="members">
       <PageHeader
         title={t('members.title')}
         subtitle={`${people.filter((p) => p.is_active).length} ${t('members.active').toLowerCase()}`}
-        action={isAdmin && (
+        action={canAddMember && (
           <button type="button" className="btn" onClick={() => setAddOpen(true)}>{t('members.addPerson')}</button>
         )}
       />
@@ -363,6 +388,16 @@ export default function Members() {
           onChange={(e) => setSearch(e.target.value)}
           aria-label={t('common.search')}
         />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label={t('members.filterLabel')}
+        >
+          <option value="all">{t('members.filterAll')}</option>
+          <option value="active">{t('members.filterActive')}</option>
+          <option value="inactive">{t('members.filterInactive')}</option>
+          <option value="new">{t('members.filterNew')}</option>
+        </select>
       </div>
 
       <Ledger

@@ -84,6 +84,15 @@ const base = {
     recentSavings: 'Ndalama zolandiridwa posachedwa', recentActivity: 'Zomwe zachitika posachedwa',
     recentMeetings: 'Misonkhano yaposachedwa', smsToday: 'Mauthenga otumizidwa lero',
     lockedAccounts: 'Maakaunti otsekedwa', finesOutstanding: 'Zindapusa zosalipidwa',
+    totalMembers: 'Mamembala onse', inactiveMembers: 'Mamembala osagwira ntchito',
+    upcomingMeetings: 'Misonkhano ikubwera', recentAttendance: 'Kupezeka kwaposachedwa',
+    membershipChanges: 'Kusintha kwa umembala', changesHint: (j, c) => `${j} analowa, ${c} asintha`,
+    quickActions: 'Zochitika mwachangu',
+    qaViewMembers: 'Onani mamembala', qaAddMember: 'Onjezani mbiri ya mumembala',
+    qaReviewRequests: 'Onani opempha kulowa', qaMembershipHistory: 'Onani mbiri ya umembala',
+    qaCreateMeeting: 'Pangani msonkhano', qaRecordAttendance: 'Lembani kupezeka',
+    qaMeetingRecords: 'Onani zolembedwa za misonkhano', qaMembershipReport: 'Pangani malipoti a mamembala',
+    qaAttendanceReport: 'Pangani malipoti a kupezeka',
   },
 
   savings: {
@@ -121,6 +130,8 @@ const base = {
     suspend: 'Imitsani', unlock: 'Tsegulani akaunti', newPassword: 'Patsani achinsinsi atsopano',
     tempPassword: 'Achinsinsi a kanthawi', writeItDown: 'Lembani pansi. Zikuonetsedwa kamodzi kokha.',
     active: 'Akugwira ntchito', inactive: 'Waimitsidwa', locked: 'Yatsekedwa',
+    filterLabel: 'Sunga malinga ndi umembala', filterAll: 'Mamembala onse',
+    filterActive: 'Akugwira ntchito', filterInactive: 'Osagwira ntchito', filterNew: 'Mamembala atsopano',
   },
 
   meetings: {

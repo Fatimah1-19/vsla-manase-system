@@ -77,6 +77,8 @@ const PERMISSIONS = {
   // ---- people and offices ----
   'users.view': ['admin', 'secretary', 'treasurer'],
   'users.manage': ['admin'],
+  // The secretary enters new people into the register; she never manages the users.
+  'members.create': ['admin', 'secretary'],
   'approvals.view': ['admin', 'treasurer'],
   'approvals.decide': ['admin', 'treasurer'],
   // The rules the group lives by: the administrator keeps every one of them now.

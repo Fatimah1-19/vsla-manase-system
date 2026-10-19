@@ -718,7 +718,7 @@ function run(middleware, user) {
   // §2 her own work: meetings, membership records and the paperwork.
   for (const perm of ['meetings.record', 'registration.view', 'registration.record',
                       'users.view', 'reports.view', 'analytics.view', 'audit.view',
-                      'messages.view', 'messages.send', 'savings.view']) {
+                      'messages.view', 'messages.send', 'savings.view', 'members.create']) {
     assert.ok(can('secretary', perm), `the secretary must hold ${perm}`);
   }
   // The meeting book and the membership register are hers at the server.
@@ -755,6 +755,74 @@ function run(middleware, user) {
   assert.ok(secDash.includes('attendance_rate') && secDash.includes('next_meeting')
     && secDash.includes('recent_meetings'),
     'her board shows the attendance and the meetings');
+
+  // §4 her board is membership and administration, never the money.
+  for (const card of ['totalMembers', 'activeMembers', 'inactiveMembers', 'pendingRequests',
+                      'upcomingMeetings', 'recentAttendance', 'membershipChanges']) {
+    assert.ok(secDash.includes(`dashboard.${card}`), `her board must carry the ${card} card`);
+  }
+  for (const financial of ['pendingLoans', 'wrappersCollected', 'ExpectedFines', 'expected_fines', 'money(']) {
+    assert.ok(!secDash.includes(financial), `money must not lead her board (${financial})`);
+  }
+  assert.ok(/payload\.upcoming_meetings = upcomingCount\.c/.test(dashSrc)
+    && /payload\.membership_changes = \{/.test(dashSrc),
+    'the server must count the meetings ahead and the membership changes');
+  assert.ok(/INTERVAL '30 days'/.test(dashSrc) && /EXECUTE_MEMBER_VOTE/.test(dashSrc),
+    'the changes card counts the joins and the suspensions of the last thirty days');
+
+  // §5 the quick actions she may take — and no chairperson-only decision.
+  for (const target of ["to: '/app/members'", "to: '/app/members?add=1'", "to: '/app/requests'",
+                        "to: '/app/members?view=history'", "to: '/app/meetings?new=1'",
+                        "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
+                        "to: '/app/analytics?tab=reports&report=members'",
+                        "to: '/app/analytics?tab=reports&report=attendance'"]) {
+    assert.ok(secDash.includes(target), `her quick actions must include ${target}`);
+  }
+  assert.ok(!secDash.includes('/app/approvals') && !secDash.includes('/app/cycles'),
+    'no chairperson-only decision may sit among her quick actions');
+
+  // §6 the member records: she may add one, filter them and read every field.
+  assert.ok(can('secretary', 'members.create') && can('admin', 'members.create')
+    && !can('treasurer', 'members.create'),
+    'the secretary and the chairperson enter new members');
+  const userRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'userRoutes.js'), 'utf8');
+  assert.ok(userRoutes.includes("router.post('/', requirePermission('members.create'), c.createUser)")
+    && !userRoutes.includes("router.post('/', requirePermission('users.manage')"),
+    'the member register is open to her, the user administration is not');
+  const membersScreen = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Members.jsx'), 'utf8');
+  assert.ok(membersScreen.includes("get('add') === '1'") && membersScreen.includes('canAddMember'),
+    'her dashboard can open the add form when she may add a member');
+  assert.ok(membersScreen.includes('members.filterNew') && membersScreen.includes('members.filterInactive')
+    && membersScreen.includes('member_status'),
+    'the register can be filtered by membership status and by new members');
+  assert.ok(membersScreen.includes('membership_number') && membersScreen.includes('p.phone'),
+    'the register can be searched by member number and by phone');
+  assert.ok(membersScreen.includes("if (!isAdmin) columns.pop()"),
+    'the secretary reads the register; suspending and unlocking stay with the chairperson');
+  assert.ok(membersScreen.includes("t('profile.gender')") && membersScreen.includes("t('members.number')")
+    && membersScreen.includes("t('members.joined')") && membersScreen.includes("t('common.phone')"),
+    'a member record shows the name, contact, joined date, number and gender');
+  const meetingsScreen = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Meetings.jsx'), 'utf8');
+  assert.ok(meetingsScreen.includes("get('new') === '1'") && meetingsScreen.includes('isRecorder'),
+    'the create-meeting shortcut opens the form for the recorders');
+  const reportsScreen = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Reports.jsx'), 'utf8');
+  assert.ok(reportsScreen.includes("get('report')"),
+    'a report link opens the report the secretary asked for');
+  for (const file of ['en.js', 'ny.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    for (const key of ['totalMembers:', 'inactiveMembers:', 'upcomingMeetings:', 'recentAttendance:',
+                       'membershipChanges:', 'changesHint:', 'quickActions:', 'qaViewMembers:',
+                       'qaAddMember:', 'qaReviewRequests:', 'qaMembershipHistory:', 'qaCreateMeeting:',
+                       'qaRecordAttendance:', 'qaMeetingRecords:', 'qaMembershipReport:',
+                       'qaAttendanceReport:', 'filterAll:', 'filterActive:', 'filterInactive:',
+                       'filterNew:', 'filterLabel:']) {
+      assert.ok(dict.includes(key), `${file} must carry ${key.replace(':', '')}`);
+    }
+  }
 
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),

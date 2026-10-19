@@ -31,6 +31,11 @@ export default function Meetings() {
   const load = useCallback(async () => { setMeetings(await api.get('/meetings')); }, []);
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
+  // "Create meeting" from the secretary's dashboard opens the form at once.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('new') === '1' && isRecorder) setOpen(true);
+  }, [isRecorder]);
+
   const change = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 

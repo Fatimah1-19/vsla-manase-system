@@ -226,6 +226,7 @@ const getDashboard = wrap(async (req, res) => {
     recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
     chairJoins, chairRules, chairVotes,
     monthlyFlow, todayTick, contribMonthly, expectedFines,
+    upcomingCount, membershipChanges,
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
                 COALESCE((SELECT SUM(amount) FROM loans WHERE status = 'approved'),0)::float AS loans_out,
@@ -364,6 +365,18 @@ const getDashboard = wrap(async (req, res) => {
         WHERE f.paid = FALSE
         ORDER BY f.date DESC, f.id DESC LIMIT 25`
     ),
+
+    // The secretary's board: the meetings still ahead, and what has changed
+    // about the membership over the last thirty days.
+    wantsPeople ? one(
+      `SELECT COUNT(*)::int AS c FROM meetings WHERE meeting_date >= CURRENT_DATE`
+    ) : null,
+    wantsPeople ? one(
+      `SELECT (SELECT COUNT(*) FROM members WHERE date_joined >= CURRENT_DATE - INTERVAL '30 days')::int AS joined,
+              (SELECT COUNT(*) FROM audit_logs
+                WHERE action IN ('DEACTIVATE_USER','REACTIVATE_USER','EXECUTE_MEMBER_VOTE')
+                  AND created_at >= CURRENT_DATE - INTERVAL '30 days')::int AS changed`
+    ) : null,
   ]);
 
   const outstanding = outstandingRows.reduce((sum, l) => {
@@ -424,6 +437,12 @@ const getDashboard = wrap(async (req, res) => {
     payload.recent_meetings = recentMeetings;
     payload.attendance_rate = attendance.rate;
     payload.recent_activity = recentActivity;
+    payload.upcoming_meetings = upcomingCount.c;
+    payload.membership_changes = {
+      joined: membershipChanges.joined,
+      changed: membershipChanges.changed,
+      total: membershipChanges.joined + membershipChanges.changed,
+    };
   }
   if (isAdmin) {
     payload.system = system;

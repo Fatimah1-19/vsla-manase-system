@@ -4,7 +4,7 @@ const { protect, requirePermission } = require('../middleware/auth');
 
 router.use(protect);
 router.get('/', requirePermission('users.view'), c.listUsers);
-router.post('/', requirePermission('users.manage'), c.createUser);
+router.post('/', requirePermission('members.create'), c.createUser);
 router.patch('/:id', requirePermission('users.manage'), c.updateUser);
 router.post('/:id/reset-password', requirePermission('users.manage'), c.adminResetPassword);
 router.post('/:id/unlock', requirePermission('users.manage'), c.unlockUser);

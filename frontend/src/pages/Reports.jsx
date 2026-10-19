@@ -64,7 +64,11 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   const [memberId, setMemberId] = useState('');
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
-  const [category, setCategory] = useState('attendance');
+  // A report can be opened straight from a link (the secretary's shortcuts).
+  const [category, setCategory] = useState(() => {
+    const wanted = new URLSearchParams(window.location.search).get('report');
+    return CATEGORIES.some((c) => c.key === wanted) ? wanted : 'attendance';
+  });
   const [report, setReport] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [totals, setTotals] = useState(null);

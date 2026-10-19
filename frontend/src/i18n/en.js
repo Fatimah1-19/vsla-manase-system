@@ -80,6 +80,15 @@ const base = {
     recentSavings: 'Money received lately', recentActivity: 'What happened lately',
     recentMeetings: 'Recent meetings', smsToday: 'Texts sent today', lockedAccounts: 'Locked accounts',
     finesOutstanding: 'Fines not yet paid',
+    totalMembers: 'Total members', inactiveMembers: 'Inactive members',
+    upcomingMeetings: 'Upcoming meetings', recentAttendance: 'Recent attendance',
+    membershipChanges: 'Membership changes', changesHint: (j, c) => `${j} joined, ${c} changed`,
+    quickActions: 'Quick actions',
+    qaViewMembers: 'View members', qaAddMember: 'Add member record',
+    qaReviewRequests: 'Review join requests', qaMembershipHistory: 'View membership history',
+    qaCreateMeeting: 'Create meeting', qaRecordAttendance: 'Record attendance',
+    qaMeetingRecords: 'View meeting records', qaMembershipReport: 'Generate membership report',
+    qaAttendanceReport: 'Generate attendance report',
   },
 
   savings: {
@@ -115,6 +124,8 @@ const base = {
     suspend: 'Suspend', unlock: 'Unlock account', newPassword: 'Give a new password',
     tempPassword: 'Temporary password', writeItDown: 'Write this down. It is only shown once.',
     active: 'Active', inactive: 'Suspended', locked: 'Locked',
+    filterLabel: 'Filter by membership status', filterAll: 'All members',
+    filterActive: 'Active', filterInactive: 'Inactive', filterNew: 'New members',
   },
 
   meetings: {

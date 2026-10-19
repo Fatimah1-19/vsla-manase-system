@@ -2448,6 +2448,9 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 
 .sdash__cols { display: grid; gap: 1.1rem; }
 
+.sdash__quick { margin-bottom: 1.4rem; }
+.sdash__quickGrid { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+
 .sdash__col {
   background: var(--card);
   border: 1px solid var(--rule);
