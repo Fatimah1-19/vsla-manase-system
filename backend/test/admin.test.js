@@ -778,6 +778,49 @@ function run(middleware, user) {
     assert.ok(chairTargets.includes(`to: '${page}`), `the chairperson menu must include ${page}`);
   }
 
+  // Her sidebar is records, meetings, reports and profile — never the
+  // administrator's pages, and the full replacement removes the money menu.
+  const secLines = navSrc.split('\n').filter((l) => l.includes("roles: ['secretary']"));
+  assert.strictEqual(secLines.length, 16,
+    `the secretary menu must be the fifteen spec links plus the dashboard (found ${secLines.length})`);
+  const secTargets = secLines.join('\n');
+  for (const line of secLines) {
+    assert.ok(!line.includes('/app/admin/'),
+      `an administrator's page must not reach the secretary: ${line.trim()}`);
+    for (const banned of ['/app/savings', '/app/loans', '/app/welfare', '/app/fines',
+                          '/app/shareout', '/app/wrappers', '/app/messages',
+                          '/app/cases', '/app/leadership']) {
+      assert.ok(!line.includes(`to: '${banned}`),
+        `the secretary menu must not offer ${banned}: ${line.trim()}`);
+    }
+  }
+  for (const page of ["to: '/app',", "to: '/app/members',", "to: '/app/requests',",
+                      "to: '/app/members?view=history'", "to: '/app/meetings',",
+                      "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
+                      "to: '/app/members?view=details'", "to: '/app/members?view=documents'",
+                      "to: '/app/activity?view=audit'", "to: '/app/activity',",
+                      "to: '/app/profile',", "to: '/app/profile?tab=account'"]) {
+    assert.ok(secTargets.includes(page), `the secretary menu must include ${page}`);
+  }
+  assert.ok((secTargets.match(/to: '\/app\/analytics\?tab=reports'/g) || []).length === 3,
+    'her three reports all open the reports screen');
+  for (const group of ['nav.gDashboard', 'nav.gMembership', 'nav.gMeetings', 'nav.gRecords',
+                       'nav.gReports', 'nav.gActivity', 'nav.gProfile']) {
+    assert.ok(secTargets.includes(`group: '${group}'`), `the secretary menu must head it with ${group}`);
+  }
+  assert.ok((secLines.filter((l) => l.includes('phone: true')).length) === 4,
+    'her phone bar is dashboard, members, join requests and meetings');
+  // Every new menu wording exists in both languages.
+  for (const file of ['en.extra.js', 'ny.extra.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    for (const key of ['gMeetings', 'gRecords', 'membershipHistory', 'meetingRecords', 'memberRecords',
+                       'membershipDocuments', 'adminRecords', 'attendanceReports', 'meetingReports',
+                       'adminActivity']) {
+      assert.ok(new RegExp(`\\b${key}: `).test(dict), `${file} must carry nav.${key}`);
+    }
+  }
+
   // ---- reset rules --------------------------------------------------------
   assert.strictEqual(resetAttempt({ attempts: 0, maxTries: 3, expired: false }).ok, true);
   assert.deepStrictEqual(resetAttempt({ attempts: 2, maxTries: 3, expired: false }).remaining, 1);

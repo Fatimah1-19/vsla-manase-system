@@ -54,23 +54,47 @@ export const NAV_ITEMS = [
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['admin'] },
 
   // ---- everyone else -----------------------------------------------------
-  { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['treasurer', 'secretary', 'member'], phone: true, end: true },
-  { to: '/app/analytics',  key: 'nav.analytics', label: 'nav.analyticsReports', icon: 'analytics', roles: ['treasurer', 'secretary'] },
-  { to: '/app/savings',    key: 'nav.savings',   label: 'nav.savingsManagement', icon: 'savings', roles: ['treasurer', 'secretary'], phone: true },
-  { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['treasurer', 'secretary', 'member'], phone: true },
-  { to: '/app/members',    key: 'nav.members',   label: 'nav.memberManagement',  icon: 'members', roles: ['treasurer', 'secretary'] },
-  { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings',  roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.welfareManagement', icon: 'welfare', roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/fines',      key: 'nav.fines',     label: 'nav.finesManagement',  icon: 'fines',     roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/shareout',   key: 'nav.shareout',  label: 'nav.shareoutManagement', icon: 'shareout', roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/requests',   key: 'nav.requests',  label: 'nav.requestsManagement', icon: 'requests',  roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',     roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['treasurer', 'secretary', 'member'] },
-  { to: '/app/messages',   key: 'nav.messages',  icon: 'messages',  roles: ['treasurer', 'secretary'] },
+  { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['treasurer', 'member'], phone: true, end: true },
+  { to: '/app/analytics',  key: 'nav.analytics', label: 'nav.analyticsReports', icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/savings',    key: 'nav.savings',   label: 'nav.savingsManagement', icon: 'savings', roles: ['treasurer'], phone: true },
+  { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['treasurer', 'member'], phone: true },
+  { to: '/app/members',    key: 'nav.members',   label: 'nav.memberManagement',  icon: 'members', roles: ['treasurer'] },
+  { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings',  roles: ['treasurer', 'member'] },
+  { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.welfareManagement', icon: 'welfare',   roles: ['treasurer', 'member'] },
+  { to: '/app/fines',      key: 'nav.fines',     label: 'nav.finesManagement',  icon: 'fines',     roles: ['treasurer', 'member'] },
+  { to: '/app/shareout',   key: 'nav.shareout',  label: 'nav.shareoutManagement', icon: 'shareout', roles: ['treasurer', 'member'] },
+  { to: '/app/requests',   key: 'nav.requests',  label: 'nav.requestsManagement', icon: 'requests',  roles: ['treasurer', 'member'] },
+  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',     roles: ['treasurer', 'member'] },
+  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['treasurer', 'member'] },
+  { to: '/app/messages',   key: 'nav.messages',  icon: 'messages',  roles: ['treasurer'] },
   { to: '/app/approvals',  key: 'nav.approvals', label: 'nav.approvals', icon: 'requests', roles: ['treasurer'] },
-  { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['treasurer', 'secretary'] },
-  { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',   roles: ['treasurer', 'secretary', 'member'], phone: true },
-  { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',  roles: ['treasurer', 'secretary', 'member'] },
+  { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['treasurer'] },
+  { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',   roles: ['treasurer', 'member'], phone: true },
+  { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',  roles: ['treasurer', 'member'] },
+
+  // ---- secretary: records, meetings, reports — never the admin's pages ---
+  { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['secretary'], phone: true, end: true },
+
+  { to: '/app/members',    key: 'nav.members',   group: 'nav.gMembership', icon: 'members',  roles: ['secretary'], phone: true },
+  { to: '/app/requests',   key: 'nav.requests',  icon: 'requests', roles: ['secretary'], phone: true },
+  { to: '/app/members?view=history', key: 'nav.membershipHistory', icon: 'members', roles: ['secretary'] },
+
+  { to: '/app/meetings',   key: 'nav.meetings',  group: 'nav.gMeetings', icon: 'meetings', roles: ['secretary'], phone: true },
+  { to: '/app/meetings?tab=attendance', key: 'nav.attendance',      icon: 'meetings', roles: ['secretary'] },
+  { to: '/app/meetings?tab=records',    key: 'nav.meetingRecords', icon: 'meetings', roles: ['secretary'] },
+
+  { to: '/app/members?view=details',   key: 'nav.memberRecords',       group: 'nav.gRecords', icon: 'members', roles: ['secretary'] },
+  { to: '/app/members?view=documents', key: 'nav.membershipDocuments', icon: 'members', roles: ['secretary'] },
+  { to: '/app/activity?view=audit',    key: 'nav.adminRecords',        icon: 'audit',   roles: ['secretary'] },
+
+  { to: '/app/analytics?tab=reports', key: 'nav.membershipReports', group: 'nav.gReports', icon: 'analytics', roles: ['secretary'] },
+  { to: '/app/analytics?tab=reports', key: 'nav.attendanceReports', icon: 'analytics', roles: ['secretary'] },
+  { to: '/app/analytics?tab=reports', key: 'nav.meetingReports',    icon: 'analytics', roles: ['secretary'] },
+
+  { to: '/app/activity',   key: 'nav.adminActivity', group: 'nav.gActivity', icon: 'activity', roles: ['secretary'] },
+
+  { to: '/app/profile',    key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['secretary'] },
+  { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['secretary'] },
 ];
 
 export const navFor = (role) => NAV_ITEMS.filter((i) => i.roles.includes(role));
