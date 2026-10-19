@@ -283,7 +283,7 @@ const listLoans = wrap(async (req, res) => {
   if (status) { params.push(status); where.push(`l.status = $${params.length}`); }
 
   const rows = await query(
-    `SELECT l.*, m.membership_number, u.full_name, u.phone,
+    `SELECT l.*, l.applied_at AS loan_date, m.membership_number, u.full_name, u.phone,
             (m.avatar IS NOT NULL) AS has_avatar,
             COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid,
             a.full_name AS decided_by_name

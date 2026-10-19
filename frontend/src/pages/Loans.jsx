@@ -317,8 +317,14 @@ export default function Loans() {
     { key: 'amount', label: t('loans.principal'), align: 'right', money: true, render: (l) => money(l.amount) },
     { key: 'interest', label: t('loans.interest'), align: 'right', money: true, hideOnPhone: true,
       render: (l) => (l.with_interest ? money(l.interest_amount) : <span className="muted">—</span>) },
+    { key: 'total_due', label: t('loans.totalDue'), align: 'right', money: true, hideOnPhone: true,
+      render: (l) => money(l.total_due) },
+    { key: 'total_repaid', label: t('loans.repaid'), align: 'right', money: true, hideOnPhone: true,
+      render: (l) => money(l.total_repaid) },
     { key: 'outstanding', label: t('loans.outstanding'), align: 'right', money: true,
       render: (l) => <span className={l.outstanding > 0 ? 'money money--neg' : 'money'}>{money(l.outstanding)}</span> },
+    { key: 'applied_at', label: t('loans.loanDate'), hideOnPhone: true,
+      render: (l) => shortDate(l.applied_at) },
     { key: 'due_date', label: t('loans.dueDate'), hideOnPhone: true,
       render: (l) => {
         const late = l.status === 'approved' && l.due_date && new Date(l.due_date) < new Date();

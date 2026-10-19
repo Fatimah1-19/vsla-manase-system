@@ -4,7 +4,7 @@
  * The treasurer records and maintains the VSLA money: savings, loans,
  * repayments, fines, welfare, the monthly wrappers and the share-out. She is
  * never the chairperson and never the system administrator, and she never gets
- * the final word on who joins. Each of the 32 checks below is asserted against
+ * the final word on who joins. Each of the 35 checks below is asserted against
  * the code that ships, in the same style as the other acceptance tests: the
  * rules and the wiring are read and checked, no database is needed.
  *
@@ -34,6 +34,7 @@ const schema = back(path.join('db', 'schema.sql'));
 
 const dashCtrl = controllers('dashboardController.js');
 const savingsCtrl = controllers('savingsController.js');
+const loanCtrl = controllers('loanController.js');
 const listeners = back(path.join('events', 'listeners.js'));
 const joinCtrl = controllers('joinRequestController.js');
 const settingsCtrl = controllers('settingsController.js');
@@ -133,7 +134,31 @@ async function check(n, title, fn) {
     assert.strictEqual(gate.status, 403, 'the secretary never writes a saving');
   });
 
-  await check(5, 'the savings screen filters by member and by date', () => {
+  await check(5, 'a saving cannot be recorded with bad details', () => {
+    // The member must be chosen and the amount must be a real figure above zero.
+    assert.ok(/if \(!member_id\)/.test(savingsCtrl), 'a saving must name its member');
+    assert.ok(/value <= 0/.test(savingsCtrl), 'a negative or zero amount must be refused');
+    assert.ok(/Enter an amount/.test(savingsCtrl), 'a missing amount must be refused');
+    // The date must be a real day, never in the future.
+    assert.ok(savingsCtrl.includes('validDate') && savingsCtrl.includes('ISO_DATE'),
+      'the date must be checked as a real calendar date');
+    assert.ok(/cannot be in the future/.test(savingsCtrl),
+      'a future transaction date must be refused');
+    // The same member, amount and date cannot be written twice.
+    assert.ok(/duplicate/.test(savingsCtrl) && savingsCtrl.includes('409'),
+      'an obvious duplicate must be refused');
+    // The screen checks the same rules before it sends, and confirms first.
+    assert.ok(savingsPage.includes('savings.amountPositive') && savingsPage.includes('savings.badDate'),
+      'the screen must check the amount and the date');
+    assert.ok(savingsPage.includes('max={inputDate()}'), 'the date picker must stop at today');
+    assert.ok(savingsPage.includes('savings.confirmRecord'), 'the transaction must be confirmed first');
+    // Who recorded it, and the trail it leaves.
+    assert.ok(savingsCtrl.includes('recorded_by') && savingsCtrl.includes('req.user.id'),
+      'the saving must record the treasurer who did it');
+    assert.ok(listeners.includes('RECORD_SAVING'), 'every saving must be written to the trail');
+  });
+
+  await check(6, 'the savings screen filters by member and by date', () => {
     assert.ok(savingsPage.includes('memberId') && savingsPage.includes('setMemberId'),
       'she must be able to pick a member');
     assert.ok(savingsPage.includes('setFrom') && savingsPage.includes('setTo'),
@@ -145,14 +170,33 @@ async function check(n, title, fn) {
     assert.ok(savingsCtrl.includes('m.membership_number'), 'each row must carry the member reference');
   });
 
-  await check(6, 'the treasurer can view loans and decide them', () => {
+  await check(7, 'the treasurer can view loans and decide them', () => {
     assert.ok(routes('loanRoutes.js').includes("requirePermission('loans.viewAll')"));
     assert.ok(routes('loanRoutes.js').includes("router.patch('/:id/decision', requirePermission('loans.decide')"));
     assert.ok(can('treasurer', 'loans.viewAll') && can('treasurer', 'loans.decide'));
     assert.ok(loansPage.includes('canRecordMoney'), 'the loans page must gate its writes');
   });
 
-  await check(7, 'the treasurer can record loan repayments', () => {
+  await check(8, 'the loans section shows every figure the treasurer needs', () => {
+    // The board hands her the whole picture of each loan.
+    for (const field of ['amount', 'interest_amount', 'total_due', 'total_repaid', 'outstanding', 'due_date', 'status']) {
+      assert.ok(loanCtrl.includes(field), `the loan payload must carry ${field}`);
+    }
+    assert.ok(loanCtrl.includes('applied_at'), 'the loan date must be on the record');
+    // The screen shows member, amount, interest, total repayable, paid, dates and status.
+    for (const col of ['loans.principal', 'loans.interest', 'loans.totalDue', 'loans.repaid',
+                       'loans.outstanding', 'loans.loanDate', 'loans.dueDate']) {
+      assert.ok(loansPage.includes(col), `the loan list must carry the ${col} column`);
+    }
+    // The views she asked for: applications, active, overdue, history.
+    for (const f of ["'pending'", "'approved'", "'overdue'", "'repayments'"]) {
+      assert.ok(loansPage.includes(f), `the loans section must offer the ${f} view`);
+    }
+    assert.ok(routes('loanRoutes.js').includes("router.get('/overdue'"),
+      'overdue loans must be reachable');
+  });
+
+  await check(9, 'the treasurer can record loan repayments', () => {
     assert.ok(routes('loanRoutes.js').includes("router.get('/repayments', c.listRepayments)")
       && routes('loanRoutes.js').includes("router.post('/:id/repayments', requirePermission('loans.record')"));
     assert.ok(can('treasurer', 'loans.record'));
@@ -162,7 +206,7 @@ async function check(n, title, fn) {
       '?tab=repayments must open the repayment history');
   });
 
-  await check(8, 'the treasurer can view and record fines', () => {
+  await check(10, 'the treasurer can view and record fines', () => {
     assert.ok(routes('fineRoutes.js').includes("router.get('/', c.listFines)")
       && routes('fineRoutes.js').includes("router.post('/', requirePermission('fines.record')")
       && routes('fineRoutes.js').includes("router.patch('/:id/pay', requirePermission('fines.record')"));
@@ -171,7 +215,7 @@ async function check(n, title, fn) {
     assert.ok(finesPage.includes('canRecordMoney'), 'the fine screen must gate its write');
   });
 
-  await check(9, 'the treasurer can view and record welfare', () => {
+  await check(11, 'the treasurer can view and record welfare', () => {
     assert.ok(routes('welfareRoutes.js').includes("router.post('/contribution', requirePermission('welfare.record')")
       && routes('welfareRoutes.js').includes("router.post('/payout', requirePermission('welfare.record')"));
     assert.ok(can('treasurer', 'welfare.record'));
@@ -180,7 +224,7 @@ async function check(n, title, fn) {
     assert.ok(welfarePage.includes('canRecordMoney'), 'the welfare screen must gate its write');
   });
 
-  await check(10, 'the treasurer can view and record the monthly wrappers', () => {
+  await check(12, 'the treasurer can view and record the monthly wrappers', () => {
     assert.ok(routes('contributionRoutes.js').includes("router.get('/', requirePermission('contributions.view')")
       && routes('contributionRoutes.js').includes("router.post('/', requirePermission('contributions.record')"));
     assert.ok(can('treasurer', 'contributions.view') && can('treasurer', 'contributions.record'));
@@ -189,7 +233,7 @@ async function check(n, title, fn) {
     assert.ok(wrappersPage.includes('canRecordMoney'), 'the wrappers screen must gate its write');
   });
 
-  await check(11, 'the treasurer can view and record the share-out', () => {
+  await check(13, 'the treasurer can view and record the share-out', () => {
     assert.ok(routes('shareOutRoutes.js').includes("router.get('/', requirePermission('shareout.view')")
       && routes('shareOutRoutes.js').includes("router.post('/:id/confirm', requirePermission('shareout.record')"));
     assert.ok(can('treasurer', 'shareout.view') && can('treasurer', 'shareout.record'));
@@ -198,14 +242,14 @@ async function check(n, title, fn) {
     assert.ok(sharePage.includes('canRecordMoney'), 'the share-out screen must gate its write');
   });
 
-  await check(12, 'the treasurer can read the financial reports', () => {
+  await check(14, 'the treasurer can read the financial reports', () => {
     assert.ok(can('treasurer', 'reports.view') && can('treasurer', 'analytics.view'));
     assert.ok(routes('reportRoutes.js').includes("requirePermission('reports.view')"));
     assert.ok(routes('analyticsRoutes.js').includes("requirePermission('analytics.view')"));
     assert.ok(reportsPage.includes('Ledger'), 'the reports must read from a table');
   });
 
-  await check(13, 'the treasurer can read every financial transaction history', () => {
+  await check(15, 'the treasurer can read every financial transaction history', () => {
     for (const p of ['Savings.jsx', 'Loans.jsx', 'Fines.jsx', 'Welfare.jsx',
                      'Wrappers.jsx', 'ShareOut.jsx']) {
       const src = page(p);
@@ -216,7 +260,7 @@ async function check(n, title, fn) {
     assert.ok(loansPage.includes('openRepayments'), 'the repayment history must be reachable');
   });
 
-  await check(14, 'the treasurer cannot manage system users', async () => {
+  await check(16, 'the treasurer cannot manage system users', async () => {
     assert.ok(!can('treasurer', 'users.manage'));
     const gate = await run(requirePermission('users.manage'), { role: 'treasurer' });
     assert.strictEqual(gate.status, 403, 'the user-management door must be shut to her');
@@ -224,13 +268,13 @@ async function check(n, title, fn) {
       'the treasurer menu must never offer the administrator\'s pages');
   });
 
-  await check(15, 'the treasurer cannot manage system roles or permissions', async () => {
+  await check(17, 'the treasurer cannot manage system roles or permissions', async () => {
     assert.ok(!can('treasurer', 'accounts.view') && !can('treasurer', 'accounts.manage'));
     const gate = await run(requirePermission('accounts.manage'), { role: 'treasurer' });
     assert.strictEqual(gate.status, 403);
   });
 
-  await check(16, 'the treasurer cannot change technical system settings', async () => {
+  await check(18, 'the treasurer cannot change technical system settings', async () => {
     assert.ok(!can('treasurer', 'system.settings'));
     const gate = await run(requirePermission('system.settings'), { role: 'treasurer' });
     assert.strictEqual(gate.status, 403, 'the system settings must be refused');
@@ -238,7 +282,7 @@ async function check(n, title, fn) {
       'the system settings must sit behind the administrator\'s permission');
   });
 
-  await check(17, 'the treasurer cannot approve or reject membership requests', async () => {
+  await check(19, 'the treasurer cannot approve or reject membership requests', async () => {
     assert.ok(!can('treasurer', 'joinRequests.decide'),
       'the final membership decision belongs to the chairperson alone');
     assert.ok(routes('joinRequestRoutes.js')
@@ -250,7 +294,7 @@ async function check(n, title, fn) {
       'the screens must agree: the decide buttons are not hers');
   });
 
-  await check(18, 'the treasurer cannot change votes or override the voting', () => {
+  await check(20, 'the treasurer cannot change votes or override the voting', () => {
     const jr = routes('joinRequestRoutes.js');
     assert.ok(!jr.includes('.put(') && !jr.includes('.delete('),
       'there must be no route that rewrites or erases a vote');
@@ -262,7 +306,7 @@ async function check(n, title, fn) {
       'the vote must still be able to fail on its own numbers');
   });
 
-  await check(19, 'the treasurer cannot modify audit records', () => {
+  await check(21, 'the treasurer cannot modify audit records', () => {
     const ar = routes('auditRoutes.js');
     assert.ok(!/\.(post|put|patch|delete)\(/.test(ar),
       'the audit routes must offer reading only');
@@ -271,7 +315,7 @@ async function check(n, title, fn) {
     assert.ok(can('treasurer', 'audit.view'), 'she may still read the history');
   });
 
-  await check(20, 'the treasurer cannot change VSLA settings without the approval process', async () => {
+  await check(22, 'the treasurer cannot change VSLA settings without the approval process', async () => {
     assert.ok(!can('treasurer', 'groupRules.propose'),
       'she may not write the group rules herself');
     const propose = await run(requirePermission('groupRules.propose'), { role: 'treasurer' });
@@ -282,7 +326,7 @@ async function check(n, title, fn) {
       'a change only enters force after it is confirmed and recorded');
   });
 
-  await check(21, 'the treasurer cannot act as chairperson', async () => {
+  await check(23, 'the treasurer cannot act as chairperson', async () => {
     for (const p of ['cases.manage', 'cycles.manage']) {
       assert.ok(!can('treasurer', p), `the treasurer must never hold ${p}`);
       const gate = await run(requirePermission(p), { role: 'treasurer' });
@@ -290,7 +334,7 @@ async function check(n, title, fn) {
     }
   });
 
-  await check(22, 'the treasurer cannot act as System Administrator', async () => {
+  await check(24, 'the treasurer cannot act as System Administrator', async () => {
     assert.ok(!can('treasurer', 'accounts.manage') && !can('treasurer', 'system.settings'));
     for (const route of ['admin/users', 'admin/roles', 'admin/settings', 'admin/system', 'admin/activity']) {
       const re = new RegExp(`path="${route.replace('/', '\\/')}[^"]*"[^\\n]*roles=\\{\\['system_admin'\\]\\}`);
@@ -300,7 +344,7 @@ async function check(n, title, fn) {
       'the money routes must refuse the administrator too');
   });
 
-  await check(23, 'her important actions are written to the audit trail', () => {
+  await check(25, 'her important actions are written to the audit trail', () => {
     for (const action of ['RECORD_SAVING', 'RECORD_REPAYMENT', 'RECORD_FINE',
                           'WELFARE_CONTRIBUTION', 'WELFARE_PAYOUT']) {
       assert.ok(listeners.includes(action) || savingsCtrl.includes(action),
@@ -310,7 +354,7 @@ async function check(n, title, fn) {
       'her actions must be collectable under the administrative register');
   });
 
-  await check(24, 'existing membership voting still works', () => {
+  await check(26, 'existing membership voting still works', () => {
     assert.ok(joinCtrl.includes('rules.canVote') && joinCtrl.includes('ON CONFLICT (request_id, user_id)'),
       'the member ballot must be unchanged');
     assert.strictEqual(typeof cases.canVote, 'function', 'the voting rule must still be exported');
@@ -318,7 +362,7 @@ async function check(n, title, fn) {
       true, 'a member still has her say');
   });
 
-  await check(25, 'the SMS service is untouched', () => {
+  await check(27, 'the SMS service is untouched', () => {
     const sms = back(path.join('utils', 'sms.js'));
     assert.ok(/sendSMS/.test(sms), 'the one SMS sender must still be there');
     const messages = back(path.join('utils', 'messages.js'));
@@ -328,7 +372,7 @@ async function check(n, title, fn) {
     assert.ok(routes('smsRoutes.js').length > 0, 'the SMS routes must still be mounted');
   });
 
-  await check(26, 'the financial calculations are untouched', () => {
+  await check(28, 'the financial calculations are untouched', () => {
     assert.strictEqual(typeof shareout.calcShares, 'function');
     assert.strictEqual(typeof shareout.totalsOf, 'function');
     assert.strictEqual(typeof helpers.loanTotals, 'function');
@@ -337,34 +381,34 @@ async function check(n, title, fn) {
     assert.strictEqual(typeof shareout.totalsOf([]).total_payout ?? 0, 'number');
   });
 
-  await check(27, 'the chairperson keeps her own work', async () => {
+  await check(29, 'the chairperson keeps her own work', async () => {
     assert.ok(can('admin', 'joinRequests.decide') && can('admin', 'cases.manage')
       && can('admin', 'cycles.manage') && can('admin', 'approvals.decide'));
     assert.ok(!can('admin', 'system.settings'), 'the system stays the administrator\'s');
   });
 
-  await check(28, 'the secretary keeps her own work', async () => {
+  await check(30, 'the secretary keeps her own work', async () => {
     assert.ok(can('secretary', 'meetings.record') && can('secretary', 'members.documents')
       && can('secretary', 'members.create'));
     assert.ok(!can('secretary', 'savings.record') && !can('secretary', 'joinRequests.decide'),
       'the money and the final membership decision are not hers');
   });
 
-  await check(29, 'the System Administrator keeps her own work', async () => {
+  await check(31, 'the System Administrator keeps her own work', async () => {
     assert.ok(can('system_admin', 'accounts.manage') && can('system_admin', 'system.settings'));
     assert.ok(!can('system_admin', 'savings.record') && !can('system_admin', 'joinRequests.decide')
       && !can('system_admin', 'meetings.record'),
       'the administrator never decides membership, records money or keeps the meetings');
   });
 
-  await check(30, 'the ordinary member still takes part', async () => {
+  await check(32, 'the ordinary member still takes part', async () => {
     const money = await run(requirePermission('savings.record'), { role: 'member' });
     assert.strictEqual(money.status, 403, 'a member records nothing');
     assert.ok(!Object.values(PERMISSIONS).some((list) => list.includes('member')),
       'no office permission may be handed to the plain member role');
   });
 
-  await check(31, 'every money screen writes only through the treasurer', () => {
+  await check(33, 'every money screen writes only through the treasurer', () => {
     for (const p of ['Savings.jsx', 'Loans.jsx', 'Fines.jsx', 'Welfare.jsx',
                      'Wrappers.jsx', 'ShareOut.jsx']) {
       assert.ok(page(p).includes('canRecordMoney'), `${p} must gate its writes on the treasurer`);
@@ -378,7 +422,7 @@ async function check(n, title, fn) {
     }
   });
 
-  await check(32, 'her sidebar is the money menu, never the administrator\'s', () => {
+  await check(34, 'her sidebar is the money menu, never the administrator\'s', () => {
     const treasLines = nav.split('\n').filter((l) => l.includes("roles: ['treasurer'"));
     assert.ok(treasLines.length >= 8, `the treasurer must keep her money menu (found ${treasLines.length})`);
     for (const line of treasLines) {
@@ -407,7 +451,7 @@ async function check(n, title, fn) {
     }
   });
 
-  await check(33, 'the membership process is still vote, decide, then record', () => {
+  await check(35, 'the membership process is still vote, decide, then record', () => {
     assert.ok(joinCtrl.includes('join_request_votes') && joinCtrl.includes('quorumNeeded'),
       'the members must still vote first');
     assert.ok(routes('joinRequestRoutes.js')
