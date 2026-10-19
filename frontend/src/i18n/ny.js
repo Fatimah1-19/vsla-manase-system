@@ -194,6 +194,8 @@ const base = {
   fines: {
     title: 'Zindapusa', record: 'Lembani chindapusa', paid: 'Zalipidwa', unpaid: 'Sizinalipidwe',
     markPaid: 'Lembani kuti zalipidwa', collected: 'Zolandiridwa', empty: 'Palibe zindapusa.',
+    type: 'Mtundu wa chindapusa', allTypes: 'Zindapusa zonse',
+    typeAbsence: 'Kusabwera', typeLate: 'Kubwera mochedwa', typeMisconduct: 'Khalidwe loipa', typeOther: 'Zina',
   },
 
   shareout: {

@@ -5,6 +5,36 @@ const { emit, EVENTS } = require('../utils/events');
 const { getActiveCycle, getSetting } = require('../utils/helpers');
 
 /**
+ * The kinds of fine the group recognises. The amount of a named kind is fixed
+ * by the group's Fine Settings and can never be typed in by the treasurer; only
+ * "other" takes a free amount, and that always needs a reason.
+ */
+const FINE_TYPES = {
+  absence: { setting: 'absence_fine', reason: 'Unexcused absence' },
+  late: { setting: 'late_fine', reason: 'Late to a meeting' },
+  misconduct: { setting: 'misconduct_fine', reason: 'Misconduct at a meeting' },
+  other: { setting: null, reason: null },
+};
+
+// A fine must carry a real calendar date, never in the future.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const todayISO = () => new Date().toISOString().slice(0, 10);
+function validDate(value) {
+  if (!ISO_DATE.test(String(value))) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return false;
+  return d.toISOString().slice(0, 10) === value;
+}
+
+/** The amount the group has set for a fine kind (0 means the kind is off). */
+async function configuredAmount(type) {
+  const meta = FINE_TYPES[type];
+  if (!meta) return null;
+  if (!meta.setting) return null; // "other" has no configured amount
+  return Number(await getSetting(meta.setting, '0'));
+}
+
+/**
  * A fine for missing a meeting, when the group has set one.
  * The amount lives in Settings (`absence_fine`); 0 means the group does not
  * fine for absences. Never throws — attendance is saved either way.
@@ -33,8 +63,8 @@ const createAbsenceFine = async ({ member_id, reason = null, date = null, record
   if (existing) return existing;
 
   const fine = await one(
-    `INSERT INTO fines (member_id, cycle_id, meeting_id, amount, reason, paid, date, recorded_by)
-     VALUES ($1,$2,$3,$4,$5,FALSE,$6,$7) RETURNING id, amount::float, date`,
+    `INSERT INTO fines (member_id, cycle_id, meeting_id, amount, reason, fine_type, paid, date, recorded_by)
+     VALUES ($1,$2,$3,$4,$5,'absence',FALSE,$6,$7) RETURNING id, amount::float, date`,
     [member_id, cycle ? cycle.id : null, meeting_id, amount, fineReason, fineDate, recorded_by || null]
   );
 
@@ -78,9 +108,50 @@ const backfillAbsenceFines = async ({ recorded_by = null } = {}) => {
 
 // POST /api/fines
 const recordFine = wrap(async (req, res) => {
-  const { member_id, amount, reason, date, paid } = req.body;
-  if (!member_id || !amount || Number(amount) <= 0) {
-    return res.status(400).json({ message: 'Choose a member and enter an amount above zero.' });
+  const { member_id, fine_type, amount, reason, date, paid } = req.body;
+  const type = fine_type || 'other';
+
+  // The kind of fine must be one the group recognises.
+  if (!FINE_TYPES[type]) {
+    return res.status(400).json({ message: 'Choose a fine type the group recognises.' });
+  }
+  if (!member_id) return res.status(400).json({ message: 'Choose a member.' });
+
+  // The date is confirmed when the fine is recorded: real, and never ahead.
+  const theDate = date || todayISO();
+  if (!validDate(theDate)) {
+    return res.status(400).json({ message: 'Enter a valid date as YYYY-MM-DD.' });
+  }
+  if (theDate > todayISO()) {
+    return res.status(400).json({ message: 'The date cannot be in the future.' });
+  }
+
+  const meta = FINE_TYPES[type];
+  let theAmount;
+  let theReason = (reason && String(reason).trim()) || meta.reason || null;
+
+  if (meta.setting) {
+    // A named kind: the amount comes from the group's Fine Settings and can
+    // never be changed on the screen. If the kind is switched off, refuse it.
+    const configured = await configuredAmount(type);
+    if (!(configured > 0)) {
+      return res.status(400).json({ message: 'That fine is not set by the group yet.' });
+    }
+    theAmount = configured;
+    // A reason may be given, but the fixed kind also carries its own wording.
+    theReason = theReason || meta.reason;
+  } else {
+    // "Other": the treasurer enters the amount, and must say what it was for.
+    const value = Number(amount);
+    if (amount === undefined || amount === null || amount === '' || Number.isNaN(value)) {
+      return res.status(400).json({ message: 'Enter an amount.' });
+    }
+    if (value <= 0) return res.status(400).json({ message: 'The amount must be above zero.' });
+    if (!Number.isFinite(value) || value > 9999999999.99) {
+      return res.status(400).json({ message: 'That amount is not a valid figure.' });
+    }
+    if (!theReason) return res.status(400).json({ message: 'Give the reason for this fine.' });
+    theAmount = value;
   }
 
   const member = await one(
@@ -93,17 +164,33 @@ const recordFine = wrap(async (req, res) => {
 
   const cycle = await getActiveCycle();
   const fine = await one(
-    `INSERT INTO fines (member_id, cycle_id, amount, reason, paid, date, recorded_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, amount::float, date`,
-    [member_id, cycle ? cycle.id : null, amount, reason || null, !!paid,
-     date || new Date().toISOString().slice(0, 10), req.user.id]
+    `INSERT INTO fines (member_id, cycle_id, amount, reason, fine_type, paid, date, recorded_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, amount::float, date, fine_type`,
+    [member_id, cycle ? cycle.id : null, theAmount, theReason, type, !!paid, theDate, req.user.id]
   );
 
   const [sms] = await emit(EVENTS.FINE_RECORDED, {
-    recordedBy: req.user.id, member, fine, reason: reason || null,
+    recordedBy: req.user.id, member, fine, reason: theReason,
   });
 
-  res.status(201).json({ message: `Fine recorded for ${member.full_name}.`, fine, sms_sent: !!(sms && sms.ok) });
+  res.status(201).json({
+    message: `Fine recorded for ${member.full_name}.`,
+    fine, sms_sent: !!(sms && sms.ok),
+  });
+});
+
+// GET /api/fines/types — the fine kinds and the amount the group has set
+const listFineTypes = wrap(async (req, res) => {
+  const types = [];
+  for (const [key, meta] of Object.entries(FINE_TYPES)) {
+    types.push({
+      key,
+      fixed: !!meta.setting,
+      amount: meta.setting ? await configuredAmount(key) : null,
+      reason: meta.reason,
+    });
+  }
+  res.json(types);
 });
 
 // GET /api/fines
@@ -112,9 +199,15 @@ const listFines = wrap(async (req, res) => {
   const where = [];
   if (req.user.role === 'member') { params.push(req.user.member_id); where.push(`f.member_id = $${params.length}`); }
   else if (req.query.member_id) { params.push(req.query.member_id); where.push(`f.member_id = $${params.length}`); }
+  // The paid/unpaid switch and the date window the treasurer filters on.
+  if (req.query.paid === 'true') where.push(`f.paid = TRUE`);
+  else if (req.query.paid === 'false') where.push(`f.paid = FALSE`);
+  if (req.query.fine_type) { params.push(req.query.fine_type); where.push(`f.fine_type = $${params.length}`); }
+  if (req.query.from) { params.push(req.query.from); where.push(`f.date >= $${params.length}`); }
+  if (req.query.to) { params.push(req.query.to); where.push(`f.date <= $${params.length}`); }
 
   const rows = await query(
-    `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.member_id,
+    `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.member_id, f.fine_type,
             f.meeting_id, f.cycle_id, to_char(f.date,'YYYY-MM') AS month,
             c.cycle_name, mt.meeting_date,
             m.membership_number, u.full_name, (m.avatar IS NOT NULL) AS has_avatar
@@ -159,7 +252,19 @@ const finesSummary = wrap(async (req, res) => {
             COUNT(*)::int AS count
        FROM fines`
   );
-  res.json(row);
+  // One line per kind of fine, so the treasurer sees where the money comes from.
+  const byType = await query(
+    `SELECT fine_type,
+            COALESCE(SUM(amount),0)::float AS total,
+            COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
+            COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding,
+            COUNT(*)::int AS count
+       FROM fines GROUP BY fine_type ORDER BY total DESC`
+  );
+  res.json({ ...row, by_type: byType });
 });
 
-module.exports = { recordFine, listFines, markPaid, deleteFine, finesSummary, createAbsenceFine, backfillAbsenceFines };
+module.exports = {
+  recordFine, listFines, listFineTypes, markPaid, deleteFine, finesSummary,
+  createAbsenceFine, backfillAbsenceFines, FINE_TYPES,
+};

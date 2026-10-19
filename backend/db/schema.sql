@@ -256,6 +256,9 @@ ALTER TABLE share_out_details ADD COLUMN IF NOT EXISTS unrecovered NUMERIC(12,2)
 -- A fine can now point at the meeting it came from (the automatic absence fine),
 -- so the records can show which meeting and cycle a member has to pay for.
 ALTER TABLE fines ADD COLUMN IF NOT EXISTS meeting_id INT REFERENCES meetings(id) ON DELETE SET NULL;
+-- The kind of fine it is (absence, late, misconduct, other). The amount for the
+-- named kinds is fixed by the group's Fine Settings; "other" is entered freely.
+ALTER TABLE fines ADD COLUMN IF NOT EXISTS fine_type VARCHAR(20) NOT NULL DEFAULT 'other';
 CREATE INDEX IF NOT EXISTS idx_fines_member ON fines(member_id);
 
 -- The fixed monthly contribution every member pays for the group's wrappers.
@@ -311,7 +314,9 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('welfare_contribution', '200'),
   ('registration_fee', '1000'),
   ('monthly_levy', '3000'),
-  ('absence_fine', '0')
+  ('absence_fine', '0'),
+  ('late_fine', '0'),
+  ('misconduct_fine', '0')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- The group agreed: a member may borrow 2 times her savings (it used to be 3).

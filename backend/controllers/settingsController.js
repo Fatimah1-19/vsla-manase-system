@@ -19,6 +19,8 @@ const GROUP_RULES = {
   registration_fee: 'One-off registration fee paid when a new member joins (MWK)',
   monthly_levy: 'Monthly contribution every member pays for the group wrappers (MWK)',
   absence_fine: 'Fine for missing a meeting without a reason (MWK)',
+  late_fine: 'Fine for coming late to a meeting (MWK)',
+  misconduct_fine: 'Fine for misconduct at a meeting (MWK)',
   case_voting_days: 'How many days a vote about a member stays open',
   case_quorum_percent: 'Share of members who must vote for the result to count (%)',
   case_dismiss_percent: 'Share of yes votes needed to dismiss a member (%)',
@@ -33,7 +35,8 @@ const isGroupRule = (key) => key in GROUP_RULES || key.startsWith('include_');
 
 const GROUP_NUMERIC = [
   'loan_multiplier', 'default_interest_rate', 'weekly_share_value', 'welfare_contribution',
-  'registration_fee', 'monthly_levy', 'absence_fine', 'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
+  'registration_fee', 'monthly_levy', 'absence_fine', 'late_fine', 'misconduct_fine',
+  'case_voting_days', 'case_quorum_percent', 'case_dismiss_percent',
   'office_voting_days', 'office_quorum_percent',
 ];
 

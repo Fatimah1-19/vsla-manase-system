@@ -262,6 +262,28 @@ async function check(n, title, fn) {
     assert.ok(finesPage.includes('canRecordMoney'), 'the fine screen must gate its write');
   });
 
+  await check(38, 'the fine types follow the group\u2019s configured amounts', () => {
+    const ctrl = controllers('fineController.js');
+    assert.ok(routes('fineRoutes.js').includes("router.get('/types', c.listFineTypes)"),
+      'the fine kinds and their amounts must be offered');
+    assert.ok(ctrl.includes('FINE_TYPES') && ctrl.includes("setting: 'absence_fine'"),
+      'absence, late and misconduct must each point at a configured setting');
+    assert.ok(ctrl.includes('configuredAmount(type)') && ctrl.includes('if (meta.setting)'),
+      'only "other" takes a typed amount');
+    assert.ok(ctrl.includes('That fine is not set by the group yet'),
+      'a switched-off fine kind must be refused');
+    assert.ok(ctrl.includes("todayISO()") && ctrl.includes('cannot be in the future'),
+      'a fine can never be dated ahead of today');
+    assert.ok(finesPage.includes("fixedAmount != null") && finesPage.includes('readOnly'),
+      'a fixed fine\u2019s amount cannot be edited on the screen');
+    assert.ok(finesPage.includes("value={typeFilter}") && finesPage.includes('fines.allTypes'),
+      'the page must filter by member, kind and date');
+    assert.ok(ctrl.includes('by_type') && finesPage.includes('summary?.by_type'),
+      'the fines by kind must be summarised');
+    assert.ok(can('treasurer', 'system.settings') === false,
+      'the treasurer still cannot quietly change the configured amounts');
+  });
+
   await check(13, 'the treasurer can view and record welfare', () => {
     assert.ok(routes('welfareRoutes.js').includes("router.post('/contribution', requirePermission('welfare.record')")
       && routes('welfareRoutes.js').includes("router.post('/payout', requirePermission('welfare.record')"));

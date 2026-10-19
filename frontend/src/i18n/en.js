@@ -187,6 +187,8 @@ const base = {
   fines: {
     title: 'Fines', record: 'Record a fine', paid: 'Paid', unpaid: 'Not paid',
     markPaid: 'Mark as paid', collected: 'Collected', empty: 'No fines recorded.',
+    type: 'Fine type', allTypes: 'All fines',
+    typeAbsence: 'Absence', typeLate: 'Late coming', typeMisconduct: 'Misconduct', typeOther: 'Other',
   },
 
   shareout: {

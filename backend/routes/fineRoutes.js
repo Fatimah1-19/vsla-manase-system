@@ -4,6 +4,7 @@ const { protect, requirePermission, blockSystemAdmin } = require('../middleware/
 
 router.use(protect, blockSystemAdmin);
 router.get('/', c.listFines);
+router.get('/types', c.listFineTypes);
 router.get('/summary', requirePermission('fines.viewAll'), c.finesSummary);
 router.post('/', requirePermission('fines.record'), c.recordFine);
 router.patch('/:id/pay', requirePermission('fines.record'), c.markPaid);

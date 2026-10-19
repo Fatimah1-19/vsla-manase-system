@@ -12,6 +12,8 @@ const DEFAULT_SETTINGS = [
   ['registration_fee', '1000'],      // one-off fee a new member pays to join
   ['monthly_levy', '3000'],          // every member, every month, for the group's wrappers
   ['absence_fine', '0'],             // fine for missing a meeting without a reason (0 = off)
+  ['late_fine', '0'],                // fine for coming late to a meeting (0 = off)
+  ['misconduct_fine', '0'],          // fine for misconduct at a meeting (0 = off)
 ];
 
 // Demo people. Change the phone numbers to real ones to test SMS.
