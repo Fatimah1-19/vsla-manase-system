@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -31,6 +32,12 @@ export default function Savings() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);   // the entry being corrected
+
+  // The treasurer's menu can open this page on its summary or on its history.
+  const [params] = useSearchParams();
+  const view = params.get('view');
+  const showSummary = view !== 'history';
+  const showHistory = view !== 'summary';
 
   const load = useCallback(async () => {
     const [list, sum, mem] = await Promise.all([
@@ -178,7 +185,7 @@ export default function Savings() {
         </div>
       )}
 
-      {summary && (
+      {summary && showSummary && (
         <div className="page-grid page-grid--stat">
           <StatCard label={t('savings.thisCycle')} value={money(summary.total_savings)} tone="gold" big />
           <StatCard label={t('common.total')} value={`${summary.entries} entries`} />
@@ -186,37 +193,41 @@ export default function Savings() {
         </div>
       )}
 
-      <div className="toolbar">
-        <input
-          className="toolbar__grow"
-          type="search"
-          placeholder={t('common.search')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label={t('common.search')}
-        />
-      </div>
+      {showHistory && (
+        <>
+          <div className="toolbar">
+            <input
+              className="toolbar__grow"
+              type="search"
+              placeholder={t('common.search')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label={t('common.search')}
+            />
+          </div>
 
-      {groups.length === 0 ? (
-        <EmptyState
-          title={t('savings.empty')}
-          action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
-        />
-      ) : (
-        groups.map((g) => (
-          <section key={g.key} className="savings__month">
-            <div className="savings__monthHead">
-              <h2 className="savings__monthTitle">{monthLong(g.key)}</h2>
-              <span className="savings__monthTotal money">{money(g.total)}</span>
-            </div>
-            {g.dates.map((d) => (
-              <div key={d.key} className="savings__day">
-                <h3 className="savings__dayTitle">{shortDate(d.key)}</h3>
-                <Ledger columns={groupColumns} rows={d.rows} />
-              </div>
-            ))}
-          </section>
-        ))
+          {groups.length === 0 ? (
+            <EmptyState
+              title={t('savings.empty')}
+              action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
+            />
+          ) : (
+            groups.map((g) => (
+              <section key={g.key} className="savings__month">
+                <div className="savings__monthHead">
+                  <h2 className="savings__monthTitle">{monthLong(g.key)}</h2>
+                  <span className="savings__monthTotal money">{money(g.total)}</span>
+                </div>
+                {g.dates.map((d) => (
+                  <div key={d.key} className="savings__day">
+                    <h3 className="savings__dayTitle">{shortDate(d.key)}</h3>
+                    <Ledger columns={groupColumns} rows={d.rows} />
+                  </div>
+                ))}
+              </section>
+            ))
+          )}
+        </>
       )}
 
       <Modal

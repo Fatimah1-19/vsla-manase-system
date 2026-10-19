@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -27,6 +28,12 @@ export default function Fines() {
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [removeReason, setRemoveReason] = useState('');
+
+  // Her menu can open the fines on the unpaid list or on the whole history.
+  const [params] = useSearchParams();
+  const view = params.get('view');
+  const showOutstanding = view !== 'history';
+  const showHistory = view !== 'outstanding';
 
   const load = useCallback(async () => {
     setRows(await api.get('/fines'));
@@ -149,7 +156,7 @@ export default function Fines() {
         <StatCard label={t('fines.count')} value={plainNumber(rows.length)} icon="fines" />
       </div>
 
-      {due.length > 0 && (
+      {showOutstanding && due.length > 0 && (
         <section className="fines__due">
           <h2 className="fines__dueTitle">{t('fines.toCollectTitle')}</h2>
           <p className="fines__dueNote muted">{t('fines.toCollectNote')}</p>
@@ -178,7 +185,7 @@ export default function Fines() {
         </section>
       )}
 
-      <Ledger columns={columns} rows={rows} empty={<EmptyState title={t('fines.empty')} />} />
+      {showHistory && <Ledger columns={columns} rows={rows} empty={<EmptyState title={t('fines.empty')} />} />}
 
       <Modal
         open={open}

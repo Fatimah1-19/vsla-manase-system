@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -58,6 +59,7 @@ export default function Loans() {
   const { t } = useLang();
   const { user, isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
+  const location = useLocation();
 
   const [loans, setLoans] = useState(null);
   const [members, setMembers] = useState([]);
@@ -109,14 +111,16 @@ export default function Loans() {
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
-  // ?tab=repayments opens the repayment history directly. Both the chairperson
-  // and the treasurer link to it from their menus.
+  // Her menu opens the loans on a particular list: ?tab=repayments shows the
+  // repayment history, ?filter=... picks a status, ?action=record opens the
+  // record-repayment panel. The chairperson links here too.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('tab') === 'repayments') {
-      openRepayments();
-    }
+    const q = new URLSearchParams(location.search);
+    if (q.get('tab') === 'repayments') openRepayments();
+    else if (q.get('filter')) setFilter(q.get('filter'));
+    if (q.get('action') === 'record') openRecord();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.search]);
 
   const change = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
@@ -279,7 +283,11 @@ export default function Loans() {
   if (!loans) return <Spinner />;
 
   const listQuery = listSearch.trim().toLowerCase();
-  const shown = (filter === 'all' ? loans : loans.filter((l) => l.status === filter))
+  const isOverdue = (l) => l.status === 'approved' && l.outstanding > 0
+    && l.due_date && new Date(l.due_date) < new Date();
+  const shown = (filter === 'all' ? loans
+    : filter === 'overdue' ? loans.filter(isOverdue)
+    : loans.filter((l) => l.status === filter))
     .filter((l) => !listQuery || l.full_name.toLowerCase().includes(listQuery));
   const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
 
@@ -346,7 +354,7 @@ export default function Loans() {
       />
 
       <div className="loans__filters" role="group" aria-label={t('common.status')}>
-        {['all', 'pending', 'approved', 'repaid', 'rejected', 'repayments'].map((f) => (
+        {['all', 'pending', 'approved', 'overdue', 'repaid', 'rejected', 'repayments'].map((f) => (
           <button
             key={f}
             type="button"

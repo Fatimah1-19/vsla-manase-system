@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -31,6 +32,12 @@ export default function Welfare() {
   const [payout, setPayout] = useState(blankPayout);
   const [contribution, setContribution] = useState(blankContribution);
   const [busy, setBusy] = useState(false);
+
+  // Her menu can open the welfare fund on its summary or on its history.
+  const [params] = useSearchParams();
+  const view = params.get('view');
+  const showSummary = view !== 'history';
+  const showHistory = view !== 'summary';
 
   const load = useCallback(async () => {
     const [b, list] = await Promise.all([api.get('/welfare/balance'), api.get('/welfare')]);
@@ -126,13 +133,15 @@ export default function Welfare() {
         )}
       />
 
-      <div className="page-grid page-grid--stat">
-        <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
-        <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
-        <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
-      </div>
+      {showSummary && (
+        <div className="page-grid page-grid--stat">
+          <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
+          <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
+          <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
+        </div>
+      )}
 
-      <Ledger columns={columns} rows={rows} />
+      {showHistory && <Ledger columns={columns} rows={rows} />}
 
       {/* ---- give help ---- */}
       <Modal

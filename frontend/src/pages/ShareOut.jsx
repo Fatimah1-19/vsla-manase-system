@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -29,6 +30,12 @@ export default function ShareOut() {
   const [busy, setBusy] = useState(false);
 
   const canRun = canRecordMoney;
+
+  // Her menu can open the share-out on its records or on its history.
+  const [params] = useSearchParams();
+  const view = params.get('view');
+  const showRecords = view !== 'history';
+  const showHistory = view !== 'records';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -230,14 +237,14 @@ export default function ShareOut() {
         </div>
       )}
 
-      {preview?.shares?.length > 0 && (
+      {showRecords && preview?.shares?.length > 0 && (
         <>
           <h2 className="shareout__h2">{t('shareout.perMember')}</h2>
           <Ledger columns={columns} rows={preview.shares} keyField="member_id" />
         </>
       )}
 
-      {history.length > 0 && (
+      {showHistory && history.length > 0 && (
         <section className="shareout__history">
           <h2 className="shareout__h2">{t('common.total')}</h2>
           <ul className="shareout__historyList">
