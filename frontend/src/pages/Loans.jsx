@@ -56,7 +56,7 @@ function groupRepayments(rows) {
 
 export default function Loans() {
   const { t } = useLang();
-  const { user, isCommittee, isRecorder } = useAuth();
+  const { user, isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
 
   const [loans, setLoans] = useState(null);
@@ -88,7 +88,7 @@ export default function Loans() {
   const [listSearch, setListSearch] = useState('');
 
   const canDecide = ['admin', 'treasurer'].includes(user.role);
-  const canRecordRepayment = isRecorder;
+  const canRecordRepayment = canRecordMoney;
 
   // How much she may borrow: her savings times the group's multiplier.
   const [limit, setLimit] = useState(null);

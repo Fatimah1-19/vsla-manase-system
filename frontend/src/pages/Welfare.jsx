@@ -21,7 +21,7 @@ const blankContribution = { member_id: '', amount: '', date: inputDate(), notes:
 
 export default function Welfare() {
   const { t } = useLang();
-  const { isCommittee, isRecorder } = useAuth();
+  const { isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
 
   const [balance, setBalance] = useState(null);
@@ -114,7 +114,7 @@ export default function Welfare() {
       <PageHeader
         title={t('welfare.title')}
         subtitle="Money the group keeps aside for sickness, funerals and emergencies."
-        action={isRecorder && (
+        action={canRecordMoney && (
           <>
             <button type="button" className="btn" onClick={() => setMode('contribution')}>
               {t('welfare.contribute')}

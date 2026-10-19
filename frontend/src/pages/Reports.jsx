@@ -35,10 +35,33 @@ const CATEGORIES = [
   { key: 'members', label: 'reportMembers' },
   { key: 'status', label: 'reportStatus' },
   { key: 'requests', label: 'reportRequests' },
+  { key: 'newMembers', label: 'reportNewMembers' },
+  { key: 'inactiveMembers', label: 'reportInactive' },
+  { key: 'changes', label: 'reportChanges' },
+  { key: 'history', label: 'reportHistory' },
+  { key: 'meetings', label: 'reportMeetings' },
 ];
 
 // Reports that only make sense for the whole group.
-const GROUP_ONLY = ['welfare', 'shareout', 'status', 'requests'];
+const GROUP_ONLY = ['welfare', 'shareout', 'status', 'requests',
+  'newMembers', 'inactiveMembers', 'changes', 'history', 'meetings'];
+
+const MEMBERSHIP_EVENT_KEYS = {
+  joined: 'evJoined', approved: 'evApproved', rejected: 'evRejected',
+  deactivated: 'evDeactivated', reactivated: 'evReactivated',
+  status_changed: 'evStatusChanged', record_updated: 'evRecordUpdated',
+  unlocked: 'evUnlocked', membership_event: 'evOther',
+};
+const EVENT_STATUS_KEYS = {
+  active: 'members.active', inactive: 'members.inactive',
+  approved: 'members.statusApproved', rejected: 'members.statusRejected',
+};
+const EVENT_STATUS_TONES = {
+  active: 'tag--green', approved: 'tag--green', inactive: 'tag--red', rejected: 'tag--red',
+};
+// A "change" is any membership event other than the joining itself.
+const CHANGE_KEYS = ['approved', 'rejected', 'deactivated', 'reactivated',
+  'status_changed', 'record_updated', 'unlocked', 'membership_event'];
 
 const loanStatusKey = (status) => (status === 'repaid' ? 'repaidStatus' : status);
 
@@ -79,6 +102,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   const [shareouts, setShareouts] = useState(null);
   const [allMembers, setAllMembers] = useState(null);
   const [joinReqs, setJoinReqs] = useState(null);
+  const [events, setEvents] = useState(null);       // the membership register's story
+  const [meetingRows, setMeetingRows] = useState(null);
 
   const load = useCallback(async () => {
     const q = new URLSearchParams({ status });
@@ -103,6 +128,19 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
       api.get('/requests').then((d) => setJoinReqs(d.requests)).catch((e) => toast.error(e.message));
     }
   }, [category, shareouts, allMembers, joinReqs, toast]);
+
+  // The newer group reports keep their own lists, pulled when their chip opens.
+  useEffect(() => {
+    if ((category === 'newMembers' || category === 'inactiveMembers') && allMembers === null) {
+      api.get('/members?all=true').then(setAllMembers).catch((e) => toast.error(e.message));
+    }
+    if ((category === 'changes' || category === 'history') && events === null) {
+      api.get('/users/history').then((d) => setEvents(d.events)).catch((e) => toast.error(e.message));
+    }
+    if (category === 'meetings' && meetingRows === null) {
+      api.get('/meetings').then(setMeetingRows).catch((e) => toast.error(e.message));
+    }
+  }, [category, allMembers, events, meetingRows, toast]);
 
   const chartYear = year || CURRENT_YEAR;
   useEffect(() => {
@@ -549,6 +587,160 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     </section>
   );
 
+  const newMembersPanel = allMembers !== null && (() => {
+    const list = allMembers
+      .filter((m) => m.date_joined && (!year || String(m.date_joined).slice(0, 4) === String(chartYear)))
+      .sort((a, b) => String(b.date_joined).localeCompare(String(a.date_joined)));
+    return (
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{t('reports.reportNewMembers')}</h2>
+        <p className="reports__repNote">{t('reports.reportNewMembersNote')}{year ? ` · ${chartYear}` : ''}</p>
+        <div className="page-grid page-grid--stat reports__totals">
+          <StatCard label={t('reports.memberNew')} value={plainNumber(list.length)} tone="blue" icon="members" />
+        </div>
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.name')}</th>
+                <th>{t('reports.reportNumber')}</th>
+                <th>{t('reports.reportJoined')}</th>
+                <th>{t('common.status')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((m) => (
+                <tr key={m.id}>
+                  <td>{m.full_name}</td>
+                  <td>{m.membership_number}</td>
+                  <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
+                  <td>
+                    <span className={`tag tag--${m.status === 'active' ? 'green' : 'red'}`}>
+                      {m.status === 'active' ? t('members.active') : t('members.inactive')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!list.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+        </div>
+      </section>
+    );
+  })();
+
+  const inactivePanel = allMembers !== null && (() => {
+    const list = allMembers.filter((m) => m.status !== 'active');
+    return (
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{t('reports.reportInactive')}</h2>
+        <p className="reports__repNote">{t('reports.reportInactiveNote')}</p>
+        <div className="page-grid page-grid--stat reports__totals">
+          <StatCard label={t('members.inactive')} value={plainNumber(list.length)} tone="red" icon="members" />
+        </div>
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.name')}</th>
+                <th>{t('reports.reportNumber')}</th>
+                <th>{t('reports.reportJoined')}</th>
+                <th>{t('common.status')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((m) => (
+                <tr key={m.id}>
+                  <td>{m.full_name}</td>
+                  <td>{m.membership_number}</td>
+                  <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
+                  <td><span className="tag tag--red">{t('members.inactive')}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!list.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+        </div>
+      </section>
+    );
+  })();
+
+  const historyPanel = events !== null && (() => {
+    const list = category === 'changes' ? events.filter((e) => CHANGE_KEYS.includes(e.event_key)) : events;
+    return (
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{category === 'changes' ? t('reports.reportChanges') : t('reports.reportHistory')}</h2>
+        <p className="reports__repNote">{category === 'changes' ? t('reports.reportChangesNote') : t('reports.reportHistoryNote')}</p>
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.name')}</th>
+                <th>{t('members.colEvent')}</th>
+                <th>{t('common.date')}</th>
+                <th>{t('members.performedBy')}</th>
+                <th>{t('common.status')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((e) => (
+                <tr key={e.id}>
+                  <td>{e.member_name || <span className="muted">—</span>}</td>
+                  <td>{t(`members.${MEMBERSHIP_EVENT_KEYS[e.event_key] || 'evOther'}`)}</td>
+                  <td>{shortDate(e.occurred_at)}</td>
+                  <td>{e.performed_by || <span className="muted">—</span>}</td>
+                  <td>
+                    {e.status
+                      ? <span className={`tag ${EVENT_STATUS_TONES[e.status] || 'tag--grey'}`}>
+                          {t(EVENT_STATUS_KEYS[e.status] || 'common.none')}
+                        </span>
+                      : <span className="muted">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!list.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+        </div>
+      </section>
+    );
+  })();
+
+  const meetingsPanel = meetingRows !== null && (() => {
+    const list = [...meetingRows].sort((a, b) => String(b.meeting_date).localeCompare(String(a.meeting_date)));
+    return (
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{t('reports.reportMeetings')}</h2>
+        <p className="reports__repNote">{t('reports.reportMeetingsNote')}</p>
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.date')}</th>
+                <th>{t('meetings.agenda')}</th>
+                <th className="is-num">{t('meetings.present')}</th>
+                <th className="is-num">{t('meetings.marked')}</th>
+                <th>{t('meetings.recordedBy')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((m) => (
+                <tr key={m.id}>
+                  <td>{shortDate(m.meeting_date)}</td>
+                  <td>{m.agenda || <span className="muted">—</span>}</td>
+                  <td className="is-num">{plainNumber(m.present_count)}</td>
+                  <td className="is-num">{plainNumber(m.marked_count)}</td>
+                  <td>{m.recorded_by_name || <span className="muted">—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!list.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+        </div>
+      </section>
+    );
+  })();
+
   const memberSavingsPanel = report && (
     <section className="panel reports__panel">
       {memberHead}
@@ -638,11 +830,14 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     }
 
     if (!isMember) {
+      const ownList = ['shareout', 'status', 'requests', 'newMembers', 'inactiveMembers', 'changes', 'history', 'meetings'];
       if (category === 'shareout' && shareouts === null) return <Spinner />;
       if (category === 'status' && allMembers === null) return <Spinner />;
+      if ((category === 'newMembers' || category === 'inactiveMembers') && allMembers === null) return <Spinner />;
+      if ((category === 'changes' || category === 'history') && events === null) return <Spinner />;
+      if (category === 'meetings' && meetingRows === null) return <Spinner />;
       if (category === 'requests' && joinReqs === null) return <Spinner />;
-      if (category !== 'shareout' && category !== 'status' && category !== 'requests'
-        && !group) return <Spinner />;
+      if (!ownList.includes(category) && !group) return <Spinner />;
       if (category === 'contributions') return groupContributions;
       if (category === 'savings') return groupSavingsPanel;
       if (category === 'loans') return groupLoans;
@@ -652,6 +847,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
       if (category === 'shareout') return groupShareoutPanel;
       if (category === 'status') return statusPanel;
       if (category === 'requests') return requestsPanel;
+      if (category === 'newMembers') return newMembersPanel;
+      if (category === 'inactiveMembers') return inactivePanel;
+      if (category === 'changes' || category === 'history') return historyPanel;
+      if (category === 'meetings') return meetingsPanel;
       return null;
     }
 

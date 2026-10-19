@@ -267,13 +267,13 @@ function run(middleware, user) {
     'a corrected entry must write the old and new figures to the audit trail');
   assert.ok(savingsCtrl.includes("audit(req.user.id, 'DELETE_SAVING'"),
     'a removed entry must write who took it out to the audit trail');
-  // The page itself only offers recording to the treasurers and secretary.
+  // The page itself only offers recording to the treasurer; the secretary reads.
   const savingsPage = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Savings.jsx'), 'utf8');
-  assert.ok(savingsPage.includes('isRecorder && <button') || savingsPage.includes('action={isRecorder &&'),
-    'the record button is for the recorders only');
-  assert.ok(savingsPage.includes('{isRecorder && (') && savingsPage.includes("t('common.edit')"),
-    'the chairperson cannot open an entry for editing');
+  assert.ok(savingsPage.includes('canRecordMoney && <button') || savingsPage.includes('action={canRecordMoney &&'),
+    'the record button is the treasurer\'s alone');
+  assert.ok(savingsPage.includes('{canRecordMoney && (') && savingsPage.includes("t('common.edit')"),
+    'the chairperson and the secretary cannot open an entry for editing');
   assert.ok(savingsPage.includes('{isAdmin && (') && savingsPage.includes("t('common.del')"),
     'removing an entry stays an explicit, authorised action');
 
@@ -304,7 +304,7 @@ function run(middleware, user) {
   assert.ok(finesPage.includes("key: 'reason'"), 'the fine type is on the page');
   assert.ok(finesPage.includes('outstanding') && finesPage.includes('collected') && finesPage.includes('rows.length'),
     'recorded, paid and outstanding fines must all be shown');
-  assert.ok(finesPage.includes(': isRecorder'), 'only a recorder can settle a fine');
+  assert.ok(finesPage.includes(': canRecordMoney'), 'only the treasurer can settle a fine');
   assert.ok(finesPage.includes('isAdmin ? ['), 'only the chairperson sees the remove button');
   assert.ok(finesPage.includes('removeReason') && finesPage.includes('{ reason: removeReason.trim() }'),
     'a removal must carry a written reason into the audit trail');
@@ -336,7 +336,7 @@ function run(middleware, user) {
   }
   assert.ok(welfarePage.includes("key: 'full_name'") && welfarePage.includes("key: 'type'"),
     'contributions are listed per member with their status');
-  assert.ok(welfarePage.includes('action={isRecorder &&'), 'the chairperson sees no way to record');
+  assert.ok(welfarePage.includes('action={canRecordMoney &&'), 'the chairperson sees no way to record');
 
   // ---- share-out: monitored, confirmed by the chair, calculated by the system
   assert.ok(can('admin', 'shareout.view'), 'the chairperson may watch the share-out');
@@ -598,7 +598,8 @@ function run(middleware, user) {
   assert.ok(can('treasurer', 'savings.record') && can('treasurer', 'loans.record')
     && can('treasurer', 'welfare.record') && !can('treasurer', 'cases.manage'),
     'the treasurer records the money and does not lead');
-  assert.ok(can('secretary', 'meetings.record') && can('secretary', 'savings.record')
+  assert.ok(can('secretary', 'meetings.record') && can('secretary', 'members.documents')
+    && !can('secretary', 'savings.record') && !can('secretary', 'loans.record')
     && !can('secretary', 'joinRequests.decide') && !can('secretary', 'cases.manage')
     && !can('secretary', 'accounts.view'),
     'the secretary keeps the records and does not lead');
@@ -912,6 +913,76 @@ function run(middleware, user) {
   assert.ok(meetingCtrl.includes("['present', 'absent', 'excused']"),
     'the server accepts only the three attendance states the group uses');
 
+  // §13 the membership papers live with the register: the chairperson and the
+  // secretary file them and the committee may open them.
+  const memberRoutes = fs.readFileSync(
+    path.join(__dirname, '..', 'routes', 'memberRoutes.js'), 'utf8');
+  assert.ok(memberRoutes.includes("requirePermission('members.documents')")
+    && memberRoutes.includes("router.post('/:id/documents'")
+    && memberRoutes.includes("router.delete('/:id/documents/:docId'"),
+    'the membership papers are filed by the chairperson and the secretary');
+  assert.ok(can('admin', 'members.documents') && can('secretary', 'members.documents')
+    && !can('treasurer', 'members.documents') && !can('member', 'members.documents'),
+    'filing a membership paper is the register keepers work');
+  const noPaperFile = await run(requirePermission('members.documents'), { role: 'treasurer' });
+  assert.strictEqual(noPaperFile.status, 403, 'the treasurer does not file the membership papers');
+  assert.ok(docCtrl.includes('uploadMemberDocument') && docCtrl.includes('deleteMemberDocument')
+    && docCtrl.includes('document_type') && docCtrl.includes('MAX_DOC_BYTES'),
+    'the membership papers are checked like every other document');
+  assert.ok(docCtrl.includes('member_id = $2'),
+    'a paper belongs to the member record it was filed under');
+  assert.ok(membersScreen.includes('`/members/${detail.member_id}/documents`')
+    && membersScreen.includes('members.confirmDocRemove') && membersScreen.includes('uploadMemberDoc'),
+    'the register lets the chairperson and the secretary file and remove a paper');
+
+  // §14 the administrative records page: the written record, never the money.
+  const recordsSrc = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'AdministrativeRecords.jsx'), 'utf8');
+  assert.ok(routeLine('records').includes('AdministrativeRecords')
+    && routeLine('records').includes('COMMITTEE'),
+    'the administrative records page is open to the committee only');
+  const recordsNav = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'navItems.js'), 'utf8');
+  assert.ok(recordsNav.includes("to: '/app/records'") && recordsNav.includes("key: 'nav.adminRecords'"),
+    'the secretary reaches the administrative records from her sidebar');
+  assert.ok(recordsSrc.includes('records.moneyNote'),
+    'the page says the money books belong to the treasurer');
+
+  // §15 the money books are the treasurer's to write in; the secretary reads.
+  assert.ok(authContext.includes("canRecordMoney: user?.role === 'treasurer'"),
+    'the app knows only the treasurer writes in the money books');
+  for (const perm of ['savings.record', 'loans.record', 'fines.record', 'contributions.record',
+                      'welfare.record', 'shareout.record', 'cases.settlement']) {
+    assert.ok(can('treasurer', perm) && !can('secretary', perm),
+      `the money door ${perm} is the treasurer's alone`);
+  }
+  for (const file of ['Savings.jsx', 'Loans.jsx', 'Fines.jsx', 'Welfare.jsx', 'ShareOut.jsx',
+                      'Wrappers.jsx', 'Cases.jsx']) {
+    const moneyScreen = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', file), 'utf8');
+    assert.ok(moneyScreen.includes('canRecordMoney') && !moneyScreen.includes('isRecorder'),
+      `${file} must read the money gate from the treasurer flag`);
+  }
+
+  // §16 the newer group reports read from the records the group already keeps.
+  assert.ok(reportsScreen.includes("'newMembers'") && reportsScreen.includes("'inactiveMembers'")
+    && reportsScreen.includes("'changes'") && reportsScreen.includes("'history'")
+    && reportsScreen.includes("'meetings'"),
+    'the reports screen offers new members, inactive members, changes, history and meetings');
+  assert.ok(reportsScreen.includes("'/users/history'") && reportsScreen.includes("'/meetings'")
+    && reportsScreen.includes("'/members?all=true'"),
+    'every new report reads from the records the group already keeps');
+  assert.ok(!/exportCsv|downloadCsv/.test(reportsScreen),
+    'no report invents a file the group never kept');
+  for (const file of ['en.extra.js', 'ny.extra.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    for (const key of ['reportNewMembers', 'reportInactive', 'reportChanges', 'reportHistory',
+                       'reportMeetings']) {
+      assert.ok(new RegExp(`\\b${key}: `).test(dict), `${file} must carry reports.${key}`);
+    }
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
@@ -954,7 +1025,7 @@ function run(middleware, user) {
                       "to: '/app/members?view=history'", "to: '/app/meetings',",
                       "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
                       "to: '/app/members?view=details'", "to: '/app/members?view=documents'",
-                      "to: '/app/activity?view=audit'", "to: '/app/activity',",
+                      "to: '/app/records',", "to: '/app/activity',",
                       "to: '/app/profile',", "to: '/app/profile?tab=account'"]) {
     assert.ok(secTargets.includes(page), `the secretary menu must include ${page}`);
   }

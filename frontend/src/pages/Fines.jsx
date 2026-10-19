@@ -17,7 +17,7 @@ const blank = { member_id: '', amount: '', reason: '', date: inputDate(), paid: 
 
 export default function Fines() {
   const { t } = useLang();
-  const { isCommittee, isRecorder, isAdmin } = useAuth();
+  const { isCommittee, canRecordMoney, isAdmin } = useAuth();
   const toast = useToast();
 
   const [rows, setRows] = useState(null);
@@ -118,7 +118,7 @@ export default function Fines() {
       render: (r) => (
         r.paid
           ? <span className="tag tag--green">{t('fines.paid')}</span>
-          : isRecorder
+          : canRecordMoney
             ? <button type="button" className="btn btn--small btn--ghost" onClick={(e) => { e.stopPropagation(); markPaid(r.id); }}>
                 {t('fines.markPaid')}
               </button>
@@ -135,7 +135,7 @@ export default function Fines() {
     <div className="fines">
       <PageHeader
         title={t('fines.title')}
-        action={isRecorder && (
+        action={canRecordMoney && (
           <button type="button" className="btn" onClick={() => setOpen(true)}>{t('fines.record')}</button>
         )}
       />

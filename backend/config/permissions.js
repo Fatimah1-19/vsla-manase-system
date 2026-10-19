@@ -29,27 +29,29 @@ const GROUPS = {
  */
 const PERMISSIONS = {
   // ---- savings ----
+  // The secretary reads the money books for her records; the treasurer alone
+  // writes in them. Nobody but the chairperson takes an entry out.
   'savings.view': ['admin', 'treasurer', 'secretary'],
-  'savings.record': ['treasurer', 'secretary'],
+  'savings.record': ['treasurer'],
   'savings.delete': ['admin'],
 
   // ---- loans ----
   'loans.viewAll': ['admin', 'treasurer', 'secretary'],
   'loans.decide': ['admin', 'treasurer'],
-  'loans.record': ['treasurer', 'secretary'],
+  'loans.record': ['treasurer'],
 
   // ---- fines ----
   'fines.viewAll': ['admin', 'treasurer', 'secretary'],
-  'fines.record': ['treasurer', 'secretary'],
+  'fines.record': ['treasurer'],
   'fines.delete': ['admin'],
 
   // ---- monthly wrappers (contributions) ----
   'contributions.view': ['admin', 'treasurer', 'secretary'],
-  'contributions.record': ['treasurer', 'secretary'],
+  'contributions.record': ['treasurer'],
   'contributions.delete': ['admin'],
 
   // ---- welfare ----
-  'welfare.record': ['treasurer', 'secretary'],
+  'welfare.record': ['treasurer'],
 
   // ---- registration fees ----
   'registration.view': ['admin', 'treasurer', 'secretary'],
@@ -58,7 +60,7 @@ const PERMISSIONS = {
 
   // ---- share-out ----
   'shareout.view': ['admin', 'treasurer', 'secretary'],
-  'shareout.record': ['treasurer', 'secretary'],
+  'shareout.record': ['treasurer'],
 
   // ---- reports and analytics ----
   'reports.view': ['admin', 'treasurer', 'secretary'],
@@ -80,6 +82,8 @@ const PERMISSIONS = {
   // The secretary enters new people into the register; she never manages the users.
   'members.create': ['admin', 'secretary'],
   'members.edit': ['admin', 'secretary'],
+  // Membership papers (forms, copies of the record) are kept with the register.
+  'members.documents': ['admin', 'secretary'],
   'approvals.view': ['admin', 'treasurer'],
   'approvals.decide': ['admin', 'treasurer'],
   // The rules the group lives by: the administrator keeps every one of them now.
@@ -87,7 +91,8 @@ const PERMISSIONS = {
   'groupRules.propose': ['admin', 'system_admin'],
   'joinRequests.decide': ['admin', 'treasurer'],
   'cases.manage': ['admin'],
-  'cases.settlement': ['treasurer', 'secretary'],
+  // Paying a settlement is a money matter, so it stays with the treasurer.
+  'cases.settlement': ['treasurer'],
   'officeVotes.manage': ['admin', 'treasurer', 'secretary'],
 
   // ---- the system administrator (accounts and the system itself) ----

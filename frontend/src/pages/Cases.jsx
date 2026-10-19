@@ -16,7 +16,7 @@ const OUTCOME_TAG = { passed: 'tag--green', rejected: 'tag--red', lapsed: 'tag--
 
 export default function Cases() {
   const { t } = useLang();
-  const { isAdmin, isRecorder, user } = useAuth();
+  const { isAdmin, canRecordMoney, user } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
   const [params, setParams] = useSearchParams();
@@ -260,7 +260,7 @@ export default function Cases() {
                     onClick={() => carryOut(c)}>{t('cases.carryOut')}</button>
                 )}
                 {c.action === 'dismiss' && c.status === 'passed' && c.executed_at && !c.settlement_paid_on
-                  && c.settlement_amount != null && Number(c.settlement_amount) > 0 && isRecorder && (
+                  && c.settlement_amount != null && Number(c.settlement_amount) > 0 && canRecordMoney && (
                   <button type="button" className="btn btn--small" disabled={busy}
                     onClick={() => recordSettled(c)}>{t('cases.recordSettled')}</button>
                 )}

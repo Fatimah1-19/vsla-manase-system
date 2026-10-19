@@ -4955,3 +4955,15 @@ section[id] { scroll-margin-top: 4.5rem; }
 /* ---- meetings: the status of each meeting ---- */
 .meetings__status { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.35rem; }
 
+/* ---- administrative records: the secretary's index of the written record ---- */
+.records__groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; }
+.records__group { padding: 0.9rem 1rem; }
+.records__links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.records__link { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.5rem; border-radius: 8px; text-decoration: none; color: inherit; }
+.records__link:hover { background: rgba(0, 0, 0, 0.04); }
+.records__icon { display: inline-flex; color: var(--slate); }
+.records__note { margin-top: 1rem; font-size: 0.85rem; color: var(--slate); }
+
+/* ---- member documents kept with the register ---- */
+.members__docUpload { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; margin-bottom: 0.7rem; padding: 0.7rem; border: 1px dashed rgba(0, 0, 0, 0.15); border-radius: 8px; }
+

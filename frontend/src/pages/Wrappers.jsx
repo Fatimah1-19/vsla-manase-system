@@ -24,7 +24,7 @@ const STATUS_TAG = { paid: 'green', partial: 'gold', unpaid: 'red' };
  */
 export default function Wrappers() {
   const { t } = useLang();
-  const { isCommittee, isRecorder, isAdmin } = useAuth();
+  const { isCommittee, canRecordMoney, isAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
@@ -135,7 +135,7 @@ export default function Wrappers() {
       render: (r) => (r.balance > 0 ? <span className="money money--neg">{money(r.balance)}</span> : '—') },
     { key: 'status', label: t('common.status'),
       render: (r) => <span className={`tag tag--${STATUS_TAG[r.status]}`}>{t(`wrappers.${r.status}`)}</span> },
-    ...(isRecorder ? [{ key: 'x', label: '', align: 'right',
+    ...(canRecordMoney ? [{ key: 'x', label: '', align: 'right',
       render: (r) => r.balance > 0 && (
         <button type="button" className="btn btn--small" onClick={() => startRecord(r)}>{t('wrappers.record')}</button>
       ) }] : []),
@@ -146,7 +146,7 @@ export default function Wrappers() {
       <PageHeader
         title={t('wrappers.title')}
         subtitle={t('wrappers.explain', money(view.levy))}
-        action={isRecorder && <button type="button" className="btn" onClick={() => startRecord(null)}>{t('wrappers.record')}</button>}
+        action={canRecordMoney && <button type="button" className="btn" onClick={() => startRecord(null)}>{t('wrappers.record')}</button>}
       />
 
       <div className="toolbar">

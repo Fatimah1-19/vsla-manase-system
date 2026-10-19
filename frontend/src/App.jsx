@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Savings from './pages/Savings.jsx';
 import Loans from './pages/Loans.jsx';
 import Members from './pages/Members.jsx';
+import AdministrativeRecords from './pages/AdministrativeRecords.jsx';
 import Meetings from './pages/Meetings.jsx';
 import Welfare from './pages/Welfare.jsx';
 import Fines from './pages/Fines.jsx';
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="wrappers" element={<ProtectedRoute roles={EVERYONE}><Wrappers /></ProtectedRoute>} />
         <Route path="loans"    element={<ProtectedRoute roles={EVERYONE}><Loans /></ProtectedRoute>} />
         <Route path="members"  element={<ProtectedRoute roles={COMMITTEE}><Members /></ProtectedRoute>} />
+        <Route path="records"  element={<ProtectedRoute roles={COMMITTEE}><AdministrativeRecords /></ProtectedRoute>} />
         <Route path="meetings" element={<ProtectedRoute roles={EVERYONE}><Meetings /></ProtectedRoute>} />
         <Route path="welfare"  element={<ProtectedRoute roles={EVERYONE}><Welfare /></ProtectedRoute>} />
         <Route path="fines"    element={<ProtectedRoute roles={EVERYONE}><Fines /></ProtectedRoute>} />

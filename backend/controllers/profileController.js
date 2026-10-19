@@ -231,4 +231,50 @@ const deleteDocument = wrap(async (req, res) => {
   res.json({ message: 'Document removed.' });
 });
 
-module.exports = { getMyProfile, updateMyProfile, setAvatar, getAvatar, uploadDocument, downloadDocument, deleteDocument };
+// POST /api/members/:id/documents — the chairperson and the secretary keep the
+// membership papers (a form, a copy of the record) with the register.
+const uploadMemberDocument = wrap(async (req, res) => {
+  const memberId = Number(req.params.id);
+  const member = await one(`SELECT id FROM members WHERE id = $1`, [memberId]);
+  if (!member) return res.status(404).json({ message: 'That member is not on the list.' });
+
+  const { document_type, file_name, mime_type, data } = req.body;
+  if (!DOC_TYPES.includes(document_type)) return res.status(400).json({ message: 'Choose what kind of document this is.' });
+  if (!ALLOWED_MIME.includes(mime_type)) return res.status(400).json({ message: 'Only PDF, JPG or PNG files are accepted.' });
+  if (!data || typeof data !== 'string') return res.status(400).json({ message: 'Choose a file to upload.' });
+
+  const buffer = Buffer.from(data, 'base64');
+  if (!buffer.length) return res.status(400).json({ message: 'That file is empty.' });
+  if (buffer.length > MAX_DOC_BYTES) return res.status(400).json({ message: 'The file is too big. The limit is 2 MB.' });
+
+  const head = buffer.subarray(0, 4).toString('hex');
+  const ok = (mime_type === 'application/pdf' && head === '25504446')
+          || (mime_type === 'image/png' && head === '89504e47')
+          || (mime_type === 'image/jpeg' && head.startsWith('ffd8'));
+  if (!ok) return res.status(400).json({ message: 'That file does not look like the type you chose.' });
+
+  const count = await one(`SELECT COUNT(*)::int AS c FROM member_documents WHERE member_id = $1`, [memberId]);
+  if (count.c >= 12) return res.status(400).json({ message: 'This record already keeps 12 documents. Remove one first.' });
+
+  const row = await one(
+    `INSERT INTO member_documents (member_id, document_type, original_name, mime_type, size_bytes, data, uploaded_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, document_type, original_name, mime_type, size_bytes, uploaded_at`,
+    [memberId, document_type, String(file_name || 'document').slice(0, 200), mime_type, buffer.length, buffer, req.user.id]
+  );
+  await audit(req.user.id, 'UPLOAD_DOCUMENT', 'member_documents', row.id, `${document_type} for member ${memberId}`);
+  res.status(201).json({ message: 'Document saved.', document: row });
+});
+
+// DELETE /api/members/:id/documents/:docId — a membership paper is filed away.
+const deleteMemberDocument = wrap(async (req, res) => {
+  const memberId = Number(req.params.id);
+  const docId = Number(req.params.docId);
+  const doc = await one(`SELECT id FROM member_documents WHERE id = $1 AND member_id = $2`, [docId, memberId]);
+  if (!doc) return res.status(404).json({ message: 'That document is not on this member record.' });
+  await query(`DELETE FROM member_documents WHERE id = $1`, [docId]);
+  await audit(req.user.id, 'DELETE_DOCUMENT', 'member_documents', docId, `member ${memberId}`);
+  res.json({ message: 'Document removed.' });
+});
+
+module.exports = { getMyProfile, updateMyProfile, setAvatar, getAvatar, uploadDocument, downloadDocument, deleteDocument,
+  uploadMemberDocument, deleteMemberDocument };

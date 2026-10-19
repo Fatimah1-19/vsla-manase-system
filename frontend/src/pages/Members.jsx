@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, fetchFile } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -64,6 +64,17 @@ function PersonalFields({ values, onChange, t, prefix }) {
   );
 }
 
+/** The membership papers the register keeps. The same list the server accepts. */
+const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
+const MAX_DOC_BYTES = 2 * 1024 * 1024;
+
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result).split(',')[1]);
+  r.onerror = () => reject(new Error('Could not read that file.'));
+  r.readAsDataURL(file);
+});
+
 /** How each membership event reads on the history page. */
 const EVENT_KEYS = {
   joined: 'evJoined', approved: 'evApproved', rejected: 'evRejected',
@@ -107,6 +118,9 @@ export default function Members() {
   const [feeForm, setFeeForm] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
   const [events, setEvents] = useState(null);   // the whole register's story
+  const [docType, setDocType] = useState(DOC_TYPES[1]);
+  const [docBusy, setDocBusy] = useState(false);
+  const docRef = useRef(null);
 
   // /app/members?view=history is the Membership History section: a reading of the
   // register and the audit trail. There is no way to change it from this page.
@@ -179,6 +193,40 @@ export default function Members() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err) {
       toast.error(err.message);
+    }
+  }
+
+  // Filing a membership paper (a form, a copy of the record) with the register.
+  async function uploadMemberDoc(e) {
+    e.preventDefault();
+    const file = docRef.current?.files?.[0];
+    if (!file) { toast.error(t('members.chooseFile')); return; }
+    if (file.size > MAX_DOC_BYTES) { toast.error(t('profile.fileBig')); return; }
+    setDocBusy(true);
+    try {
+      const res = await api.post(`/members/${detail.member_id}/documents`, {
+        document_type: docType, file_name: file.name, mime_type: file.type, data: await toBase64(file),
+      });
+      toast.success(res.message);
+      if (docRef.current) docRef.current.value = '';
+      setHistory(await api.get(`/members/${detail.member_id}`));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDocBusy(false);
+    }
+  }
+
+  async function removeMemberDoc(doc) {
+    if (!(await confirm({ message: t('members.confirmDocRemove'), danger: true }))) return;
+    setDocBusy(true);
+    try {
+      toast.success((await api.del(`/members/${detail.member_id}/documents/${doc.id}`)).message);
+      setHistory(await api.get(`/members/${detail.member_id}`));
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDocBusy(false);
     }
   }
 
@@ -699,6 +747,26 @@ export default function Members() {
             {detail.member_id && isCommittee && (
               <div className="members__hist">
                 <h3 className="members__feeTitle">{t('nav.membershipDocuments')}</h3>
+                {canEditMember && (
+                  <form className="members__docUpload" onSubmit={uploadMemberDoc}>
+                    <div className="form-row form-row--2">
+                      <div>
+                        <label className="field-label" htmlFor="md-type">{t('profile.docType')}</label>
+                        <select id="md-type" value={docType} onChange={(e) => setDocType(e.target.value)}>
+                          {DOC_TYPES.map((d) => <option key={d} value={d}>{t(`profile.doc_${d}`)}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="field-label" htmlFor="md-file">{t('profile.docFile')}</label>
+                        <input id="md-file" type="file" accept="application/pdf,image/jpeg,image/png" ref={docRef} />
+                        <span className="field-hint">{t('profile.docLimit')}</span>
+                      </div>
+                    </div>
+                    <button type="submit" className="btn btn--small" disabled={docBusy}>
+                      {docBusy ? t('common.saving') : t('profile.upload')}
+                    </button>
+                  </form>
+                )}
                 <ul className="profile__docs">
                   {!history?.documents?.length && <li className="muted">{t('common.none')}</li>}
                   {history?.documents?.map((d) => (
@@ -710,6 +778,10 @@ export default function Members() {
                       <span className="row-actions">
                         <button type="button" className="btn btn--small btn--ghost"
                           onClick={() => openMemberDoc(d)}>{t('common.view')}</button>
+                        {canEditMember && (
+                          <button type="button" className="btn btn--small btn--ghost" disabled={docBusy}
+                            onClick={() => removeMemberDoc(d)}>{t('common.del')}</button>
+                        )}
                       </span>
                     </li>
                   ))}

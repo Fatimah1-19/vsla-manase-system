@@ -18,7 +18,7 @@ import '../styles.css';
  */
 export default function ShareOut() {
   const { t } = useLang();
-  const { isCommittee, isRecorder } = useAuth();
+  const { isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -28,7 +28,7 @@ export default function ShareOut() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  const canRun = isRecorder;
+  const canRun = canRecordMoney;
 
   const load = useCallback(async () => {
     setLoading(true);

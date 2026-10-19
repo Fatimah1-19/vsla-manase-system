@@ -19,7 +19,7 @@ const blank = { member_id: '', amount: '', shares: '1', date: inputDate(), note:
 
 export default function Savings() {
   const { t } = useLang();
-  const { isRecorder, isAdmin } = useAuth();
+  const { canRecordMoney, isAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -139,10 +139,10 @@ export default function Savings() {
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
     { key: 'recorded_by_name', label: t('savings.recordedBy'), hideOnPhone: true,
       render: (r) => <span className="muted">{r.recorded_by_name || '—'}</span> },
-    ...(isRecorder || isAdmin ? [{ key: 'x', label: '', align: 'right',
+    ...(canRecordMoney || isAdmin ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (
         <span className="row-actions">
-          {isRecorder && (
+          {canRecordMoney && (
             <button type="button" className="btn btn--small btn--ghost"
               onClick={() => setEditing({ id: r.id, amount: r.amount, shares: r.shares, date: String(r.date).slice(0, 10), note: r.note || '', full_name: r.full_name })}>
               {t('common.edit')}
@@ -164,7 +164,7 @@ export default function Savings() {
       <PageHeader
         title={t('savings.title')}
         subtitle={t('savings.smsNote')}
-        action={isRecorder && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
+        action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
       />
 
       {summary?.cycle && (
@@ -200,7 +200,7 @@ export default function Savings() {
       {groups.length === 0 ? (
         <EmptyState
           title={t('savings.empty')}
-          action={isRecorder && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
+          action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
         />
       ) : (
         groups.map((g) => (

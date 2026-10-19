@@ -133,11 +133,22 @@ const base = {
     filterLabel: 'Sunga malinga ndi umembala', filterAll: 'Mamembala onse',
     filterActive: 'Akugwira ntchito', filterInactive: 'Osagwira ntchito', filterNew: 'Mamembala atsopano',
     colEvent: 'Chochitika', performedBy: 'Anachita', statusApproved: 'Zavomerezedwa', statusRejected: 'Zakanidwa',
+    chooseFile: 'Sankhani fayilo kuti mukweze.',
+    confirmDocRemove: 'Chotsani chikalata ichi pa zolembedwa za membala?',
     histNote: 'Mbiri iyi imachokera ku kaundula ndi mbiri ya kasamalidwe. Sizisinthidwa pa tsamba ili; zosintha zovomerezeka zimawonjezeredwa mu mbiri ya kasamalidwe.',
     evJoined: 'Analowa mu gulu', evApproved: 'Umembala unavomerezedwa', evRejected: 'Umembala unakanidwa',
     evDeactivated: 'Anaimitsidwa', evReactivated: 'Anabwezeretsedwa',
     evStatusChanged: 'Mkhalidwe wa umembala wasinthidwa', evRecordUpdated: 'Zolembedwa zasinthidwa',
     evUnlocked: 'Akatsegulidwa', evOther: 'Chochitika china cha umembala',
+  },
+
+  records: {
+    note: 'Zolembedwa za gulu: kaundula, misonkhano ndi zisankho. Ndalama sizisungidwa kuno.',
+    recordsMembership: 'Kaundula',
+    recordsMeetings: 'Misonkhano ndi kupezekapo',
+    recordsDecisions: 'Zisankho ndi mbiri',
+    recordsReports: 'Malipoti a umembala',
+    moneyNote: 'Mabuku a ndalama — zosunga, ngongole, zolipira, chitukuko ndi kugawana — ndi a msunga ndalama.',
   },
 
   meetings: {

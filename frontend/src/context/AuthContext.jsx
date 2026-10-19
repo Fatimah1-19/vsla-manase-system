@@ -188,8 +188,11 @@ export function AuthProvider({ children }) {
       stayLoggedIn: () => resetRef.current && resetRef.current(),
       // Chairperson, treasurer, secretary: can see the books.
       isCommittee: !!user && ['admin', 'treasurer', 'secretary'].includes(user.role),
-      // Treasurer and secretary: the two who write everything in the books.
+      // Treasurer and secretary: the recorders of the meeting book.
       isRecorder: !!user && ['treasurer', 'secretary'].includes(user.role),
+      // The money books are the treasurer's to write in. The chairperson and the
+      // secretary read them; the secretary never changes a transaction.
+      canRecordMoney: user?.role === 'treasurer',
       // Only the chairperson and the treasurer settle join requests and loans.
       isDecider: !!user && ['admin', 'treasurer'].includes(user.role),
       isAdmin: user?.role === 'admin',

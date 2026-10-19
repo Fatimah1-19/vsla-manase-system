@@ -85,7 +85,7 @@ export const NAV_ITEMS = [
 
   { to: '/app/members?view=details',   key: 'nav.memberRecords',       group: 'nav.gRecords', icon: 'members', roles: ['secretary'] },
   { to: '/app/members?view=documents', key: 'nav.membershipDocuments', icon: 'members', roles: ['secretary'] },
-  { to: '/app/activity?view=audit',    key: 'nav.adminRecords',        icon: 'audit',   roles: ['secretary'] },
+  { to: '/app/records',                key: 'nav.adminRecords',        icon: 'audit',   roles: ['secretary'] },
 
   { to: '/app/analytics?tab=reports', key: 'nav.membershipReports', group: 'nav.gReports', icon: 'analytics', roles: ['secretary'] },
   { to: '/app/analytics?tab=reports', key: 'nav.attendanceReports', icon: 'analytics', roles: ['secretary'] },

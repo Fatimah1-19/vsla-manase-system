@@ -127,11 +127,22 @@ const base = {
     filterLabel: 'Filter by membership status', filterAll: 'All members',
     filterActive: 'Active', filterInactive: 'Inactive', filterNew: 'New members',
     colEvent: 'Event', performedBy: 'Performed by', statusApproved: 'Approved', statusRejected: 'Rejected',
+    chooseFile: 'Choose a file to upload.',
+    confirmDocRemove: 'Remove this document from the member record?',
     histNote: 'This history comes from the register and the audit trail. It cannot be changed from this page; an authorised correction is added to the audit trail.',
     evJoined: 'Member joined', evApproved: 'Membership approved', evRejected: 'Membership rejected',
     evDeactivated: 'Member became inactive', evReactivated: 'Member reactivated',
     evStatusChanged: 'Membership status changed', evRecordUpdated: 'Record updated',
     evUnlocked: 'Account unlocked', evOther: 'Other membership event',
+  },
+
+  records: {
+    note: 'The written records of the group: the register, the meetings, the decisions. Money is not kept here.',
+    recordsMembership: 'The register',
+    recordsMeetings: 'Meetings and attendance',
+    recordsDecisions: 'Decisions and the trail',
+    recordsReports: 'Membership reports',
+    moneyNote: 'The money books — savings, loans, fines, welfare and share-out — belong to the treasurer.',
   },
 
   meetings: {
