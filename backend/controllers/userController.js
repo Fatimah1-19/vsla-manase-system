@@ -287,4 +287,59 @@ const reactivateUser = wrap(async (req, res) => {
   res.json({ message: `${user.full_name} is back.` });
 });
 
-module.exports = { listUsers, createUser, updateUser, adminResetPassword, unlockUser, deactivateUser, reactivateUser };
+// GET /api/users/history — the membership register's story: who joined, who was
+// approved or rejected, and every change of standing. It reads the members'
+// joined dates together with the audit trail. Nothing here is ever edited from
+// the group floor: a correction is a new entry in the audit trail.
+const membershipHistory = wrap(async (req, res) => {
+  const events = await query(
+    `SELECT * FROM (
+       SELECT 'member-' || u.id                AS id,
+              u.full_name                      AS member_name,
+              'joined'                         AS event_key,
+              COALESCE(m.date_joined::timestamptz, u.created_at) AS occurred_at,
+              (SELECT au.full_name FROM audit_logs al JOIN users au ON au.id = al.user_id
+                WHERE al.action = 'CREATE_USER' AND al.entity_type = 'users' AND al.entity_id = u.id
+                LIMIT 1)                       AS performed_by,
+              CASE WHEN u.is_active THEN 'active' ELSE 'inactive' END AS status
+         FROM users u JOIN members m ON m.user_id = u.id
+       UNION ALL
+       SELECT 'audit-' || al.id                 AS id,
+              COALESCE(
+                lu.full_name,
+                CASE WHEN al.action = 'EXECUTE_MEMBER_VOTE'
+                     THEN regexp_replace(al.details, '^[a-z]+ ', '') ELSE al.details END
+              )                                  AS member_name,
+              CASE al.action
+                WHEN 'APPROVE_JOIN_REQUEST' THEN 'approved'
+                WHEN 'REJECT_JOIN_REQUEST'  THEN 'rejected'
+                WHEN 'DEACTIVATE_USER'      THEN 'deactivated'
+                WHEN 'REACTIVATE_USER'      THEN 'reactivated'
+                WHEN 'EXECUTE_MEMBER_VOTE'  THEN 'status_changed'
+                WHEN 'UPDATE_USER'          THEN 'record_updated'
+                WHEN 'UNLOCK_USER'          THEN 'unlocked'
+                ELSE 'membership_event' END  AS event_key,
+              al.created_at                      AS occurred_at,
+              au.full_name                       AS performed_by,
+              CASE
+                WHEN al.action = 'APPROVE_JOIN_REQUEST' THEN 'approved'
+                WHEN al.action = 'REJECT_JOIN_REQUEST'  THEN 'rejected'
+                WHEN al.action = 'DEACTIVATE_USER'      THEN 'inactive'
+                WHEN al.action = 'REACTIVATE_USER'      THEN 'active'
+                WHEN al.action = 'EXECUTE_MEMBER_VOTE' AND al.details ILIKE 'suspend%' THEN 'inactive'
+                WHEN al.action = 'EXECUTE_MEMBER_VOTE' AND al.details ILIKE 'dismiss%' THEN 'inactive'
+                WHEN al.action = 'EXECUTE_MEMBER_VOTE'  THEN 'active'
+                ELSE NULL END                    AS status
+         FROM audit_logs al
+         LEFT JOIN users au ON au.id = al.user_id
+         LEFT JOIN users lu ON lu.id = al.entity_id AND al.entity_type = 'users'
+        WHERE al.action IN ('APPROVE_JOIN_REQUEST', 'REJECT_JOIN_REQUEST', 'DEACTIVATE_USER',
+                            'REACTIVATE_USER', 'EXECUTE_MEMBER_VOTE', 'UPDATE_USER', 'UNLOCK_USER')
+     ) events
+     ORDER BY events.occurred_at DESC, events.id DESC
+     LIMIT 200`
+  );
+  res.json({ events });
+});
+
+module.exports = { listUsers, createUser, updateUser, adminResetPassword, unlockUser, deactivateUser, reactivateUser, membershipHistory };

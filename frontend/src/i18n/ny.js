@@ -132,6 +132,12 @@ const base = {
     active: 'Akugwira ntchito', inactive: 'Waimitsidwa', locked: 'Yatsekedwa',
     filterLabel: 'Sunga malinga ndi umembala', filterAll: 'Mamembala onse',
     filterActive: 'Akugwira ntchito', filterInactive: 'Osagwira ntchito', filterNew: 'Mamembala atsopano',
+    colEvent: 'Chochitika', performedBy: 'Anachita', statusApproved: 'Zavomerezedwa', statusRejected: 'Zakanidwa',
+    histNote: 'Mbiri iyi imachokera ku kaundula ndi mbiri ya kasamalidwe. Sizisinthidwa pa tsamba ili; zosintha zovomerezeka zimawonjezeredwa mu mbiri ya kasamalidwe.',
+    evJoined: 'Analowa mu gulu', evApproved: 'Umembala unavomerezedwa', evRejected: 'Umembala unakanidwa',
+    evDeactivated: 'Anaimitsidwa', evReactivated: 'Anabwezeretsedwa',
+    evStatusChanged: 'Mkhalidwe wa umembala wasinthidwa', evRecordUpdated: 'Zolembedwa zasinthidwa',
+    evUnlocked: 'Akatsegulidwa', evOther: 'Chochitika china cha umembala',
   },
 
   meetings: {
@@ -143,6 +149,12 @@ const base = {
     empty: 'Palibe misonkhano yolembedwa.',
     presentCount: (n, t) => `${n} mwa ${t} analipo`,
     statusUpcoming: 'Kubwera', statusHeld: 'Yachitika', viewRecord: 'Onani zolemba',
+    recordsTitle: 'Zolembedwa za misonkhano', upcomingTitle: 'Misonkhano yomwe ikubwera',
+    previousTitle: 'Misonkhano yapita',
+    marked: 'Analembedwa', dateCreated: 'Tsiku lopangidwa', details: 'Zambiri za msonkhano',
+    noPlace: 'Palibe malo olembedwa',
+    attendanceHint: 'Sankhani msonkhano kuti mulembe amene analipo, kapena kuwerenga kaundula.',
+    recordsHint: 'Zolembedwa za msonkhano uliwonse: tsiku, malo, zomwe zinakambidwa, zomwe zinchitika, ndi amene analemba.',
   },
 
   welfare: {

@@ -3838,6 +3838,17 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .meetings__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
 
+.meetings__tabs { display: flex; gap: 0.35rem; overflow-x: auto; margin-bottom: 1rem; padding-bottom: 2px; border-bottom: 1px solid var(--rule); }
+.meetings__tab {
+  flex: 0 0 auto; min-height: 42px; padding: 0.4rem 0.95rem; background: none; cursor: pointer;
+  border: 0; border-bottom: 3px solid transparent; color: var(--slate); font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center;
+}
+.meetings__tab.is-on { color: var(--leaf-dark); border-bottom-color: var(--leaf); }
+.meetings__section { margin-bottom: 1.4rem; }
+.meetings__group { margin: 0.2rem 0 0.6rem; font-size: 1.02rem; }
+
+
 .meetings__recordings {
   display: flex;
   flex-wrap: wrap;

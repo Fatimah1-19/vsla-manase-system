@@ -126,6 +126,12 @@ const base = {
     active: 'Active', inactive: 'Suspended', locked: 'Locked',
     filterLabel: 'Filter by membership status', filterAll: 'All members',
     filterActive: 'Active', filterInactive: 'Inactive', filterNew: 'New members',
+    colEvent: 'Event', performedBy: 'Performed by', statusApproved: 'Approved', statusRejected: 'Rejected',
+    histNote: 'This history comes from the register and the audit trail. It cannot be changed from this page; an authorised correction is added to the audit trail.',
+    evJoined: 'Member joined', evApproved: 'Membership approved', evRejected: 'Membership rejected',
+    evDeactivated: 'Member became inactive', evReactivated: 'Member reactivated',
+    evStatusChanged: 'Membership status changed', evRecordUpdated: 'Record updated',
+    evUnlocked: 'Account unlocked', evOther: 'Other membership event',
   },
 
   meetings: {
@@ -137,6 +143,11 @@ const base = {
     notify: 'Text everyone about this meeting', empty: 'No meetings recorded yet.',
     presentCount: (n, t) => `${n} of ${t} present`,
     statusUpcoming: 'Upcoming', statusHeld: 'Held', viewRecord: 'View record',
+    recordsTitle: 'Meeting records', upcomingTitle: 'Upcoming meetings', previousTitle: 'Previous meetings',
+    marked: 'Marked', dateCreated: 'Date created', details: 'Meeting details',
+    noPlace: 'No place written down',
+    attendanceHint: 'Choose a meeting to mark who was present, or to read the register.',
+    recordsHint: 'Every meeting record: when and where it was held, what was discussed, what happened, and who wrote it up.',
   },
 
   welfare: {

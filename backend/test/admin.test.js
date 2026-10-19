@@ -819,7 +819,11 @@ function run(middleware, user) {
                        'qaAddMember:', 'qaReviewRequests:', 'qaMembershipHistory:', 'qaCreateMeeting:',
                        'qaRecordAttendance:', 'qaMeetingRecords:', 'qaMembershipReport:',
                        'qaAttendanceReport:', 'filterAll:', 'filterActive:', 'filterInactive:',
-                       'filterNew:', 'filterLabel:', 'decidedBy:']) {
+                       'filterNew:', 'filterLabel:', 'decidedBy:', 'colEvent:', 'performedBy:',
+                       'statusApproved:', 'statusRejected:', 'histNote:', 'evJoined:', 'evApproved:',
+                       'evRejected:', 'evDeactivated:', 'evReactivated:', 'evStatusChanged:',
+                       'evRecordUpdated:', 'evUnlocked:', 'evOther:', 'recordsTitle:', 'upcomingTitle:',
+                       'previousTitle:', 'marked:', 'dateCreated:', 'details:', 'noPlace:']) {
       assert.ok(dict.includes(key), `${file} must carry ${key.replace(':', '')}`);
     }
   }
@@ -870,6 +874,43 @@ function run(middleware, user) {
     path.join(__dirname, '..', 'controllers', 'joinRequestController.js'), 'utf8');
   assert.ok(joinReqCtrl.includes('ON CONFLICT (request_id, user_id)') && joinReqCtrl.includes('req.user.id'),
     'a vote is written once, for the person who cast it');
+
+  // §9 the membership history is one reading of the register and the audit trail.
+  assert.ok(userRoutes.includes("router.get('/history', requirePermission('users.view'), c.membershipHistory)"),
+    'the membership history is a reading for the register keepers');
+  assert.ok(!userRoutes.includes("router.put('/history") && !userRoutes.includes("router.patch('/history")
+    && !userRoutes.includes("router.delete('/history"),
+    'history is never edited from the group floor');
+  assert.ok(memberCtrl.includes('membershipHistory') && memberCtrl.includes("'EXECUTE_MEMBER_VOTE'")
+    && memberCtrl.includes("'APPROVE_JOIN_REQUEST'") && memberCtrl.includes("'REJECT_JOIN_REQUEST'")
+    && memberCtrl.includes("'DEACTIVATE_USER'") && memberCtrl.includes("'REACTIVATE_USER'"),
+    'the history carries joins, approvals, rejections and every change of standing');
+  assert.ok(!memberCtrl.includes('DELETE FROM audit_logs') && !memberCtrl.includes('UPDATE audit_logs'),
+    'the audit trail is only ever added to');
+  assert.ok(membersScreen.includes("get('view')") && membersScreen.includes("'/users/history'")
+    && membersScreen.includes('members.colEvent') && membersScreen.includes('members.performedBy')
+    && membersScreen.includes('members.histNote'),
+    'the register shows Member, Event, Date, Performed by and Status, and says it is read only');
+
+  // §10 to §12 the meeting book: the schedule, the attendance register and the
+  // written-up meeting records.
+  assert.ok(meetingsScreen.includes("get('tab')") && meetingsScreen.includes("'attendance'")
+    && meetingsScreen.includes("'records'"),
+    'the meeting page has a schedule, an attendance section and a records section');
+  assert.ok(meetingsScreen.includes('meetings.upcomingTitle') && meetingsScreen.includes('meetings.previousTitle'),
+    'upcoming meetings are shown apart from the meetings already held');
+  assert.ok(meetingsScreen.includes("['present', 'absent', 'excused']"),
+    'attendance is marked present, absent or excused');
+  assert.ok(meetingsScreen.includes('meetings.dateCreated') && meetingsScreen.includes('recorded_by_name')
+    && meetingsScreen.includes('m.notes') && meetingsScreen.includes('m.agenda')
+    && meetingsScreen.includes('m.meeting_time'),
+    'a meeting record carries the date, the time, the place, the agenda, the minutes and who wrote them up');
+  assert.ok(meetingsScreen.includes('meetings.details') && meetingsScreen.includes('...info'),
+    'the recorder may correct the place, the time and the agenda on the record');
+  assert.ok(meetingCtrl.includes('SAVE_ATTENDANCE') && meetingCtrl.includes('UPDATE_MEETING'),
+    'every attendance correction and minutes change leaves a line in the audit trail');
+  assert.ok(meetingCtrl.includes("['present', 'absent', 'excused']"),
+    'the server accepts only the three attendance states the group uses');
 
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),

@@ -64,6 +64,21 @@ function PersonalFields({ values, onChange, t, prefix }) {
   );
 }
 
+/** How each membership event reads on the history page. */
+const EVENT_KEYS = {
+  joined: 'evJoined', approved: 'evApproved', rejected: 'evRejected',
+  deactivated: 'evDeactivated', reactivated: 'evReactivated',
+  status_changed: 'evStatusChanged', record_updated: 'evRecordUpdated',
+  unlocked: 'evUnlocked', membership_event: 'evOther',
+};
+const EVENT_STATUS_KEYS = {
+  active: 'members.active', inactive: 'members.inactive',
+  approved: 'members.statusApproved', rejected: 'members.statusRejected',
+};
+const EVENT_STATUS_TONES = {
+  active: 'tag--green', approved: 'tag--green', inactive: 'tag--red', rejected: 'tag--red',
+};
+
 export default function Members() {
   const { t } = useLang();
   const { user, isAdmin, isRecorder, isCommittee } = useAuth();
@@ -91,6 +106,11 @@ export default function Members() {
   const [fees, setFees] = useState(null);
   const [feeForm, setFeeForm] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
+  const [events, setEvents] = useState(null);   // the whole register's story
+
+  // /app/members?view=history is the Membership History section: a reading of the
+  // register and the audit trail. There is no way to change it from this page.
+  const view = new URLSearchParams(window.location.search).get('view');
 
   const load = useCallback(async () => {
     const [people, reg] = await Promise.all([api.get('/users'), api.get('/registration-fees')]);
@@ -104,6 +124,11 @@ export default function Members() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('add') === '1' && canAddMember) setAddOpen(true);
   }, [canAddMember]);
+
+  useEffect(() => {
+    if (view !== 'history') return;
+    api.get('/users/history').then((d) => setEvents(d.events)).catch((e) => toast.error(e.message));
+  }, [view, toast]);
 
   // Is any committee office empty? If so the chairperson (or, if the chairperson
   // seat itself is empty, a treasurer or secretary) can start an election from here.
@@ -289,6 +314,37 @@ export default function Members() {
     const [y, m, d] = jd.split('-');
     return [{ key: jd, label: `${monthName(Number(m))} ${Number(d)}, ${y}` }];
   };
+
+  if (view === 'history') {
+    if (!events) return <Spinner />;
+    return (
+      <div className="members">
+        <PageHeader title={t('nav.membershipHistory')} subtitle={t('members.histNote')} />
+        <Ledger
+          columns={[
+            { key: 'member_name', label: t('common.name') },
+            {
+              key: 'event_key',
+              label: t('members.colEvent'),
+              render: (e) => t(`members.${EVENT_KEYS[e.event_key] || 'evOther'}`),
+            },
+            { key: 'occurred_at', label: t('common.date'), render: (e) => shortDate(e.occurred_at) },
+            { key: 'performed_by', label: t('members.performedBy'), render: (e) => e.performed_by || '—' },
+            {
+              key: 'status',
+              label: t('common.status'),
+              render: (e) => (e.status
+                ? <span className={`tag ${EVENT_STATUS_TONES[e.status] || 'tag--grey'}`}>
+                    {t(EVENT_STATUS_KEYS[e.status] || 'common.none')}
+                  </span>
+                : '—'),
+            },
+          ]}
+          rows={events}
+        />
+      </div>
+    );
+  }
 
   if (!people) return <Spinner />;
 
