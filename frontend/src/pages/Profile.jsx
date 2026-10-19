@@ -316,6 +316,7 @@ export default function Profile() {
               </dd>
             </div>
             <div><dt>{t('members.number')}</dt><dd>{m?.membership_number || '—'}</dd></div>
+            <div><dt>{t('members.id')}</dt><dd>{m?.id ?? user.member_id ?? '—'}</dd></div>
             <div><dt>{t('members.joined')}</dt><dd>{m?.date_joined ? shortDate(m.date_joined) : '—'}</dd></div>
           </dl>
 

@@ -134,7 +134,7 @@ const base = {
   },
 
     members: {
-      title: 'Mamembala', number: 'Nambala ya membala', joined: 'Analowa', savings: 'Wasunga',
+      title: 'Mamembala', number: 'Nambala ya membala', id: 'Chizindikiro cha umembala', joined: 'Analowa', savings: 'Wasunga',
       historyTitle: 'Mbiri ya mumembala',
       presentIn: (p, m) => `Adawera ${p} mwa ${m} misonkhano yaposachedwa`,
       welfarePaid: (amount, n) => `Chithandizo cholipilidwa: ${amount} mu zopereka ${n}`,

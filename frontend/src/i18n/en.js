@@ -128,7 +128,7 @@ const base = {
   },
 
     members: {
-      title: 'Members', number: 'Member number', joined: 'Joined', savings: 'Saved',
+      title: 'Members', number: 'Member number', id: 'Membership ID', joined: 'Joined', savings: 'Saved',
       historyTitle: 'Membership history',
       presentIn: (p, m) => `Present at ${p} of the last ${m} meetings`,
       welfarePaid: (amount, n) => `Welfare paid: ${amount} in ${n} contributions`,
