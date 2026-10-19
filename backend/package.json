@@ -10,7 +10,7 @@
     "db:setup": "node db/setup.js",
     "db:seed": "node db/seed.js",
     "admin:create": "node scripts/create-admin.js",
-    "test": "node test/shareout.test.js && node test/cases.test.js && node test/officeVotes.test.js && node test/admin.test.js && node test/acceptance.test.js"
+    "test": "node test/shareout.test.js && node test/cases.test.js && node test/officeVotes.test.js && node test/admin.test.js && node test/acceptance.test.js && node test/acceptance-secretary.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
