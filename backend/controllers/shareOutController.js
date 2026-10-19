@@ -55,11 +55,20 @@ const preview = wrap(async (req, res) => {
   const cycle = await getActiveCycle();
   if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
-  const [result, openLoans] = await Promise.all([
+  const [result, openLoans, eligible] = await Promise.all([
     computeShareOut(cycle.id),
     one(`SELECT COUNT(*)::int AS c FROM loans WHERE status IN ('pending','approved')`),
+    // How many members actually saved into this cycle: these are the ones the
+    // share-out is worked out for. Read-only; the calculation stays untouched.
+    one(`SELECT COUNT(DISTINCT member_id)::int AS c FROM savings WHERE cycle_id = $1`, [cycle.id]),
   ]);
-  res.json({ cycle, ...result, open_loans: openLoans.c });
+  res.json({
+    cycle,
+    ...result,
+    open_loans: openLoans.c,
+    eligible_members: eligible.c,
+    cycle_status: cycle.status,
+  });
 });
 
 // POST /api/shareout — save the calculation as a draft

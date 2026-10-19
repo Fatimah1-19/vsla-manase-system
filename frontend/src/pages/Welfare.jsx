@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -27,11 +27,17 @@ export default function Welfare() {
 
   const [balance, setBalance] = useState(null);
   const [rows, setRows] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [members, setMembers] = useState([]);
   const [mode, setMode] = useState(null);            // 'payout' | 'contribution'
   const [payout, setPayout] = useState(blankPayout);
   const [contribution, setContribution] = useState(blankContribution);
   const [busy, setBusy] = useState(false);
+
+  // The treasurer filters the welfare book by name, kind and date window.
+  const [search, setSearch] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
 
   // Her menu can open the welfare fund on its summary or on its history.
   const [params] = useSearchParams();
@@ -40,13 +46,33 @@ export default function Welfare() {
   const showHistory = view !== 'summary';
 
   const load = useCallback(async () => {
-    const [b, list] = await Promise.all([api.get('/welfare/balance'), api.get('/welfare')]);
+    const [b, list, sum] = await Promise.all([
+      api.get('/welfare/balance'),
+      api.get('/welfare'),
+      api.get('/welfare/summary').catch(() => null),
+    ]);
     setBalance(b);
     setRows(list);
+    setSummary(sum);
     if (isCommittee) { try { setMembers(await api.get('/members')); } catch { /* ignore */ } }
   }, [isCommittee]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+
+  const filtered = useMemo(() => {
+    if (!rows) return [];
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (from && r.date < from) return false;
+      if (to && r.date > to) return false;
+      if (q && !(`${r.full_name || ''} ${r.notes || ''}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [rows, search, from, to]);
+
+  const anyFilter = !!(search.trim() || from || to);
+  const clearFilters = () => { setSearch(''); setFrom(''); setTo(''); };
+
 
   async function submitPayout(e) {
     e.preventDefault();
@@ -116,6 +142,34 @@ export default function Welfare() {
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
   ];
 
+  const memberColumns = [
+    { key: 'full_name', label: t('common.name'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
+    { key: 'contributions', label: t('welfare.contribution'), align: 'right', money: true,
+      render: (r) => <span className="money">{money(r.contributions)}</span> },
+    { key: 'payouts', label: t('welfare.payout'), align: 'right', money: true, hideOnPhone: true,
+      render: (r) => (r.payouts > 0 ? <span className="money money--neg">-{money(r.payouts)}</span> : '—') },
+    { key: 'entries', label: t('welfare.entries'), align: 'right', render: (r) => r.entries },
+  ];
+
+  const typeColumns = [
+    { key: 'type', label: t('common.status'),
+      render: (r) => (
+        <span className={r.type === 'contribution' ? 'tag tag--green' : 'tag tag--gold'}>
+          {t(`welfare.${r.type}`)}
+        </span>
+      ) },
+    { key: 'category', label: t('welfare.category'), hideOnPhone: true,
+      render: (r) => (r.category ? t(`welfare.${r.category}`) : '—') },
+    { key: 'count', label: t('welfare.entries'), align: 'right', render: (r) => r.count },
+    { key: 'amount', label: t('common.total'), align: 'right', money: true, render: (r) => money(r.amount) },
+  ];
+
   return (
     <div className="welfare">
       <PageHeader
@@ -141,7 +195,52 @@ export default function Welfare() {
         </div>
       )}
 
-      {showHistory && <Ledger columns={columns} rows={rows} />}
+      {showSummary && summary?.per_member?.length > 0 && (
+        <section className="savings__month">
+          <div className="savings__monthHead">
+            <h2 className="savings__monthTitle">{t('welfare.memberTitle')}</h2>
+            <span className="savings__monthTotal money">{money(summary.contributions)}</span>
+          </div>
+          <Ledger columns={memberColumns} rows={summary.per_member} keyField="member_id" />
+        </section>
+      )}
+
+      {showSummary && summary?.by_type?.length > 0 && (
+        <section className="savings__month">
+          <div className="savings__monthHead">
+            <h2 className="savings__monthTitle">{t('welfare.byType')}</h2>
+          </div>
+          <Ledger columns={typeColumns} rows={summary.by_type} />
+        </section>
+      )}
+
+      {showHistory && (
+        <>
+          <div className="toolbar">
+            <input
+              className="toolbar__grow"
+              type="search"
+              placeholder={t('common.search')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label={t('common.search')}
+            />
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t('common.date')} />
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('common.date')} />
+            {anyFilter && (
+              <button type="button" className="btn btn--ghost" onClick={clearFilters}>{t('common.clear')}</button>
+            )}
+          </div>
+
+          {anyFilter && (
+            <p className="muted">
+              {filtered.length} {filtered.length === 1 ? t('welfare.entry') : t('welfare.entries')}
+            </p>
+          )}
+
+          <Ledger columns={columns} rows={filtered} empty={<EmptyState title={t('welfare.empty')} />} />
+        </>
+      )}
 
       {/* ---- give help ---- */}
       <Modal
@@ -178,7 +277,7 @@ export default function Welfare() {
             </div>
             <div>
               <label className="field-label" htmlFor="w-date">{t('common.date')}</label>
-              <input id="w-date" type="date" value={payout.date}
+              <input id="w-date" type="date" max={inputDate()} value={payout.date}
                 onChange={(e) => setPayout((p) => ({ ...p, date: e.target.value }))} />
             </div>
           </div>
@@ -258,7 +357,7 @@ export default function Welfare() {
             </div>
             <div>
               <label className="field-label" htmlFor="wc-date">{t('common.date')}</label>
-              <input id="wc-date" type="date" value={contribution.date}
+              <input id="wc-date" type="date" max={inputDate()} value={contribution.date}
                 onChange={(e) => setContribution((c) => ({ ...c, date: e.target.value }))} />
             </div>
           </div>

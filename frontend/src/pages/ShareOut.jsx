@@ -172,6 +172,19 @@ export default function ShareOut() {
 
       {!preview && <EmptyState title={t('shareout.noCycle')} />}
 
+      {preview?.cycle && (
+        <div className="savings__cycle">
+          <span className="savings__cycleLabel">{t('shareout.cycle')}</span>
+          <strong className="savings__cycleName">{preview.cycle.cycle_name}</strong>
+          <span className="savings__cycleDates">
+            {shortDate(preview.cycle.start_date)} - {shortDate(preview.cycle.end_date)}
+          </span>
+          <span className={preview.cycle_status === 'completed' ? 'tag tag--green' : 'tag tag--blue'}>
+            {preview.cycle_status === 'completed' ? t('shareout.cycleCompleted') : t('shareout.cycleActive')}
+          </span>
+        </div>
+      )}
+
       {preview?.open_loans > 0 && (
         <p className="notice notice--warn">{t('shareout.openLoans', preview.open_loans)}</p>
       )}
@@ -197,6 +210,13 @@ export default function ShareOut() {
             <div className="is-total">
               <dt>{t('shareout.totalPayout')}</dt>
               <dd className="money">{money(b.total_payout)}</dd>
+            </div>
+          </dl>
+
+          <dl className="shareout__rows">
+            <div>
+              <dt>{t('shareout.eligible')}</dt>
+              <dd>{preview.eligible_members} / {preview.total_members}</dd>
             </div>
           </dl>
 
@@ -246,7 +266,32 @@ export default function ShareOut() {
 
       {showHistory && history.length > 0 && (
         <section className="shareout__history">
-          <h2 className="shareout__h2">{t('common.total')}</h2>
+          <h2 className="shareout__h2">{t('shareout.history')}</h2>
+          <Ledger
+            columns={[
+              { key: 'cycle_name', label: t('shareout.cycle'),
+                render: (h) => h.cycle_name || `#${h.id}` },
+              { key: 'status', label: t('common.status'),
+                render: (h) => (
+                  <span className={
+                    h.status === 'distributed' ? 'tag tag--green'
+                      : h.status === 'confirmed' ? 'tag tag--blue' : 'tag tag--gold'
+                  }>
+                    {h.status === 'distributed' ? t('shareout.distributed')
+                      : h.status === 'confirmed' ? t('shareout.confirmedTag') : t('shareout.draft')}
+                  </span>
+                ) },
+              { key: 'total_savings', label: t('shareout.savedByMembers'), align: 'right', money: true, hideOnPhone: true,
+                render: (h) => money(h.total_savings) },
+              { key: 'total_interest', label: t('shareout.interestReturned'), align: 'right', money: true, hideOnPhone: true,
+                render: (h) => money(h.total_interest) },
+              { key: 'total_fund', label: t('shareout.totalPayout'), align: 'right', money: true,
+                render: (h) => <strong className="money">{money(h.total_fund)}</strong> },
+              { key: 'date_distributed', label: t('common.date'), hideOnPhone: true,
+                render: (h) => (h.date_distributed ? shortDate(h.date_distributed) : <span className="muted">—</span>) },
+            ]}
+            rows={history}
+          />
           <ul className="shareout__historyList">
             {history.map((h) => (
               <li key={h.id}>

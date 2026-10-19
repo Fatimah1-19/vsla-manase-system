@@ -182,6 +182,8 @@ const base = {
     announce: 'Tell the whole group', announceHelp:
       'Everyone else gets a text so they can visit or attend.',
     contribution: 'Contribution', payout: 'Help given', empty: 'Nothing recorded yet.',
+    entries: 'Entries', entry: 'entry', memberTitle: 'Member welfare contributions',
+    byType: 'Welfare summary by kind',
   },
 
   fines: {
@@ -203,6 +205,9 @@ const base = {
     openLoans: (n) => `${n} loan(s) are still out. Settle them before sharing out.`,
     confirmDistribute: 'This texts every member their own figure. Do it once the money is ready.',
     empty: 'No share-out has been done yet.',
+    cycle: 'Saving cycle', cycleActive: 'Active', cycleCompleted: 'Completed',
+    eligible: 'Members who saved this cycle', history: 'Share-out history',
+    distributed: 'Handed out', draft: 'Draft',
   },
 
     requests: {

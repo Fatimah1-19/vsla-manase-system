@@ -189,6 +189,8 @@ const base = {
     announce: 'Uzani gulu lonse',
     announceHelp: 'Ena onse alandira uthenga kuti akhoza kucheza kapena kubwera.',
     contribution: 'Zoperekedwa', payout: 'Thandizo loperekedwa', empty: 'Palibe zolembedwa.',
+    entries: 'Zolembedwa', entry: 'cholembedwa', memberTitle: 'Zoperekedwa za mamembala',
+    byType: 'Chidule cha chithandizo mwa mtundu',
   },
 
   fines: {
@@ -211,6 +213,9 @@ const base = {
     openLoans: (n) => `Ngongole ${n} zikadali panja. Zithetseni musanagawane.`,
     confirmDistribute: 'Izi zitumiza uthenga kwa membala aliyense. Chitani ndalama zikakonzeka.',
     empty: 'Kugawana sikunachitike.',
+    cycle: 'Nyengo yosungira', cycleActive: 'Ikugwira', cycleCompleted: 'Yatha',
+    eligible: 'Mamembala osunga nyengo ino', history: 'Mbiri ya kugawana',
+    distributed: 'Zagawidwa', draft: 'Zolembedwa',
   },
 
     requests: {

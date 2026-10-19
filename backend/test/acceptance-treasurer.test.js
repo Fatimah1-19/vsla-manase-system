@@ -293,6 +293,25 @@ async function check(n, title, fn) {
     assert.ok(welfarePage.includes('canRecordMoney'), 'the welfare screen must gate its write');
   });
 
+  await check(39, 'the welfare book is searchable, dated and summarised', () => {
+    const ctrl = controllers('welfareController.js');
+    assert.ok(routes('welfareRoutes.js').includes("router.get('/summary', c.welfareSummary)"),
+      'the welfare summary must be offered');
+    assert.ok(ctrl.includes('w.from') || ctrl.includes('w.date >='),
+      'the welfare history must filter by date');
+    assert.ok(ctrl.includes('per_member') && ctrl.includes('by_type'),
+      'the summary must break down by member and by kind');
+    assert.ok(ctrl.includes("todayISO()") && ctrl.includes('cannot be in the future'),
+      'a welfare entry can never be dated ahead of today');
+    assert.ok(welfarePage.includes('summary?.per_member') && welfarePage.includes('memberTitle'),
+      'each member\u2019s welfare contribution must be shown');
+    assert.ok(welfarePage.includes("value={from}") && welfarePage.includes("value={search}"),
+      'the welfare history must be searchable and filterable by date');
+    for (const card of ['welfare.balance', 'welfare.contribution', 'welfare.payout']) {
+      assert.ok(welfarePage.includes(card), `the ${card} figure must stay`);
+    }
+  });
+
   await check(14, 'the treasurer can view and record the monthly wrappers', () => {
     assert.ok(routes('contributionRoutes.js').includes("router.get('/', requirePermission('contributions.view')")
       && routes('contributionRoutes.js').includes("router.post('/', requirePermission('contributions.record')"));
@@ -309,6 +328,22 @@ async function check(n, title, fn) {
     assert.ok(back(path.join('controllers', 'shareoutController.js')).includes('CREATE_SHAREOUT'),
       'a share-out must be written to the trail');
     assert.ok(sharePage.includes('canRecordMoney'), 'the share-out screen must gate its write');
+  });
+
+  await check(40, 'the share-out shows the cycle, the members and the history', () => {
+    const ctrl = controllers('shareoutController.js');
+    assert.ok(ctrl.includes('eligible_members') && ctrl.includes('cycle_status'),
+      'the preview must show the cycle status and who saved');
+    assert.ok(ctrl.includes('computeShareOut'),
+      'the one share-out calculation stays exactly as it was');
+    assert.ok(sharePage.includes('preview?.cycle') && sharePage.includes('shareout.cycleActive'),
+      'the current cycle and its status must be shown');
+    assert.ok(sharePage.includes('shareout.eligible') && sharePage.includes('eligible_members'),
+      'the eligible members must be shown');
+    assert.ok(sharePage.includes('shareout.interestReturned') && sharePage.includes('shareout.perMember'),
+      'the interest information and member allocations must be shown');
+    assert.ok(sharePage.includes('shareout__historyList') && sharePage.includes('shareout.history'),
+      'the share-out history must be shown');
   });
 
   await check(16, 'the treasurer can read the financial reports', () => {
