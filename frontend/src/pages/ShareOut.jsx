@@ -208,7 +208,7 @@ export default function ShareOut() {
         </section>
       )}
 
-      {draft && (
+      {canRun && draft && (
         <div className="shareout__draft">
           <p>{t('shareout.awaitConfirm')}</p>
           <button type="button" className="btn btn--gold" onClick={() => confirmFigures(draft.id)} disabled={busy}>

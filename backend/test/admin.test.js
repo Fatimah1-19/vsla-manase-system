@@ -352,8 +352,8 @@ function run(middleware, user) {
     'the share-out history is there to look at');
   assert.ok(shareRoutes.includes("router.post('/', requirePermission('shareout.record')"),
     'creating a share-out needs the record permission');
-  assert.ok(shareRoutes.includes("router.post('/:id/confirm', requirePermission('shareout.view')"),
-    'the existing confirmation step stays with anyone who may view');
+  assert.ok(shareRoutes.includes("router.post('/:id/confirm', requirePermission('shareout.record')"),
+    'confirming the figures is a money step, kept with the treasurer');
   assert.ok(shareRoutes.includes("router.post('/:id/distribute', requirePermission('shareout.record')"),
     'handing out the money needs the record permission');
   assert.ok(!/router\.(patch|delete|put)\s*\(/.test(shareRoutes),
@@ -361,7 +361,7 @@ function run(middleware, user) {
   const shareCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'shareOutController.js'), 'utf8');
   assert.ok(shareCtrl.includes('computeShareOut') && shareCtrl.includes('module.exports'),
     'the one calculation method is the one the system already had');
-  assert.ok(shareCtrl.includes("'CONFIRM_SHAREOUT'"), 'the chairperson confirmation is recorded');
+  assert.ok(shareCtrl.includes("'CONFIRM_SHAREOUT'"), 'the confirmation is recorded');
   const sharePage = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'ShareOut.jsx'), 'utf8');
   assert.ok(sharePage.includes("api.get('/shareout/preview')") && sharePage.includes('shareout__breakdown'),
@@ -373,8 +373,8 @@ function run(middleware, user) {
   assert.ok(sharePage.includes('shareout__historyList'), 'the share-out history is shown');
   assert.ok(sharePage.includes("t('shareout.confirmFigures')"),
     'the existing confirm step is offered to the chairperson');
-  assert.ok(sharePage.includes('canRun && !draft && preview') && sharePage.includes('canRun && ('),
-    'calculating and distributing stay with the recorders');
+  assert.ok(sharePage.includes('canRun && !draft && preview') && sharePage.includes('canRun && draft'),
+    'calculating, confirming and distributing stay with the treasurer');
   assert.ok(shareCtrl.includes("status = 'confirmed'") || shareCtrl.includes("'confirmed'"),
     'the share-out keeps its draft, confirmed and distributed statuses');
 
@@ -983,6 +983,88 @@ function run(middleware, user) {
     }
   }
 
+  // §17 the administrative activity page: the secretary's own written record.
+  const auditCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'auditController.js'), 'utf8');
+  assert.ok(auditCtrl.includes('ADMINISTRATIVE_ACTIONS')
+    && auditCtrl.includes("scope === 'administrative'")
+    && auditCtrl.includes('a.action = ANY('),
+    'the trail can be read down to the administrative actions alone');
+  for (const action of ['CREATE_USER', 'UPDATE_USER', 'EXECUTE_MEMBER_VOTE', 'DEACTIVATE_USER',
+                        'REACTIVATE_USER', 'UNLOCK_USER', 'CREATE_MEETING', 'SAVE_ATTENDANCE',
+                        'UPDATE_MEETING']) {
+    assert.ok(auditCtrl.includes(`'${action}'`), `the administrative trail must carry ${action}`);
+  }
+  const adminActivitySrc = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'AdministrativeActivity.jsx'), 'utf8');
+  assert.ok(routeLine('activity/administrative').includes('AdministrativeActivity')
+    && routeLine('activity/administrative').includes('COMMITTEE'),
+    'the administrative activity page is open to the committee');
+  assert.ok(adminActivitySrc.includes("scope: 'administrative'"),
+    'the page asks for the administrative actions alone');
+  for (const col of ['colUser', 'colAction', 'colRecord', 'colDate', 'colTime', 'colStatus']) {
+    assert.ok(adminActivitySrc.includes(`activity.${col}`), `the page must show the ${col} column`);
+  }
+  assert.ok(recordsNav.includes("to: '/app/activity/administrative'")
+    && recordsNav.includes("key: 'nav.adminActivity'"),
+    'the secretary reaches the administrative activity from her sidebar');
+
+  // §18 the audit trail is read-only for the secretary too.
+  const trailRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'auditRoutes.js'), 'utf8');
+  const auditSchema = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
+  assert.ok(can('secretary', 'audit.view'), 'the secretary may read the trail');
+  assert.ok(!/router\.(post|put|patch|delete)\s*\(/.test(trailRoutes),
+    'the audit routes must not write, for any role');
+  assert.ok(auditSchema.includes('audit_logs is append-only')
+    && /BEFORE UPDATE OR DELETE ON audit_logs/.test(auditSchema),
+    'the database refuses to edit, delete or re-stamp an audit record');
+  const secAudit = await run(requirePermission('audit.view'), { role: 'secretary' });
+  assert.ok(secAudit.passed, 'the secretary reads the trail with audit.view');
+  assert.ok(!can('secretary', 'system.settings') && !can('secretary', 'accounts.manage'),
+    'system-wide audit management stays with the administrator');
+
+  // §19 her own profile: her details, her password, never her role.
+  assert.ok(can('secretary', 'users.view') && !can('secretary', 'users.manage'),
+    'the secretary reads the register but manages no account');
+  assert.ok(profileCtrl.includes('UPDATE users SET phone = COALESCE')
+    && !/UPDATE users SET[^`]*\brole\b/.test(profileCtrl),
+    'her own profile edits contact details, never a role');
+  assert.ok(profileRoutes.includes('router.use(protect)') && profileRoutes.includes("'/me'")
+    && !profileRoutes.includes('/users/:id'),
+    'the profile routes work on the signed-in person only');
+  assert.ok(userCtrl.includes('You cannot change your own role.'),
+    'nobody promotes themselves');
+  assert.ok(userCtrl.includes('Roles are given by a vote of the members')
+    && userCtrl.includes("const role = 'member'"),
+    'a member record is created as a member, and roles are never edited from a page');
+  const profilePageSrc = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Profile.jsx'), 'utf8');
+  for (const shown of ['login.username', 'common.role', 'profile.accountStatus', 'profile.changePassword']) {
+    assert.ok(profilePageSrc.includes(shown), `the profile must show ${shown}`);
+  }
+  assert.ok(!/api\.\w+\([^)]*\brole\b/.test(profilePageSrc),
+    'the profile page offers no way to change a role');
+
+  // §20 the forbidden actions are refused at the server, not just hidden.
+  for (const perm of ['accounts.view', 'accounts.manage', 'system.settings', 'users.manage',
+                      'cases.manage', 'cycles.manage', 'approvals.decide', 'joinRequests.decide',
+                      'loans.decide', 'savings.delete', 'fines.delete', 'contributions.delete',
+                      'registration.delete', 'groupRules.propose']) {
+    const gate = await run(requirePermission(perm), { role: 'secretary' });
+    assert.strictEqual(gate.status, 403, `the secretary must be refused ${perm}`);
+    assert.ok(!can('secretary', perm), `the secretary must not hold ${perm}`);
+  }
+  assert.ok(userCtrl.includes("if (req.body.role && req.body.role !== 'member')"),
+    'the account creator refuses any role but member');
+  assert.ok(joinReqRoutes.includes("router.post('/:id/vote', protect, c.vote)")
+    && joinReqRoutes.includes("router.patch('/:id', protect, requirePermission('joinRequests.decide')"),
+    'the secretary votes; the decision and the vote records are not hers');
+  for (const perm of ['savings.record', 'loans.record', 'fines.record', 'contributions.record',
+                      'welfare.record', 'shareout.record', 'cases.settlement']) {
+    assert.ok(!can('secretary', perm) && can('treasurer', perm),
+      `the secretary may not move money through ${perm}`);
+  }
+
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),
     'the chairperson cannot open the user management page');
@@ -1025,7 +1107,7 @@ function run(middleware, user) {
                       "to: '/app/members?view=history'", "to: '/app/meetings',",
                       "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
                       "to: '/app/members?view=details'", "to: '/app/members?view=documents'",
-                      "to: '/app/records',", "to: '/app/activity',",
+                      "to: '/app/records',", "to: '/app/activity/administrative',",
                       "to: '/app/profile',", "to: '/app/profile?tab=account'"]) {
     assert.ok(secTargets.includes(page), `the secretary menu must include ${page}`);
   }

@@ -721,5 +721,13 @@ export default {
     colUser: 'Wogwiritsa', colAction: 'Zochita', colRecord: 'Chomwe chakhudzidwa',
     colDate: 'Tsiku', colTime: 'Nthawi', colStatus: 'Mkhalidwe',
     statusDone: 'Zapambana', statusFailed: 'Zalephera',
+    adminNote: 'Zolembedwa zonse za mlembi: kaundula, misonkhano ndi kupezekapo. Zowerengedwa zokha.',
+    actCreated: 'Zolembedwa za membala zapangidwa', actUpdated: 'Zambiri za membala zasinthidwa',
+    actMembership: 'Zolembedwa za umembala zasinthidwa', actDeactivated: 'Membala waimitsidwa',
+    actReactivated: 'Membala wabwezeretsedwa', actUnlocked: 'Akaunti yatsegulidwa',
+    actMeeting: 'Msonkhano wapangidwa', actAttendance: 'Kupezekapo kwalembedwa kapena kukonzedwa',
+    actMinutes: 'Zolembedwa za msonkhano zasinthidwa', actOther: 'Chochita cha kasamalidwe',
+    recUser: 'Zolembedwa za membala', recMember: 'Zolembedwa za membala', recMeeting: 'Msonkhano',
+    recDocument: 'Chikalata cha umembala',
   },
 };

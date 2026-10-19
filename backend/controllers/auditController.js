@@ -2,12 +2,32 @@ const { query } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { audit } = require('../utils/audit');
 
+// §17 the administrative actions: the membership register and the meeting book.
+// Everything the secretary writes goes through one of these. The money never
+// appears here — savings, loans, fines, welfare and the share-out are the
+// treasurer's, and they are read from her own books.
+const ADMINISTRATIVE_ACTIONS = [
+  'CREATE_USER',        // a member record was created
+  'UPDATE_USER',        // a member's information was updated
+  'EXECUTE_MEMBER_VOTE',// a membership vote changed a standing
+  'DEACTIVATE_USER',    // a member was put out of active standing
+  'REACTIVATE_USER',    // a member was brought back
+  'UNLOCK_USER',        // a locked account was opened again
+  'CREATE_MEETING',     // a meeting was scheduled
+  'SAVE_ATTENDANCE',    // attendance was recorded or corrected
+  'UPDATE_MEETING',     // the written-up meeting record was updated
+];
+
 // Turn the page's filters into a WHERE clause. Shared by the list and the export.
 function buildFilters(req) {
-  const { action, user_id, from, to, q } = req.query;
+  const { action, user_id, from, to, q, scope } = req.query;
   const where = [];
   const params = [];
   if (action) { params.push(action); where.push(`a.action = $${params.length}`); }
+  if (scope === 'administrative') {
+    params.push(ADMINISTRATIVE_ACTIONS);
+    where.push(`a.action = ANY($${params.length})`);
+  }
   if (user_id) { params.push(Number(user_id)); where.push(`a.user_id = $${params.length}`); }
   if (from) { params.push(from); where.push(`a.created_at >= $${params.length}::date`); }
   if (to) { params.push(to); where.push(`a.created_at < ($${params.length}::date + INTERVAL '1 day')`); }
@@ -138,4 +158,4 @@ const listSessions = wrap(async (req, res) => {
   res.json({ sessions, unassigned });
 });
 
-module.exports = { listAudit, exportAudit, listSessions };
+module.exports = { listAudit, exportAudit, listSessions, ADMINISTRATIVE_ACTIONS };

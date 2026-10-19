@@ -91,7 +91,7 @@ export const NAV_ITEMS = [
   { to: '/app/analytics?tab=reports', key: 'nav.attendanceReports', icon: 'analytics', roles: ['secretary'] },
   { to: '/app/analytics?tab=reports', key: 'nav.meetingReports',    icon: 'analytics', roles: ['secretary'] },
 
-  { to: '/app/activity',   key: 'nav.adminActivity', group: 'nav.gActivity', icon: 'activity', roles: ['secretary'] },
+  { to: '/app/activity/administrative', key: 'nav.adminActivity', group: 'nav.gActivity', icon: 'activity', roles: ['secretary'] },
 
   { to: '/app/profile',    key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['secretary'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['secretary'] },

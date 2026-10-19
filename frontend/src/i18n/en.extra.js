@@ -731,5 +731,13 @@ export default {
     colUser: 'User', colAction: 'Action', colRecord: 'Affected record',
     colDate: 'Date', colTime: 'Time', colStatus: 'Status',
     statusDone: 'Success', statusFailed: 'Failed',
+    adminNote: 'Every record the secretary keeps: the register, the meetings and the attendance. Read-only.',
+    actCreated: 'Member record created', actUpdated: 'Member information updated',
+    actMembership: 'Membership record updated', actDeactivated: 'Member deactivated',
+    actReactivated: 'Member reactivated', actUnlocked: 'Account unlocked',
+    actMeeting: 'Meeting created', actAttendance: 'Attendance recorded or corrected',
+    actMinutes: 'Meeting record updated', actOther: 'Administrative action',
+    recUser: 'Member record', recMember: 'Member record', recMeeting: 'Meeting',
+    recDocument: 'Membership document',
   },
 };
