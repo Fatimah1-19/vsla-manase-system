@@ -16,7 +16,16 @@ export default {
     membershipHistory: 'Mbiri ya umembala', meetingRecords: 'Zolembedwa za misonkhano', memberRecords: 'Zolembedwa za mamembala',
     membershipDocuments: 'Zikalata za umembala', adminRecords: 'Zolembedwa za kasamalidwe',
     attendanceReports: 'Malipoti a kupezeka', meetingReports: 'Malipoti a misonkhano', adminActivity: 'Zochitika za kasamalidwe',
-    groupActivity: 'Zochitika za gulu', auditHistory: 'Mbiri yofunikira ya kafukufuku' },
+    groupActivity: 'Zochitika za gulu', auditHistory: 'Mbiri yofunikira ya kafukufuku',
+    gSavings: 'Kusunga', gLoans: 'Ngongole', gFines: 'Zilango', gWelfare: 'Chithandizo',
+    gShareout: 'Kugawana', gFinancialReports: 'Malipoti a ndalama',
+    recordSavings: 'Lembani kusunga', savingsHistory: 'Mbiri ya kusunga', savingsSummary: 'Chidule cha kusunga',
+    loanApplications: 'Zopempha ngongole', recordLoan: 'Lembani ngongole', activeLoans: 'Ngongole zomwe zilipo', overdueLoans: 'Ngongole zatha nthawi',
+    recordFine: 'Lembani chilango', fineHistory: 'Mbiri ya zilango', outstandingFines: 'Zilango zosathetsedwa',
+    recordWelfare: 'Lembani chithandizo', welfareHistory: 'Mbiri ya chithandizo', welfareSummary: 'Chidule cha chithandizo',
+    currentCycle: 'Nyengo yamakono', shareoutRecords: 'Zolembedwa za kugawana', shareoutHistory: 'Mbiri ya kugawana',
+    repaymentReports: 'Malipoti a kubweza', fineReports: 'Malipoti a zilango', welfareReports: 'Malipoti a chithandizo',
+    financialSummary: 'Chidule cha ndalama', financialActivity: 'Zochitika za ndalama' },
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 

@@ -53,25 +53,56 @@ export const NAV_ITEMS = [
   { to: '/app/profile',    key: 'nav.myProfile', group: 'nav.gProfile', icon: 'profile', roles: ['admin'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['admin'] },
 
-  // ---- everyone else -----------------------------------------------------
-  { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['treasurer', 'member'], phone: true, end: true },
-  { to: '/app/analytics',  key: 'nav.analytics', label: 'nav.analyticsReports', icon: 'analytics', roles: ['treasurer'] },
-  { to: '/app/savings',    key: 'nav.savings',   label: 'nav.savingsManagement', icon: 'savings', roles: ['treasurer'], phone: true },
-  { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['treasurer', 'member'], phone: true },
-  { to: '/app/loans?tab=repayments', key: 'nav.loanRepayments', icon: 'loans', roles: ['treasurer'] },
-  { to: '/app/members',    key: 'nav.members',   label: 'nav.memberManagement',  icon: 'members', roles: ['treasurer'] },
-  { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings',  roles: ['treasurer', 'member'] },
-  { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.welfareManagement', icon: 'welfare',   roles: ['treasurer', 'member'] },
-  { to: '/app/fines',      key: 'nav.fines',     label: 'nav.finesManagement',  icon: 'fines',     roles: ['treasurer', 'member'] },
-  { to: '/app/shareout',   key: 'nav.shareout',  label: 'nav.shareoutManagement', icon: 'shareout', roles: ['treasurer', 'member'] },
-  { to: '/app/requests',   key: 'nav.requests',  label: 'nav.requestsManagement', icon: 'requests',  roles: ['treasurer', 'member'] },
-  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',     roles: ['treasurer', 'member'] },
-  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['treasurer', 'member'] },
-  { to: '/app/messages',   key: 'nav.messages',  icon: 'messages',  roles: ['treasurer'] },
-  { to: '/app/approvals',  key: 'nav.approvals', label: 'nav.approvals', icon: 'requests', roles: ['treasurer'] },
-  { to: '/app/activity',   key: 'nav.activity',  icon: 'activity',  roles: ['treasurer'] },
-  { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',   roles: ['treasurer', 'member'], phone: true },
-  { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',  roles: ['treasurer', 'member'] },
+  // ---- treasurer: the money menu, and only the money menu ----------------
+  { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['treasurer'], phone: true, end: true },
+
+  { to: '/app/savings',                key: 'nav.recordSavings',   group: 'nav.gSavings', icon: 'savings', roles: ['treasurer'], phone: true },
+  { to: '/app/savings?view=history',   key: 'nav.savingsHistory', icon: 'savings', roles: ['treasurer'] },
+  { to: '/app/savings?view=summary',   key: 'nav.savingsSummary', icon: 'savings', roles: ['treasurer'] },
+
+  { to: '/app/loans?filter=pending',   key: 'nav.loanApplications', group: 'nav.gLoans', icon: 'loans', roles: ['treasurer'], phone: true },
+  { to: '/app/loans?action=record',    key: 'nav.recordLoan',       icon: 'loans', roles: ['treasurer'] },
+  { to: '/app/loans?filter=approved',  key: 'nav.activeLoans',      icon: 'loans', roles: ['treasurer'] },
+  { to: '/app/loans?tab=repayments',   key: 'nav.loanRepayments',   icon: 'loans', roles: ['treasurer'] },
+  { to: '/app/loans?filter=overdue',   key: 'nav.overdueLoans',     icon: 'loans', roles: ['treasurer'] },
+
+  { to: '/app/fines',                  key: 'nav.recordFine',        group: 'nav.gFines', icon: 'fines', roles: ['treasurer'], phone: true },
+  { to: '/app/fines?view=history',     key: 'nav.fineHistory',       icon: 'fines', roles: ['treasurer'] },
+  { to: '/app/fines?view=outstanding', key: 'nav.outstandingFines',  icon: 'fines', roles: ['treasurer'] },
+
+  { to: '/app/welfare',                key: 'nav.recordWelfare',   group: 'nav.gWelfare', icon: 'welfare', roles: ['treasurer'], phone: true },
+  { to: '/app/welfare?view=history',   key: 'nav.welfareHistory',  icon: 'welfare', roles: ['treasurer'] },
+  { to: '/app/welfare?view=summary',   key: 'nav.welfareSummary',  icon: 'welfare', roles: ['treasurer'] },
+
+  { to: '/app/shareout',               key: 'nav.currentCycle',    group: 'nav.gShareout', icon: 'shareout', roles: ['treasurer'], phone: true },
+  { to: '/app/shareout?view=records',  key: 'nav.shareoutRecords', icon: 'shareout', roles: ['treasurer'] },
+  { to: '/app/shareout?view=history',  key: 'nav.shareoutHistory', icon: 'shareout', roles: ['treasurer'] },
+
+  { to: '/app/analytics?tab=reports&report=savings',    key: 'nav.savingsReports',   group: 'nav.gFinancialReports', icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=loans',      key: 'nav.loanReports',      icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=repayments', key: 'nav.repaymentReports', icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=fines',      key: 'nav.fineReports',      icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=welfare',    key: 'nav.welfareReports',   icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=shareout',   key: 'nav.shareoutReports',  icon: 'analytics', roles: ['treasurer'] },
+  { to: '/app/analytics?tab=reports&report=overview',   key: 'nav.financialSummary', icon: 'analytics', roles: ['treasurer'] },
+
+  { to: '/app/activity',   key: 'nav.financialActivity', group: 'nav.gActivity', icon: 'activity', roles: ['treasurer'] },
+
+  { to: '/app/profile',            key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['treasurer'], phone: true },
+  { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['treasurer'] },
+
+  // ---- the ordinary member -------------------------------------------------
+  { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['member'], phone: true, end: true },
+  { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['member'], phone: true },
+  { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings', roles: ['member'] },
+  { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.welfareManagement', icon: 'welfare',  roles: ['member'] },
+  { to: '/app/fines',      key: 'nav.fines',     label: 'nav.finesManagement',  icon: 'fines',    roles: ['member'] },
+  { to: '/app/shareout',   key: 'nav.shareout',  label: 'nav.shareoutManagement', icon: 'shareout', roles: ['member'] },
+  { to: '/app/requests',   key: 'nav.requests',  label: 'nav.requestsManagement', icon: 'requests', roles: ['member'] },
+  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',      roles: ['member'] },
+  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['member'] },
+  { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',   roles: ['member'] },
+  { to: '/app/profile',    key: 'nav.profile',   icon: 'profile',    roles: ['member'], phone: true },
 
   // ---- secretary: records, meetings, reports — never the admin's pages ---
   { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['secretary'], phone: true, end: true },

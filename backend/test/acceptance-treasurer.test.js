@@ -137,7 +137,7 @@ async function check(n, title, fn) {
     assert.ok(can('treasurer', 'loans.record'));
     assert.ok(listeners.includes('RECORD_REPAYMENT'), 'every repayment must be written to the trail');
     assert.ok(loansPage.includes('canRecordMoney'), 'the repayment panel is the treasurer\'s alone');
-    assert.ok(loansPage.includes("new URLSearchParams(window.location.search).get('tab') === 'repayments'"),
+    assert.ok(/get\('tab'\) === 'repayments'/.test(loansPage) && loansPage.includes('openRepayments()'),
       '?tab=repayments must open the repayment history');
   });
 
@@ -365,13 +365,25 @@ async function check(n, title, fn) {
         `an administrator's page must not reach the treasurer: ${line.trim()}`);
     }
     const targets = treasLines.join('\n');
-    for (const pageLink of ['/app/analytics', '/app/savings', '/app/loans', '/app/welfare',
-                            '/app/fines', '/app/shareout', '/app/wrappers', '/app/approvals',
-                            '/app/activity', '/app/profile']) {
+    // The whole money menu: savings, loans, fines, welfare, share-out, reports.
+    for (const pageLink of ['/app/savings', '/app/loans', '/app/fines', '/app/welfare',
+                            '/app/shareout', '/app/activity', '/app/profile']) {
       assert.ok(targets.includes(`to: '${pageLink}`), `the treasurer menu must include ${pageLink}`);
     }
     assert.ok(targets.includes("to: '/app/loans?tab=repayments'"),
       'the treasurer menu must reach the repayment history');
+    // Grouped, with a heading over each section of the menu.
+    for (const group of ['nav.gDashboard', 'nav.gSavings', 'nav.gLoans', 'nav.gFines',
+                         'nav.gWelfare', 'nav.gShareout', 'nav.gFinancialReports',
+                         'nav.gActivity', 'nav.gProfile']) {
+      assert.ok(targets.includes(group), `the treasurer menu is missing the ${group} heading`);
+    }
+    // The administrator's pages and membership approval are not hers.
+    for (const forbidden of ['/app/admin/', '/app/approvals', '/app/messages', '/app/members',
+                             '/app/cases', '/app/leadership', '/app/wrappers']) {
+      assert.ok(!targets.includes(`to: '${forbidden}`),
+        `the treasurer menu must not offer ${forbidden}`);
+    }
   });
 
   await check(32, 'the membership process is still vote, decide, then record', () => {
