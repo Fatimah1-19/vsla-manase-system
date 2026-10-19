@@ -391,6 +391,7 @@ const getDashboard = wrap(async (req, res) => {
     money: {
       total_savings: money.total_savings,
       loans_out: money.loans_out,
+      repaid: money.repaid,
       outstanding: +outstanding.toFixed(2),
       interest_earned: money.interest_earned,
       cash_in_box: cashNow,

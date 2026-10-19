@@ -68,6 +68,7 @@ export default {
     qaRecordRepayment: 'Record loan repayment',
     qaRecordFine: 'Record a fine',
     qaRecordWelfare: 'Record welfare contribution',
+    qaViewActiveLoans: 'View active loans',
     qaFinancialReports: 'Financial reports',
     qaShareOut: 'Share-out',
     qaViewSavings: 'View savings',
@@ -78,7 +79,7 @@ export default {
   },
 
 
-  common: { showPassword: 'Show password', hidePassword: 'Hide password', noResults: 'Nothing matches your search' },
+  common: { showPassword: 'Show password', hidePassword: 'Hide password', clear: 'Clear', noResults: 'Nothing matches your search' },
 
   cases: {
     title: 'Member cases',

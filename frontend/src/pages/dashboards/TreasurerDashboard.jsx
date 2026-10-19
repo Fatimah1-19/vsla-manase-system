@@ -4,7 +4,8 @@ import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
-import { money, plainNumber } from '../../utils/format.js';
+import Icon from '../../components/Icon.jsx';
+import { money, plainNumber, shortDate } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import '../../styles.css';
 
@@ -21,22 +22,25 @@ export default function TreasurerDashboard({ data }) {
   const welfareTotal = m.welfare_in + m.welfare_out;
   const welfareInPct = welfareTotal > 0 ? Math.round((m.welfare_in / welfareTotal) * 100) : 0;
 
+  const cycle = data.cycle;
+
+  // The treasurer's seven day-to-day actions, in the order she does them.
   const quickActions = isRecorder ? [
     { to: '/app/savings', key: 'treas.qaRecordSavings', cls: 'btn--sky' },
-    { to: '/app/loans', key: 'treas.qaRecordLoan', cls: '' },
-    { to: '/app/loans?tab=repayments', key: 'treas.qaRecordRepayment', cls: 'btn--gold' },
+    { to: '/app/loans?action=apply', key: 'treas.qaRecordLoan', cls: '' },
+    { to: '/app/loans?action=record', key: 'treas.qaRecordRepayment', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaRecordFine', cls: '' },
     { to: '/app/welfare', key: 'treas.qaRecordWelfare', cls: 'btn--sky' },
+    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
-    { to: '/app/shareout', key: 'treas.qaShareOut', cls: '' },
   ] : [
     { to: '/app/savings', key: 'treas.qaViewSavings', cls: 'btn--sky' },
     { to: '/app/loans', key: 'treas.qaViewLoans', cls: '' },
     { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaViewFines', cls: '' },
     { to: '/app/welfare', key: 'treas.qaViewWelfare', cls: 'btn--sky' },
+    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
-    { to: '/app/shareout', key: 'treas.qaShareOut', cls: '' },
   ];
 
   return (
@@ -51,20 +55,33 @@ export default function TreasurerDashboard({ data }) {
           ))}
         </div>
       </section>
+
+      {cycle && (
+        <div className="savings__cycle">
+          <Icon name="cycles" size={18} />
+          <span className="savings__cycleLabel">{t('nav.currentCycle')}</span>
+          <strong className="savings__cycleName">{cycle.cycle_name}</strong>
+          <span className="savings__cycleDates">
+            {shortDate(cycle.start_date)} - {shortDate(cycle.end_date)}
+          </span>
+        </div>
+      )}
+
       <div className="page-grid page-grid--stat">
-        <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" icon="savings" big />
-        <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" />
-        <StatCard label={t('dashboard.loansOut')}      value={money(m.loans_out)}     tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" big />
         <StatCard label={t('dashboard.activeLoans')}   value={plainNumber(data.loans?.approved)} tone="green" icon="loans" />
         <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="blue" icon="loans" />
-        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
-        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} tone="green" icon="welfare" />
+        <StatCard label={t('analytics.totalRepayments')} value={money(m.repaid)} tone="gold" icon="loans" />
         <StatCard
           label={t('dashboard.finesOutstanding')}
           value={money(m.fines_outstanding)}
           tone={m.fines_outstanding > 0 ? 'red' : 'plain'}
           icon="fines"
         />
+        <StatCard label={t('dashboard.welfareBalance')} value={money(m.welfare_balance)} tone="green" icon="welfare" />
+        <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" icon="savings" />
+        <StatCard label={t('dashboard.loansOut')}      value={money(m.loans_out)}     tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
         {w && (
           <StatCard
             label={t('dashboard.wrappersCollected')}
@@ -93,7 +110,7 @@ export default function TreasurerDashboard({ data }) {
       {data.loans?.overdue > 0 && (
         <p className="notice notice--danger">
           {data.loans.overdue} {t('dashboard.overdueLoans').toLowerCase()}.{' '}
-          <Link to="/app/loans">{t('common.view')}</Link>
+          <Link to="/app/loans?filter=overdue">{t('common.view')}</Link>
         </p>
       )}
 

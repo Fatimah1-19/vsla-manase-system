@@ -67,6 +67,7 @@ export default {
     qaRecordFine: 'Lembani chindapusa',
     qaRecordWelfare: 'Lembani zoperekedwa za chithandizo',
     qaFinancialReports: 'Malipoti azachuma',
+    qaViewActiveLoans: 'Onani ngongole zomwe zikuyenda',
     qaShareOut: 'Kugawana',
     qaViewSavings: 'Onani zosunga',
     qaViewLoans: 'Onani ngongole',
@@ -76,7 +77,7 @@ export default {
   },
 
 
-  common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu' },
+  common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', clear: 'Chotsani', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu' },
 
   cases: {
     title: 'Milandu ya mamembala',
