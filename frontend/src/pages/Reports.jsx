@@ -23,6 +23,7 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => ({
 
 // The report categories (chips) under the member picker.
 const CATEGORIES = [
+  { key: 'summary', label: 'reportSummary' },
   { key: 'attendance', label: 'reportAttendance' },
   { key: 'overview', label: 'reportOverview' },
   { key: 'contributions', label: 'reportContributions' },
@@ -43,7 +44,7 @@ const CATEGORIES = [
 ];
 
 // Reports that only make sense for the whole group.
-const GROUP_ONLY = ['welfare', 'shareout', 'status', 'requests',
+const GROUP_ONLY = ['summary', 'welfare', 'shareout', 'status', 'requests',
   'newMembers', 'inactiveMembers', 'changes', 'history', 'meetings'];
 
 const MEMBERSHIP_EVENT_KEYS = {
@@ -104,6 +105,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   const [joinReqs, setJoinReqs] = useState(null);
   const [events, setEvents] = useState(null);       // the membership register's story
   const [meetingRows, setMeetingRows] = useState(null);
+  const [welfareFund, setWelfareFund] = useState(null);   // contributions by member
+  const [sharePreview, setSharePreview] = useState(null); // the live share-out working
 
   const load = useCallback(async () => {
     const q = new URLSearchParams({ status });
@@ -140,7 +143,13 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     if (category === 'meetings' && meetingRows === null) {
       api.get('/meetings').then(setMeetingRows).catch((e) => toast.error(e.message));
     }
-  }, [category, allMembers, events, meetingRows, toast]);
+    if (category === 'welfare' && welfareFund === null) {
+      api.get('/welfare/summary').then(setWelfareFund).catch((e) => toast.error(e.message));
+    }
+    if (category === 'shareout' && sharePreview === null) {
+      api.get('/shareout/preview').then(setSharePreview).catch(() => {});
+    }
+  }, [category, allMembers, events, meetingRows, welfareFund, sharePreview, toast]);
 
   const chartYear = year || CURRENT_YEAR;
   useEffect(() => {
@@ -248,6 +257,30 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     { key: 'savings', label: t('reports.serSavings'), tone: 'purple' },
     { key: 'repayments', label: t('reports.serRepayments'), tone: 'teal' },
   ];
+
+  // The overall position, drawn only from figures the system already keeps.
+  const summaryPanel = totals && (
+    <section className="panel reports__panel">
+      <h2 className="panel__title">{t('reports.reportSummary')}</h2>
+      <p className="reports__repNote">{t('reports.summaryNote')}</p>
+      <div className="page-grid page-grid--stat reports__totals">
+        <StatCard label={t('dashboard.cashInBox')} value={money(totals.cash_in_box)} tone="gold" icon="savings" />
+        <StatCard label={t('dashboard.totalSavings')} value={money(totals.savings.total)} tone="green" icon="savings" />
+        <StatCard label={t('dashboard.activeLoans')} value={money(totals.loans.outstanding)} tone="blue" icon="loans" />
+        <StatCard label={t('dashboard.interestEarned')} value={money(totals.loans.interest_earned)} tone="gold" icon="loans" />
+      </div>
+      <dl className="reports__facts">
+        <div><dt>{t('reports.reportLoansGiven')}</dt><dd className="money">{money(totals.loans.lent_principal)}</dd></div>
+        <div><dt>{t('analytics.totalRepayments')}</dt><dd className="money">{money(totals.repayments.total)}</dd></div>
+        <div><dt>{t('reports.totalContribution')}</dt><dd className="money">{money(totals.wrappers.cycle_total)}</dd></div>
+        <div><dt>{t('reports.totalFines')}</dt><dd className="money">{money(totals.fines.total)}</dd></div>
+        <div><dt>{t('dashboard.finesOutstanding')}</dt><dd className="money money--neg">{money(totals.fines.outstanding)}</dd></div>
+        <div><dt>{t('analytics.welfareIn')}</dt><dd className="money">{money(totals.welfare.contributions)}</dd></div>
+        <div><dt>{t('analytics.welfareOut')}</dt><dd className="money">{money(totals.welfare.payouts)}</dd></div>
+        <div className="is-strong"><dt>{t('dashboard.welfareBalance')}</dt><dd className="money">{money(totals.welfare.balance)}</dd></div>
+      </dl>
+    </section>
+  );
 
   const memberFacts = report && (
     <section className="panel reports__panel">
@@ -425,46 +458,114 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
         <StatCard label={t('dashboard.welfareBalance')} value={money(totals.welfare.balance)} tone="gold" icon="welfare" />
       </div>
       <LineChart tone="maize" data={gb.map((b) => ({ label: b.label, value: b.welfare }))} />
+      {welfareFund && welfareFund.per_member.length > 0 && (
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('common.name')}</th>
+                <th className="is-num">{t('reports.welfareContributions')}</th>
+                <th className="is-num">{t('reports.welfarePayouts')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {welfareFund.per_member.map((r) => (
+                <tr key={r.member_id}>
+                  <td>{r.full_name}</td>
+                  <td className="is-num money">{money(r.contributions)}</td>
+                  <td className="is-num money money--neg">{r.payouts > 0 ? money(r.payouts) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 
   const groupShareoutPanel = shareouts !== null && (
-    <section className="panel reports__panel">
-      <h2 className="panel__title">{t('reports.groupShareoutTitle')}</h2>
-      <div className="reports__tableWrap">
-        <table className="reports__table">
-          <thead>
-            <tr>
-              <th>{t('reports.cycleName')}</th>
-              <th>{t('common.status')}</th>
-              <th className="is-num">{t('reports.reportSaved')}</th>
-              <th className="is-num">{t('dashboard.interestEarned')}</th>
-              <th className="is-num">{t('reports.shareFund')}</th>
-              <th>{t('common.date')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shareouts.map((so) => (
-              <tr key={so.id}>
-                <td>{so.cycle_name || <span className="muted">—</span>}</td>
-                <td>
-                  <span className={`tag tag--${so.status === 'distributed' ? 'green'
-                    : so.status === 'confirmed' ? 'blue' : 'gold'}`}>
-                    {so.status === 'distributed' ? shortDate(so.date_distributed)
-                      : so.status === 'confirmed' ? t('shareout.confirmedTag') : so.status}
-                  </span>
-                </td>
-                <td className="is-num money">{money(so.total_savings)}</td>
-                <td className="is-num money">{money(so.total_interest)}</td>
-                <td className="is-num money">{money(so.total_fund)}</td>
-                <td>{shortDate(so.created_at)}</td>
+    <>
+      {sharePreview && (
+        <section className="panel reports__panel">
+          <h2 className="panel__title">{t('reports.shareoutCalcTitle')}</h2>
+          <p className="reports__repNote">{t('shareout.rulesBox')}</p>
+          <div className="page-grid page-grid--stat reports__totals">
+            <StatCard label={t('shareout.savedByMembers')} value={money(sharePreview.breakdown.total_savings)} tone="green" icon="savings" />
+            <StatCard label={t('shareout.interestReturned')} value={money(sharePreview.breakdown.interest_returned)} tone="gold" icon="loans" />
+            <StatCard label={t('shareout.totalPayout')} value={money(sharePreview.breakdown.total_payout)} tone="blue" icon="shareout" />
+          </div>
+          <dl className="reports__facts">
+            <div><dt>{t('shareout.deductionsTotal')}</dt><dd className="money money--neg">-{money(sharePreview.breakdown.deductions)}</dd></div>
+            <div><dt>{t('shareout.finesKept')}</dt><dd className="money">{money(sharePreview.breakdown.fines_kept)}</dd></div>
+            <div><dt>{t('shareout.welfareKept')}</dt><dd className="money">{money(sharePreview.breakdown.welfare_kept)}</dd></div>
+            <div><dt>{t('shareout.wrappersKept')}</dt><dd className="money">{money(sharePreview.breakdown.wrappers_kept)}</dd></div>
+          </dl>
+          {sharePreview.shares.length > 0 && (
+            <div className="reports__tableWrap">
+              <table className="reports__table">
+                <thead>
+                  <tr>
+                    <th>{t('common.name')}</th>
+                    <th className="is-num">{t('reports.reportSaved')}</th>
+                    <th className="is-num">{t('shareout.interestReturned')}</th>
+                    <th className="is-num">{t('shareout.deductionsTotal')}</th>
+                    <th className="is-num">{t('reports.shareFund')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sharePreview.shares.map((s) => (
+                    <tr key={s.member_id}>
+                      <td>{s.full_name}</td>
+                      <td className="is-num money">{money(s.member_savings)}</td>
+                      <td className="is-num money">{money(s.profit_share)}</td>
+                      <td className="is-num money money--neg">{s.deductions > 0 ? `-${money(s.deductions)}` : '—'}</td>
+                      <td className="is-num money is-strong">{money(s.share_amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="panel reports__panel">
+        <h2 className="panel__title">{t('reports.groupShareoutTitle')}</h2>
+        <div className="reports__tableWrap">
+          <table className="reports__table">
+            <thead>
+              <tr>
+                <th>{t('reports.cycleName')}</th>
+                <th>{t('common.status')}</th>
+                <th className="is-num">{t('reports.reportSaved')}</th>
+                <th className="is-num">{t('dashboard.interestEarned')}</th>
+                <th className="is-num">{t('reports.shareFund')}</th>
+                <th>{t('common.date')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {!shareouts.length && <p className="muted">{t('reports.reportEmpty')}</p>}
-      </div>
-    </section>
+            </thead>
+            <tbody>
+              {shareouts.map((so) => (
+                <tr key={so.id}>
+                  <td>{so.cycle_name || <span className="muted">—</span>}</td>
+                  <td>
+                    <span className={`tag tag--${so.status === 'distributed' ? 'green'
+                      : so.status === 'confirmed' ? 'blue' : 'gold'}`}>
+                      {so.status === 'distributed' ? shortDate(so.date_distributed)
+                        : so.status === 'confirmed' ? t('shareout.confirmedTag') : so.status}
+                    </span>
+                  </td>
+                  <td className="is-num money">{money(so.total_savings)}</td>
+                  <td className="is-num money">{money(so.total_interest)}</td>
+                  <td className="is-num money">{money(so.total_fund)}</td>
+                  <td>{shortDate(so.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!shareouts.length && <p className="muted">{t('reports.reportEmpty')}</p>}
+        </div>
+      </section>
+    </>
   );
 
   const attendanceSeen = group
@@ -830,14 +931,16 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     }
 
     if (!isMember) {
-      const ownList = ['shareout', 'status', 'requests', 'newMembers', 'inactiveMembers', 'changes', 'history', 'meetings'];
+      const ownList = ['summary', 'shareout', 'status', 'requests', 'newMembers', 'inactiveMembers', 'changes', 'history', 'meetings'];
       if (category === 'shareout' && shareouts === null) return <Spinner />;
       if (category === 'status' && allMembers === null) return <Spinner />;
       if ((category === 'newMembers' || category === 'inactiveMembers') && allMembers === null) return <Spinner />;
       if ((category === 'changes' || category === 'history') && events === null) return <Spinner />;
       if (category === 'meetings' && meetingRows === null) return <Spinner />;
       if (category === 'requests' && joinReqs === null) return <Spinner />;
+      if (category === 'summary' && totals === null) return <Spinner />;
       if (!ownList.includes(category) && !group) return <Spinner />;
+      if (category === 'summary') return summaryPanel;
       if (category === 'contributions') return groupContributions;
       if (category === 'savings') return groupSavingsPanel;
       if (category === 'loans') return groupLoans;

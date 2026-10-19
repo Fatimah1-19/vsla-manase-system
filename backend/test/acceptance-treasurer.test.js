@@ -5,7 +5,7 @@
  * repayments, fines, welfare, the monthly wrappers and the share-out. She is
  * never the chairperson and never the system administrator, she never gets
  * the final word on who joins, and she never approves a loan — not even her
- * own. Each of the 37 checks below is asserted against
+ * own. Each of the 45 checks below is asserted against
  * the code that ships, in the same style as the other acceptance tests: the
  * rules and the wiring are read and checked, no database is needed.
  *
@@ -455,6 +455,56 @@ async function check(n, title, fn) {
       'a vote always belongs to the signed-in member');
     assert.ok(joinCtrl.includes('rules.quorumNeeded') && /votes\.yes <= votes\.no/.test(joinCtrl),
       'the vote must still be able to fail on its own numbers');
+  });
+
+  await check(43, 'the treasurer who is also a member keeps her one ordinary vote', () => {
+    // A vote belongs to a member, checked by the member record — not the role.
+    assert.ok(joinCtrl.includes('const me = req.user.member_id')
+      && joinCtrl.includes('Only members can vote'),
+      'a vote needs a member record, whatever office she holds');
+    assert.ok(joinCtrl.includes('rules.canVote'),
+      'the same member-voting rule must apply to the treasurer');
+    assert.ok(joinCtrl.includes('ON CONFLICT (request_id, user_id) DO UPDATE'),
+      'one person, one vote: a repeat overwrites her own, it never adds a second');
+    // The treasurer role itself carries no extra voting weight anywhere.
+    assert.ok(!Object.keys(PERMISSIONS).some((p) => /vote/i.test(p) && PERMISSIONS[p].includes('treasurer')
+      && !PERMISSIONS[p].includes('member') && PERMISSIONS[p].length === 1),
+      'the treasurer must hold no vote that an ordinary member does not');
+  });
+
+  await check(44, 'the financial reports the treasurer keeps are all on record', () => {
+    // §16 — one page draws every financial report from figures already kept.
+    assert.ok(reportsPage.includes('/reports/group') && reportsPage.includes('group?.buckets'),
+      'the group report must read the recorded buckets');
+    assert.ok(reportsPage.includes("api.get('/welfare/summary')")
+      && reportsPage.includes('per_member'),
+      'the welfare report must show contributions by member');
+    assert.ok(reportsPage.includes("api.get('/shareout/preview')")
+      && reportsPage.includes('sharePreview.shares'),
+      'the share-out report must show the working and the member allocations');
+    assert.ok(reportsPage.includes('summaryPanel') && reportsPage.includes('reportSummary')
+      && reportsPage.includes("api.get('/analytics')"),
+      'the financial summary must reuse the figures already in the system');
+    // Savings and repayment reports carry a total and a by-period view.
+    assert.ok(reportsPage.includes('groupSavingsTitle') && reportsPage.includes('groupRepaymentsTitle'),
+      'the savings and repayment reports must both be present');
+  });
+
+  await check(45, 'the dashboard visualisations use real recorded figures', () => {
+    // §17 — the charts read the same recorded data, no invented series.
+    assert.ok(reportsPage.includes("import { MultiLineChart, LineChart, BarChart }")
+      || reportsPage.includes('MultiLineChart'),
+      'the reports page must draw its charts from the shared chart set');
+    assert.ok(reportsPage.includes('gb.map') && reportsPage.includes('group?.buckets'),
+      'every chart must be fed the buckets the server returned');
+    const analyticsCtrl = controllers('analyticsController.js');
+    for (const table of ['FROM savings', 'FROM loan_repayments', 'FROM loans',
+                         'FROM fines', 'FROM welfare_fund']) {
+      assert.ok(analyticsCtrl.includes(table),
+        `the trend charts must read real rows (${table})`);
+    }
+    assert.ok(analyticsCtrl.includes('monthly'),
+      'the trends must be grouped by real months');
   });
 
   await check(23, 'the treasurer cannot modify audit records', () => {
