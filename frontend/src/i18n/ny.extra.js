@@ -50,6 +50,22 @@ export default {
     qaViewMeetings: 'Onani misonkhano',
   },
 
+  treas: {
+    qaTitle: 'Zochitika mwachangu',
+    qaRecordSavings: 'Lembani zosunga',
+    qaRecordLoan: 'Lembani ngongole',
+    qaRecordRepayment: 'Lembani kubweza ngongole',
+    qaRecordFine: 'Lembani chindapusa',
+    qaRecordWelfare: 'Lembani zoperekedwa za chithandizo',
+    qaFinancialReports: 'Malipoti azachuma',
+    qaShareOut: 'Kugawana',
+    qaViewSavings: 'Onani zosunga',
+    qaViewLoans: 'Onani ngongole',
+    qaViewRepayments: 'Onani kubweza ngongole',
+    qaViewFines: 'Onani zindapusa',
+    qaViewWelfare: 'Onani thumba la chithandizo',
+  },
+
 
   common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu' },
 

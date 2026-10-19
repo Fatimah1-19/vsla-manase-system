@@ -341,7 +341,7 @@ async function check(n, title, fn) {
       && !can('secretary', 'cases.settlement'),
       'the money books belong to the treasurer alone');
     assert.ok(!can('secretary', 'joinRequests.decide') && !can('secretary', 'loans.decide'),
-      'membership and loan decisions stay with the chairperson and treasurer');
+      'membership decisions stay with the chairperson; loan decisions are with the chairperson and treasurer');
     const chairOnly = await run(requirePermission('cycles.manage'), { role: 'secretary' });
     assert.strictEqual(chairOnly.status, 403, 'leading the cycle stays with the chairperson');
   });

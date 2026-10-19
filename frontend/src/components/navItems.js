@@ -58,6 +58,7 @@ export const NAV_ITEMS = [
   { to: '/app/analytics',  key: 'nav.analytics', label: 'nav.analyticsReports', icon: 'analytics', roles: ['treasurer'] },
   { to: '/app/savings',    key: 'nav.savings',   label: 'nav.savingsManagement', icon: 'savings', roles: ['treasurer'], phone: true },
   { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['treasurer', 'member'], phone: true },
+  { to: '/app/loans?tab=repayments', key: 'nav.loanRepayments', icon: 'loans', roles: ['treasurer'] },
   { to: '/app/members',    key: 'nav.members',   label: 'nav.memberManagement',  icon: 'members', roles: ['treasurer'] },
   { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings',  roles: ['treasurer', 'member'] },
   { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.welfareManagement', icon: 'welfare',   roles: ['treasurer', 'member'] },

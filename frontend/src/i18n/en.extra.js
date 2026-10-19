@@ -52,6 +52,22 @@ export default {
     qaViewMeetings: 'View Meetings',
   },
 
+  treas: {
+    qaTitle: 'Quick actions',
+    qaRecordSavings: 'Record savings',
+    qaRecordLoan: 'Record a loan',
+    qaRecordRepayment: 'Record loan repayment',
+    qaRecordFine: 'Record a fine',
+    qaRecordWelfare: 'Record welfare contribution',
+    qaFinancialReports: 'Financial reports',
+    qaShareOut: 'Share-out',
+    qaViewSavings: 'View savings',
+    qaViewLoans: 'View loans',
+    qaViewRepayments: 'View repayments',
+    qaViewFines: 'View fines',
+    qaViewWelfare: 'View welfare',
+  },
+
 
   common: { showPassword: 'Show password', hidePassword: 'Hide password', noResults: 'Nothing matches your search' },
 

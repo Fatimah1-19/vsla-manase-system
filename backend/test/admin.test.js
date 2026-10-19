@@ -774,11 +774,11 @@ function run(middleware, user) {
   // She still votes on join requests like any member — only the decision moved.
   assert.ok(joinRoutes.includes("router.post('/:id/vote', protect, c.vote)")
     && joinRoutes.includes("router.patch('/:id', protect, requirePermission('joinRequests.decide')"),
-    'the secretary votes; only the chairperson and treasurer decide');
+    'the secretary votes; the chairperson alone decides');
   // The screens agree with the server: the decide buttons are not hers.
   const authContext = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'context', 'AuthContext.jsx'), 'utf8');
-  assert.ok(authContext.includes("isDecider: !!user && ['admin', 'treasurer']"),
+  assert.ok(authContext.includes("isDecider: user?.role === 'admin'"),
     'the app must know who may decide');
   assert.ok(joinPage.includes('{isDecider && (') && !joinPage.includes('{isCommittee && ('),
     'the join-request decide buttons must not reach the secretary');

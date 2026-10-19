@@ -109,6 +109,15 @@ export default function Loans() {
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
+  // ?tab=repayments opens the repayment history directly. Both the chairperson
+  // and the treasurer link to it from their menus.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'repayments') {
+      openRepayments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const change = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 

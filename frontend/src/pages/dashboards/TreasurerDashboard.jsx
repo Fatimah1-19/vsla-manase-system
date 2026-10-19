@@ -21,8 +21,36 @@ export default function TreasurerDashboard({ data }) {
   const welfareTotal = m.welfare_in + m.welfare_out;
   const welfareInPct = welfareTotal > 0 ? Math.round((m.welfare_in / welfareTotal) * 100) : 0;
 
+  const quickActions = isRecorder ? [
+    { to: '/app/savings', key: 'treas.qaRecordSavings', cls: 'btn--sky' },
+    { to: '/app/loans', key: 'treas.qaRecordLoan', cls: '' },
+    { to: '/app/loans?tab=repayments', key: 'treas.qaRecordRepayment', cls: 'btn--gold' },
+    { to: '/app/fines', key: 'treas.qaRecordFine', cls: '' },
+    { to: '/app/welfare', key: 'treas.qaRecordWelfare', cls: 'btn--sky' },
+    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
+    { to: '/app/shareout', key: 'treas.qaShareOut', cls: '' },
+  ] : [
+    { to: '/app/savings', key: 'treas.qaViewSavings', cls: 'btn--sky' },
+    { to: '/app/loans', key: 'treas.qaViewLoans', cls: '' },
+    { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', cls: 'btn--gold' },
+    { to: '/app/fines', key: 'treas.qaViewFines', cls: '' },
+    { to: '/app/welfare', key: 'treas.qaViewWelfare', cls: 'btn--sky' },
+    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
+    { to: '/app/shareout', key: 'treas.qaShareOut', cls: '' },
+  ];
+
   return (
     <>
+      <section className="dash__card sdash__quick">
+        <h2 className="dash__sectionTitle">{t('treas.qaTitle')}</h2>
+        <div className="sdash__quickGrid">
+          {quickActions.map((a) => (
+            <Link key={a.to + a.key} to={a.to} className={`btn ${a.cls}`.trim()}>
+              {t(a.key)}
+            </Link>
+          ))}
+        </div>
+      </section>
       <div className="page-grid page-grid--stat">
         <StatCard label={t('dashboard.cashInBox')}     value={money(m.cash_in_box)}   tone="gold" icon="savings" big />
         <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" />
