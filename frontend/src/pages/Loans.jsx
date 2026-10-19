@@ -18,6 +18,32 @@ const STATUS_TAG = {
   pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red',
 };
 
+// The plain standing of a loan, as the treasurer reads it at a glance.
+const STANDING_TAG = {
+  overdue: 'red', dueSoon: 'gold', active: 'green', fullyPaid: 'blue',
+};
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Whole days a loan is past its due date (0 if it is not). */
+function daysOverdue(loan) {
+  if (!loan.due_date) return 0;
+  const diff = Math.floor((Date.now() - new Date(loan.due_date).getTime()) / DAY);
+  return diff > 0 ? diff : 0;
+}
+
+/** The standing of a loan: fully paid, overdue, due soon, or running. */
+function standing(loan) {
+  if (loan.status === 'repaid' || loan.outstanding <= 0) return 'fullyPaid';
+  if (loan.status === 'approved') {
+    const days = daysOverdue(loan);
+    if (days > 0) return 'overdue';
+    if (loan.due_date && new Date(loan.due_date).getTime() - Date.now() <= 7 * DAY) return 'dueSoon';
+    return 'active';
+  }
+  return 'active';
+}
+
 const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '' };
 
 /**
@@ -57,7 +83,7 @@ function groupRepayments(rows) {
 
 export default function Loans() {
   const { t } = useLang();
-  const { user, isCommittee, canRecordMoney } = useAuth();
+  const { user, isCommittee, canRecordMoney, isDecider } = useAuth();
   const toast = useToast();
   const location = useLocation();
 
@@ -75,6 +101,7 @@ export default function Loans() {
   // The repayment-history view: search a member, see their payments grouped.
   const [rpSearch, setRpSearch] = useState('');
   const [rpMember, setRpMember] = useState('');
+  const [rpLoanId, setRpLoanId] = useState('');
   const [rpData, setRpData] = useState(null);
   const [rpLoading, setRpLoading] = useState(false);
 
@@ -89,7 +116,9 @@ export default function Loans() {
   // A search over the loan list, so one member's history can be found quickly.
   const [listSearch, setListSearch] = useState('');
 
-  const canDecide = ['admin', 'treasurer'].includes(user.role);
+  // Lending the group's money is the chairperson's decision. The treasurer
+  // records the loan once it has been authorised; she never approves it herself.
+  const canDecide = isDecider;
   const canRecordRepayment = canRecordMoney;
 
   // How much she may borrow: her savings times the group's multiplier.
@@ -205,10 +234,13 @@ export default function Loans() {
     }
   }
 
-  async function loadRepayments(memberId) {
+  async function loadRepayments(memberId, loanId) {
     setRpLoading(true);
     try {
-      const q = memberId ? `?member_id=${memberId}` : '';
+      const qs = new URLSearchParams();
+      if (memberId) qs.set('member_id', memberId);
+      if (loanId) qs.set('loan_id', loanId);
+      const q = qs.toString() ? `?${qs.toString()}` : '';
       setRpData(await api.get(`/loans/repayments${q}`));
     } catch (err) {
       toast.error(err.message);
@@ -221,21 +253,31 @@ export default function Loans() {
     const own = isCommittee ? '' : (user.member_id || '');
     setRpSearch('');
     setRpMember(own ? String(own) : '');
+    setRpLoanId('');
     setFilter('repayments');
     setRpData(null);
-    loadRepayments(own);
+    loadRepayments(own, '');
   }
 
   function showEveryone() {
     setRpSearch('');
     setRpMember('');
-    loadRepayments('');
+    setRpLoanId('');
+    loadRepayments('', '');
   }
 
   function pickMember(m) {
     setRpSearch(m.full_name);
     setRpMember(String(m.id));
-    loadRepayments(m.id);
+    setRpLoanId('');
+    loadRepayments(m.id, '');
+  }
+
+  // Narrow the repayment history to one loan, so a single loan's payments can
+  // be read on their own.
+  function pickRepayLoan(loanId) {
+    setRpLoanId(loanId);
+    loadRepayments(rpMember, loanId);
   }
 
   function openRecord() {
@@ -272,7 +314,7 @@ export default function Loans() {
       setRecAmount('');
       setRecDate('');
       await load();
-      if (filter === 'repayments') loadRepayments(rpMember);
+      if (filter === 'repayments') loadRepayments(rpMember, rpLoanId);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -283,10 +325,14 @@ export default function Loans() {
   if (!loans) return <Spinner />;
 
   const listQuery = listSearch.trim().toLowerCase();
-  const isOverdue = (l) => l.status === 'approved' && l.outstanding > 0
-    && l.due_date && new Date(l.due_date) < new Date();
+  // The overdue board lists every loan that is still running or late, worst
+  // first, so the treasurer reads what needs chasing at the top.
+  const running = loans.filter((l) => l.status === 'approved' || (l.status === 'repaid' && l.outstanding > 0));
+  const overdueRows = running.filter((l) => standing(l) === 'overdue');
+  const overdueCount = overdueRows.length;
+  const overdueOwed = overdueRows.reduce((sum, l) => sum + (Number(l.outstanding) || 0), 0);
   const shown = (filter === 'all' ? loans
-    : filter === 'overdue' ? loans.filter(isOverdue)
+    : filter === 'overdue' ? [...running].sort((a, b) => daysOverdue(b) - daysOverdue(a))
     : loans.filter((l) => l.status === filter))
     .filter((l) => !listQuery || l.full_name.toLowerCase().includes(listQuery));
   const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
@@ -297,6 +343,8 @@ export default function Loans() {
     ? members.filter((m) => m.full_name.toLowerCase().includes(rpQuery)
         || String(m.membership_number || '').includes(rpQuery)).slice(0, 8)
     : [];
+  // When one member is picked, her loans become the filter for the history.
+  const rpLoanOptions = rpMember ? loans.filter((l) => String(l.member_id) === String(rpMember)) : [];
 
   const recQuery = recSearch.trim().toLowerCase();
   const recMatches = (recQuery && !recMember)
@@ -332,6 +380,41 @@ export default function Loans() {
       } },
     { key: 'status', label: t('common.status'),
       render: (l) => <span className={`tag tag--${STATUS_TAG[l.status]}`}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</span> },
+  ];
+
+  // The overdue board: member, what was lent, what has come back, what is owed,
+  // when it was due, how late it is, and how it stands.
+  const STANDING_LABEL = {
+    overdue: 'loans.standingOverdue',
+    dueSoon: 'loans.standingDueSoon',
+    active: 'loans.standingActive',
+    fullyPaid: 'loans.standingFullyPaid',
+  };
+  const overdueColumns = [
+    { key: 'full_name', label: t('loans.borrower'),
+      render: (l) => (
+        <span className="vcell">
+          <MemberAvatar memberId={l.member_id} hasAvatar={l.has_avatar} name={l.full_name} size={32} />
+          <span className="vcell__name">{l.full_name}</span>
+        </span>
+      ) },
+    { key: 'amount', label: t('loans.principal'), align: 'right', money: true, render: (l) => money(l.amount) },
+    { key: 'total_repaid', label: t('loans.amountPaid'), align: 'right', money: true, hideOnPhone: true,
+      render: (l) => money(l.total_repaid) },
+    { key: 'outstanding', label: t('loans.outstanding'), align: 'right', money: true,
+      render: (l) => <span className={l.outstanding > 0 ? 'money money--neg' : 'money'}>{money(l.outstanding)}</span> },
+    { key: 'due_date', label: t('loans.dueDate'), hideOnPhone: true,
+      render: (l) => <span className={standing(l) === 'overdue' ? 'loans__late' : ''}>{shortDate(l.due_date)}</span> },
+    { key: 'days_overdue', label: t('loans.daysOverdue'), align: 'right', hideOnPhone: true,
+      render: (l) => {
+        const d = daysOverdue(l);
+        return d > 0 ? <span className="loans__late">{plainNumber(d)}</span> : <span className="muted">—</span>;
+      } },
+    { key: 'standing', label: t('common.status'),
+      render: (l) => {
+        const s = standing(l);
+        return <span className={`tag tag--${STANDING_TAG[s]}`}>{t(STANDING_LABEL[s])}</span>;
+      } },
   ];
 
   return (
@@ -391,6 +474,25 @@ export default function Loans() {
                   {t('loans.everyone')}
                 </button>
               </div>
+
+              {rpLoanOptions.length > 0 && (
+                <div className="toolbar">
+                  <label className="field-label" htmlFor="rp-loan">{t('loans.filterByLoan')}</label>
+                  <select
+                    id="rp-loan"
+                    className="toolbar__grow"
+                    value={rpLoanId}
+                    onChange={(e) => pickRepayLoan(e.target.value)}
+                  >
+                    <option value="">{t('loans.allLoans')}</option>
+                    {rpLoanOptions.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {t('loans.loanRef', l.id)} · {money(l.amount)} · {t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {rpQuery && (
                 <ul className="rp__results">
@@ -495,11 +597,19 @@ export default function Loans() {
             </div>
           )}
 
+          {filter === 'overdue' && (
+            <p className={overdueCount > 0 ? 'notice notice--danger' : 'notice notice--good'}>
+              {overdueCount > 0
+                ? t('loans.overdueSummary', overdueCount, money(overdueOwed))
+                : t('loans.noOverdue')}
+            </p>
+          )}
+
           <Ledger
-            columns={columns}
+            columns={filter === 'overdue' ? overdueColumns : columns}
             rows={shown}
             onRowClick={openDetail}
-            empty={<EmptyState title={t('loans.empty')} />}
+            empty={<EmptyState title={filter === 'overdue' ? t('loans.noOverdue') : t('loans.empty')} />}
           />
         </>
       )}

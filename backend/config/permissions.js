@@ -37,7 +37,10 @@ const PERMISSIONS = {
 
   // ---- loans ----
   'loans.viewAll': ['admin', 'treasurer', 'secretary'],
-  'loans.decide': ['admin', 'treasurer'],
+  // Who may lend the group's money is a committee decision the chairperson
+  // settles. The treasurer records the loan that has been authorised; she never
+  // approves it, and never approves her own request.
+  'loans.decide': ['admin'],
   'loans.record': ['treasurer'],
 
   // ---- fines ----

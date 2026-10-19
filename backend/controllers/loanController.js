@@ -160,6 +160,12 @@ const decideLoan = wrap(async (req, res) => {
     if (!loan) return { code: 404, message: 'That loan request does not exist.' };
     if (loan.status !== 'pending') return { code: 400, message: 'That request has already been decided.' };
 
+    // Separation of powers: nobody approves their own loan. A treasurer who is
+    // also a member applies like anyone else, and another officer decides it.
+    if (req.user.member_id && Number(loan.member_id) === Number(req.user.member_id)) {
+      return { code: 403, message: 'You cannot decide your own loan request.' };
+    }
+
     if (status === 'approved') {
       const available = await cashInBox(loan.cycle_id, run);
       if (Number(loan.amount) > available) {
@@ -345,6 +351,7 @@ const listRepayments = wrap(async (req, res) => {
   const where = [];
   const params = [];
   if (memberId) { params.push(memberId); where.push(`l.member_id = $${params.length}`); }
+  if (req.query.loan_id) { params.push(Number(req.query.loan_id)); where.push(`r.loan_id = $${params.length}`); }
   if (req.query.from) { params.push(req.query.from); where.push(`r.date >= $${params.length}`); }
   if (req.query.to) { params.push(req.query.to); where.push(`r.date <= $${params.length}`); }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';

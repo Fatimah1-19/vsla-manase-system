@@ -784,8 +784,8 @@ function run(middleware, user) {
     'the join-request decide buttons must not reach the secretary');
   const loansScreen = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Loans.jsx'), 'utf8');
-  assert.ok(/canDecide = \['admin', 'treasurer'\]\.includes\(user\.role\)/.test(loansScreen),
-    'loan decisions must agree with the server');
+  assert.ok(/canDecide = isDecider/.test(loansScreen),
+    'loan decisions must agree with the server: the chairperson alone decides');
   // Her dashboard is the people-and-meetings board, not the money board.
   const dashSrc = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'dashboardController.js'), 'utf8');
   assert.ok(/wantsMoney = role === 'treasurer' \|\| role === 'admin'/.test(dashSrc)
