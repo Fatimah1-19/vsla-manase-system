@@ -31,6 +31,9 @@ export default function Savings() {
   const [form, setForm] = useState(blank);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
+  const [memberId, setMemberId] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [editing, setEditing] = useState(null);   // the entry being corrected
 
   // The treasurer's menu can open this page on its summary or on its history.
@@ -108,8 +111,29 @@ export default function Savings() {
   const filtered = useMemo(() => {
     if (!rows) return [];
     const q = search.trim().toLowerCase();
-    return q ? rows.filter((r) => r.full_name.toLowerCase().includes(q)) : rows;
-  }, [rows, search]);
+    const picked = memberId ? Number(memberId) : null;
+    const day = (r) => String(r.date).slice(0, 10);
+    return rows.filter((r) => {
+      if (picked && r.member_id !== picked) return false;
+      if (from && day(r) < from) return false;
+      if (to && day(r) > to) return false;
+      return !q || r.full_name.toLowerCase().includes(q);
+    });
+  }, [rows, search, memberId, from, to]);
+
+  const filteredTotal = useMemo(
+    () => filtered.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
+    [filtered]
+  );
+
+  const anyFilter = !!(search.trim() || memberId || from || to);
+
+  const clearFilters = () => {
+    setSearch('');
+    setMemberId('');
+    setFrom('');
+    setTo('');
+  };
 
   const groups = useMemo(() => {
     const months = new Map();
@@ -144,6 +168,8 @@ export default function Savings() {
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'note', label: t('savings.note'), hideOnPhone: true,
+      render: (r) => <span className="muted">{r.note || '—'}</span> },
     { key: 'recorded_by_name', label: t('savings.recordedBy'), hideOnPhone: true,
       render: (r) => <span className="muted">{r.recorded_by_name || '—'}</span> },
     ...(canRecordMoney || isAdmin ? [{ key: 'x', label: '', align: 'right',
@@ -163,6 +189,21 @@ export default function Savings() {
   ];
 
   const groupColumns = columns.filter((c) => c.key !== 'date');
+
+  // What each member has put into the box this cycle — the treasurer's cross-check.
+  const perMemberColumns = [
+    { key: 'full_name', label: t('savings.member'),
+      render: (r) => (
+        <span className="vcell">
+          <MemberAvatar memberId={r.member_id} hasAvatar={r.has_avatar} name={r.full_name} size={32} />
+          <span className="vcell__name">{r.full_name}</span>
+        </span>
+      ) },
+    { key: 'total_savings', label: t('savings.thisCycle'), align: 'right', render: (r) => money(r.total_savings) },
+    { key: 'total_shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
+  ];
+
+  const savers = (summary?.per_member || []).filter((r) => Number(r.total_savings) > 0);
 
   if (!rows) return <Spinner />;
 
@@ -188,9 +229,19 @@ export default function Savings() {
       {summary && showSummary && (
         <div className="page-grid page-grid--stat">
           <StatCard label={t('savings.thisCycle')} value={money(summary.total_savings)} tone="gold" big />
-          <StatCard label={t('common.total')} value={`${summary.entries} entries`} />
-          <StatCard label={t('nav.members')} value={`${summary.savers} saving`} />
+          <StatCard label={t('common.total')} value={`${summary.entries} ${t('savings.entries')}`} />
+          <StatCard label={t('nav.members')} value={`${summary.savers} ${t('savings.savers')}`} />
         </div>
+      )}
+
+      {showSummary && savers.length > 0 && (
+        <section className="savings__month">
+          <div className="savings__monthHead">
+            <h2 className="savings__monthTitle">{t('savings.memberTotals')}</h2>
+            <span className="savings__monthTotal money">{money(summary.total_savings)}</span>
+          </div>
+          <Ledger columns={perMemberColumns} rows={savers} />
+        </section>
       )}
 
       {showHistory && (
@@ -204,7 +255,42 @@ export default function Savings() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label={t('common.search')}
             />
+            <select
+              value={memberId}
+              onChange={(e) => setMemberId(e.target.value)}
+              aria-label={t('savings.member')}
+            >
+              <option value="">{t('nav.members')}</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>{m.full_name}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              aria-label={t('common.date')}
+            />
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              aria-label={t('common.date')}
+            />
+            {anyFilter && (
+              <button type="button" className="btn btn--ghost" onClick={clearFilters}>
+                {t('common.clear')}
+              </button>
+            )}
           </div>
+
+          {anyFilter && (
+            <p className="muted">
+              {filtered.length} {filtered.length === 1 ? t('savings.entry') : t('savings.entries')}
+              {' — '}
+              <span className="money">{money(filteredTotal)}</span>
+            </p>
+          )}
 
           {groups.length === 0 ? (
             <EmptyState

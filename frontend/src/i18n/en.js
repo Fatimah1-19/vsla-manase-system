@@ -94,6 +94,7 @@ const base = {
   savings: {
     title: 'Savings', record: 'Record a saving', member: 'Member', shares: 'Shares',
     recordedBy: 'Recorded by', note: 'Note', thisCycle: 'This cycle', cycle: 'Saving cycle',
+    entry: 'entry', entries: 'entries', memberTotals: 'Savings by member', savers: 'saving',
     empty: 'No savings recorded yet. Record the first one.',
     smsNote: 'They get a text message confirming the amount.',
   },

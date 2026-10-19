@@ -98,6 +98,7 @@ const base = {
   savings: {
     title: 'Zosunga', record: 'Lembani zosunga', member: 'Membala', shares: 'Magawo',
     recordedBy: 'Analemba', note: 'Zolemba', thisCycle: 'Nyengo ino', cycle: 'Nyengo yosunga',
+    entry: 'cholembedwa', entries: 'zolembedwa', memberTotals: 'Zosunga za membala aliyense', savers: 'akusunga',
     empty: 'Palibe zosunga zolembedwa. Lembani zoyamba.',
     smsNote: 'Alandira uthenga wotsimikizira ndalamazo.',
   },
