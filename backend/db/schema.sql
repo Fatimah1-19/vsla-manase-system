@@ -215,6 +215,22 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- A correction is a NEW record that points back at a money row that was wrong.
+-- The original row is never edited or deleted: this is the honest way to fix the
+-- books. Every correction keeps the reason, the old value, the new value, who
+-- made it and when. The treasurer records it; the committee can read it.
+CREATE TABLE IF NOT EXISTS transaction_corrections (
+  id             SERIAL PRIMARY KEY,
+  entity_type    VARCHAR(30) NOT NULL,        -- savings, loans, loan_repayments, fines, welfare_fund, share_out
+  entity_id      INT NOT NULL,                -- the row being corrected
+  member_id      INT REFERENCES members(id) ON DELETE SET NULL,
+  reason         TEXT NOT NULL,               -- why the correction is made
+  previous_value TEXT,                        -- what the record said before
+  new_value      TEXT,                        -- what it should say
+  corrected_by   INT NOT NULL REFERENCES users(id),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   setting_key    VARCHAR(60) PRIMARY KEY,
   setting_value  TEXT NOT NULL,
@@ -228,6 +244,8 @@ CREATE INDEX IF NOT EXISTS idx_loans_status   ON loans(status);
 CREATE INDEX IF NOT EXISTS idx_repay_loan     ON loan_repayments(loan_id);
 CREATE INDEX IF NOT EXISTS idx_sms_sent_at    ON sms_notifications(sent_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_created  ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_corrections_entity ON transaction_corrections(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_corrections_created ON transaction_corrections(created_at DESC);
 
 
 -- =====================================================================

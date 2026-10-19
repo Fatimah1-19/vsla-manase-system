@@ -69,6 +69,13 @@ const PERMISSIONS = {
   'reports.view': ['admin', 'treasurer', 'secretary'],
   'analytics.view': ['admin', 'treasurer', 'secretary'],
 
+  // ---- the one financial activity page, and corrections ----
+  // The whole committee reads the pooled money feed. Only the treasurer records
+  // a correction, and a correction is a new line that points back at the old
+  // one: nothing in the books is ever edited or quietly removed.
+  'transactions.view': ['admin', 'treasurer', 'secretary'],
+  'transactions.correct': ['treasurer'],
+
   // ---- cycles ----
   'cycles.manage': ['admin'],
 
@@ -123,6 +130,7 @@ const MONEY_PERMISSIONS = [
   'registration.view', 'registration.record', 'registration.delete',
   'shareout.view', 'shareout.record',
   'reports.view', 'analytics.view', 'cycles.manage',
+  'transactions.view', 'transactions.correct',
   'messages.view', 'messages.send', 'meetings.record',
 ];
 

@@ -86,7 +86,7 @@ export const NAV_ITEMS = [
   { to: '/app/analytics?tab=reports&report=shareout',   key: 'nav.shareoutReports',  icon: 'analytics', roles: ['treasurer'] },
   { to: '/app/analytics?tab=reports&report=overview',   key: 'nav.financialSummary', icon: 'analytics', roles: ['treasurer'] },
 
-  { to: '/app/activity',   key: 'nav.financialActivity', group: 'nav.gActivity', icon: 'activity', roles: ['treasurer'] },
+  { to: '/app/financial-activity', key: 'nav.financialActivity', group: 'nav.gActivity', icon: 'activity', roles: ['treasurer'] },
 
   { to: '/app/profile',            key: 'nav.myProfile',      group: 'nav.gProfile', icon: 'profile', roles: ['treasurer'], phone: true },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['treasurer'] },

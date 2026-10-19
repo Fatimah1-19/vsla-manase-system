@@ -49,6 +49,7 @@ const welfarePage = page('Welfare.jsx');
 const wrappersPage = page('Wrappers.jsx');
 const sharePage = page('ShareOut.jsx');
 const reportsPage = page('Reports.jsx');
+const financePage = page('FinancialActivity.jsx');
 
 /** Runs one permission middleware the way Express would. */
 function run(middleware, user) {
@@ -346,6 +347,52 @@ async function check(n, title, fn) {
       'the share-out history must be shown');
   });
 
+  await check(41, 'the central financial activity page pools every money movement', () => {
+    const ctrl = controllers('transactionController.js');
+    assert.ok(routes('transactionRoutes.js').includes("router.get('/', requirePermission('transactions.view')"),
+      'the pooled feed must be readable by the committee');
+    assert.ok(can('treasurer', 'transactions.view') && can('secretary', 'transactions.view')
+      && can('admin', 'transactions.view'), 'the whole committee may read the money feed');
+    for (const kind of ["'savings'", "'loan'", "'loan_repayment'", "'fine'", "'welfare'", "'share_out'"]) {
+      assert.ok(ctrl.includes(kind), `the feed must gather ${kind}`);
+    }
+    for (const col of ['reference', 'recorded_by_name', 'status', 'amount']) {
+      assert.ok(ctrl.includes(col), `each line must carry its ${col}`);
+    }
+    assert.ok(ctrl.includes('q.type') && ctrl.includes('q.member_id')
+      && ctrl.includes('q.from') && ctrl.includes('q.to') && ctrl.includes('q.status'),
+      'the feed must filter by type, member, date and status');
+    for (const label of ['finance.member', 'finance.type', 'finance.reference',
+                         'finance.recordedBy']) {
+      assert.ok(financePage.includes(label), `the page must show the ${label} column`);
+    }
+    assert.ok(financePage.includes("value={filters.type}") && financePage.includes("value={filters.member_id}")
+      && financePage.includes("value={filters.from}") && financePage.includes("value={filters.status}"),
+      'the page must offer every filter');
+  });
+
+  await check(42, 'a correction is a new record, never a silent edit', () => {
+    const ctrl = controllers('transactionController.js');
+    assert.ok(routes('transactionRoutes.js').includes("router.post('/corrections', requirePermission('transactions.correct')"),
+      'recording a correction needs its own permission');
+    assert.ok(can('treasurer', 'transactions.correct') && !can('secretary', 'transactions.correct'),
+      'only the treasurer records a correction');
+    assert.ok(ctrl.includes('INSERT INTO transaction_corrections'),
+      'a correction is written as a new record');
+    for (const field of ['previous_value', 'new_value', 'reason', 'corrected_by']) {
+      assert.ok(ctrl.includes(field), `a correction must keep its ${field}`);
+    }
+    assert.ok(ctrl.includes("audit(req.user.id, 'CORRECT_TRANSACTION'"),
+      'every correction must also be written to the trail');
+    assert.ok(!/UPDATE\s+(savings|loans|loan_repayments|fines|welfare_fund|share_out)/i.test(ctrl)
+      && !/DELETE\s+FROM\s+(savings|loans|loan_repayments|fines|welfare_fund|share_out)/i.test(ctrl),
+      'the correction path must never edit or delete the original row');
+    assert.ok(financePage.includes('correctNote') && financePage.includes('finance.newValue')
+      && financePage.includes('finance.previousValue'),
+      'the correction dialog must ask for the reason, the old value and the new value');
+    assert.ok(!/\bapi\.del\(/.test(financePage), 'the treasurer cannot delete financial history from this page');
+  });
+
   await check(16, 'the treasurer can read the financial reports', () => {
     assert.ok(can('treasurer', 'reports.view') && can('treasurer', 'analytics.view'));
     assert.ok(routes('reportRoutes.js').includes("requirePermission('reports.view')"));
@@ -536,7 +583,7 @@ async function check(n, title, fn) {
     const targets = treasLines.join('\n');
     // The whole money menu: savings, loans, fines, welfare, share-out, reports.
     for (const pageLink of ['/app/savings', '/app/loans', '/app/fines', '/app/welfare',
-                            '/app/shareout', '/app/activity', '/app/profile']) {
+                            '/app/shareout', '/app/financial-activity', '/app/profile']) {
       assert.ok(targets.includes(`to: '${pageLink}`), `the treasurer menu must include ${pageLink}`);
     }
     assert.ok(targets.includes("to: '/app/loans?tab=repayments'"),

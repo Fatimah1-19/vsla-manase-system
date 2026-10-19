@@ -60,6 +60,7 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/member-cases', require('./routes/memberCaseRoutes'));
 app.use('/api/office-votes', require('./routes/officeVoteRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/transactions', require('./routes/transactionRoutes'));
 
 // Counts only, no money — this is what the public front page shows.
 app.get('/api/public/impact', publicImpact);

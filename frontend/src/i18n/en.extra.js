@@ -771,4 +771,22 @@ export default {
     recUser: 'Member record', recMember: 'Member record', recMeeting: 'Meeting',
     recDocument: 'Membership document',
   },
+
+  finance: {
+    title: 'Financial activity',
+    subtitle: 'Every money movement in one place: savings, loans, repayments, fines, welfare and the share-out.',
+    member: 'Member', group: 'Whole group', type: 'Transaction type',
+    reference: 'Reference', recordedBy: 'Recorded by', recordedAt: 'Recorded on',
+    system: 'System', entries: 'Transactions',
+    anyType: 'All transaction types', anyStatus: 'Any status',
+    from: 'From', to: 'To', empty: 'No transactions match these filters.',
+    integrityNote: 'The financial books are read-only. Nothing here is edited or deleted: a mistake is fixed with a correction record that keeps the old value, the reason and who made it.',
+    kindSavings: 'Savings', kindLoan: 'Loan', kindRepayment: 'Loan repayment',
+    kindFine: 'Fine', kindWelfare: 'Welfare', kindShareout: 'Share-out',
+    kindCorrection: 'Correction',
+    correct: 'Correct', correctTitle: 'Record a correction',
+    correctNote: 'This writes a new correction record. The original transaction is left exactly as it was.',
+    previousValue: 'Previous value', newValue: 'Correct value',
+    reason: 'Reason for correction', reasonHint: 'The old value, the new value and this reason are all kept in the trail.',
+  },
 };

@@ -761,4 +761,22 @@ export default {
     recUser: 'Zolembedwa za membala', recMember: 'Zolembedwa za membala', recMeeting: 'Msonkhano',
     recDocument: 'Chikalata cha umembala',
   },
+
+  finance: {
+    title: 'Ntchito za ndalama',
+    subtitle: 'Mayendedwe onse a ndalama pamalo amodzi: zosungidwa, ngongole, zobweza, zindapusa, chithandizo ndi kugawana.',
+    member: 'Membala', group: 'Gulu lonse', type: 'Mtundu wa ntchito',
+    reference: 'Chizindikiro', recordedBy: 'Analemba', recordedAt: 'Analemba pa',
+    system: 'System', entries: 'Ntchito',
+    anyType: 'Mitundu yonse', anyStatus: 'Mkhalidwe uliwonse',
+    from: 'Kuyambira', to: 'Mpaka', empty: 'Palibe ntchito zomwe zikugwirizana ndi zosefera.',
+    integrityNote: 'Mabuku a ndalama samasinthidwa. Palibe chomwe chimakonzedwa kapena kuchotsedwa: cholakwika chimakonzedwa ndi cholembedwa cha kukonza chomwe chimasunga mtengo wakale, chifukwa ndi amene adachikonza.',
+    kindSavings: 'Zosungidwa', kindLoan: 'Ngongole', kindRepayment: 'Kubweza ngongole',
+    kindFine: 'Chindapusa', kindWelfare: 'Chithandizo', kindShareout: 'Kugawana',
+    kindCorrection: 'Kukonza',
+    correct: 'Konzani', correctTitle: 'Lembani kukonza',
+    correctNote: 'Izi zimalemba cholembedwa chatsopano cha kukonza. Ntchito yoyambirira imasiyidwa monga ilili.',
+    previousValue: 'Mtengo wakale', newValue: 'Mtengo wolondola',
+    reason: 'Chifukwa cha kukonza', reasonHint: 'Mtengo wakale, mtengo watsopano ndi chifukwa zimenezi zonse zimasungidwa.',
+  },
 };

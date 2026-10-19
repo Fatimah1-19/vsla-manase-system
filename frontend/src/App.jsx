@@ -20,6 +20,7 @@ import Leadership from './pages/Leadership.jsx';
 import Messages from './pages/Messages.jsx';
 import Cycles from './pages/Cycles.jsx';
 import Activity from './pages/Activity.jsx';
+import FinancialActivity from './pages/FinancialActivity.jsx';
 import AdministrativeActivity from './pages/AdministrativeActivity.jsx';
 import Profile from './pages/Profile.jsx';
 import Analytics from './pages/Analytics.jsx';
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
         <Route path="activity" element={<ProtectedRoute roles={[...COMMITTEE, 'system_admin']}><Activity /></ProtectedRoute>} />
+        <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
         <Route path="activity/administrative" element={<ProtectedRoute roles={COMMITTEE}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
         <Route path="admin/users" element={<ProtectedRoute roles={['system_admin']}><AdminUsers /></ProtectedRoute>} />
