@@ -819,10 +819,57 @@ function run(middleware, user) {
                        'qaAddMember:', 'qaReviewRequests:', 'qaMembershipHistory:', 'qaCreateMeeting:',
                        'qaRecordAttendance:', 'qaMeetingRecords:', 'qaMembershipReport:',
                        'qaAttendanceReport:', 'filterAll:', 'filterActive:', 'filterInactive:',
-                       'filterNew:', 'filterLabel:']) {
+                       'filterNew:', 'filterLabel:', 'decidedBy:']) {
       assert.ok(dict.includes(key), `${file} must carry ${key.replace(':', '')}`);
     }
   }
+
+  // §7 the secretary keeps the register: she edits the permitted member details
+  // of ordinary members, and standing in the group stays with the members' vote.
+  assert.ok(can('secretary', 'members.edit') && can('admin', 'members.edit')
+    && !can('treasurer', 'members.edit'),
+    'the secretary and the chairperson keep the member records');
+  assert.ok(userRoutes.includes("router.patch('/:id', requirePermission('members.edit'), c.updateUser)"),
+    'editing a member record is allowed for the record keepers');
+  assert.ok(userRoutes.includes("router.delete('/:id', requirePermission('users.manage')")
+    && userRoutes.includes("router.post('/:id/reset-password', requirePermission('users.manage')"),
+    'suspending, unlocking and new passwords stay with the chairperson');
+  const memberCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'userController.js'), 'utf8');
+  assert.ok(memberCtrl.includes('Only the chairperson maintains the office accounts'),
+    'the secretary cannot edit the office accounts, only the member records');
+  assert.ok(memberCtrl.includes('is_active !== existing.is_active')
+    && memberCtrl.includes('current.status !== member_status') && memberCtrl.includes('VOTE_MESSAGE'),
+    'a role or a standing in the group is never changed from the record page');
+  assert.ok(membersScreen.includes('isCommittee') && membersScreen.includes('nav.membershipDocuments')
+    && membersScreen.includes('openMemberDoc'),
+    'a member record lists the membership documents the committee may open');
+  assert.ok(membersScreen.includes('canEditMember') && membersScreen.includes('{canEditMember && ('),
+    'the record page offers the chairperson and the secretary the permitted edits');
+  const docCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'profileController.js'), 'utf8');
+  assert.ok(docCtrl.includes("['admin', 'treasurer', 'secretary'].includes(req.user.role)"),
+    'the committee may open a membership document');
+
+  // §8 she reads join requests for the records; the decision is the group's.
+  const joinScreen = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'JoinRequests.jsx'), 'utf8');
+  assert.ok(joinScreen.includes('yes_votes') && joinScreen.includes('no_votes') && joinScreen.includes('my_vote')
+    && joinScreen.includes('requests.background') && joinScreen.includes('r.created_at'),
+    'the secretary sees the votes, the background and the date of a join request');
+  assert.ok(joinScreen.includes('requests.decidedBy') && joinScreen.includes('decided_by_name'),
+    'the chairperson who decided a join request is named');
+  assert.ok(joinScreen.includes('isDecider'),
+    'the accept and decline buttons are for the chairperson and the treasurer');
+  const joinReqRoutes = fs.readFileSync(
+    path.join(__dirname, '..', 'routes', 'joinRequestRoutes.js'), 'utf8');
+  assert.ok(joinReqRoutes.includes("router.post('/:id/vote', protect, c.vote)")
+    && joinReqRoutes.includes("router.patch('/:id', protect, requirePermission('joinRequests.decide')"),
+    'she may vote as a member; only the deciders approve or reject');
+  assert.ok(!joinReqRoutes.includes('.put(') && !joinReqRoutes.includes('.delete('),
+    'no one changes or removes another members vote');
+  const joinReqCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'joinRequestController.js'), 'utf8');
+  assert.ok(joinReqCtrl.includes('ON CONFLICT (request_id, user_id)') && joinReqCtrl.includes('req.user.id'),
+    'a vote is written once, for the person who cast it');
 
   // The administrator's own pages stay out of the chairperson's routes.
   assert.ok(routeLine('admin/users').includes('system_admin') && !routeLine('admin/users').includes("'admin'"),

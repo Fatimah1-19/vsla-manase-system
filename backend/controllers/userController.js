@@ -145,6 +145,12 @@ const updateUser = wrap(async (req, res) => {
   // The office screens never reach the System Administrator's account.
   if (refuseAccount(req, res, id, existing.role)) return;
 
+  // The secretary keeps the member register. The office accounts are the
+  // chairperson's to keep, so they are not edited from this page by anyone else.
+  if (req.user.role !== 'admin' && existing.role !== 'member') {
+    return res.status(403).json({ message: 'Only the chairperson maintains the office accounts.' });
+  }
+
   // An ordinary member's standing in the group (active, suspended, dismissed) can only
   // change through a vote. Saving the same value again is fine.
   if (existing.role === 'member') {

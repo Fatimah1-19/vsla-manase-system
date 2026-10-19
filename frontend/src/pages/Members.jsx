@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api/client.js';
+import { api, fetchFile } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -66,11 +66,14 @@ function PersonalFields({ values, onChange, t, prefix }) {
 
 export default function Members() {
   const { t } = useLang();
-  const { user, isAdmin, isRecorder } = useAuth();
+  const { user, isAdmin, isRecorder, isCommittee } = useAuth();
   const navigate = useNavigate();
   // Adding a member record is the chairperson's and the secretary's work;
   // every other button here needs users.manage, which is the chairperson's alone.
   const canAddMember = !!user && ['admin', 'secretary'].includes(user.role);
+  // The secretary keeps the register; only the permitted member details are
+  // edited from here, never standing in the group.
+  const canEditMember = !!user && ['admin', 'secretary'].includes(user.role);
   const [editForm, setEditForm] = useState(null);
   const toast = useToast();
   const confirm = useConfirm();
@@ -142,6 +145,16 @@ export default function Members() {
       occupation: p.occupation || '', address: p.address || '',
     });
     setDetail(null);
+  }
+
+  async function openMemberDoc(doc) {
+    try {
+      const url = await fetchFile(`/profile/documents/${doc.id}`);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      toast.error(err.message);
+    }
   }
 
   async function saveEdit(e) {
@@ -626,6 +639,28 @@ export default function Members() {
               </div>
             )}
 
+            {/* ---- membership documents: the committee may open them ---- */}
+            {detail.member_id && isCommittee && (
+              <div className="members__hist">
+                <h3 className="members__feeTitle">{t('nav.membershipDocuments')}</h3>
+                <ul className="profile__docs">
+                  {!history?.documents?.length && <li className="muted">{t('common.none')}</li>}
+                  {history?.documents?.map((d) => (
+                    <li key={d.id}>
+                      <span className="profile__docName">
+                        <strong>{t(`profile.doc_${d.document_type}`)}</strong>
+                        <span className="muted"> · {d.original_name} · {shortDate(d.uploaded_at)}</span>
+                      </span>
+                      <span className="row-actions">
+                        <button type="button" className="btn btn--small btn--ghost"
+                          onClick={() => openMemberDoc(d)}>{t('common.view')}</button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {detail.member_id && feeByMember[detail.member_id] && (
               <div className="members__fee">
                 <h3 className="members__feeTitle">{t('members.regFee')}</h3>
@@ -647,19 +682,21 @@ export default function Members() {
               </div>
             )}
 
-            {isAdmin && (
+            {canEditMember && (isAdmin || detail.role === 'member') && (
               <div className="members__actions">
                 <button type="button" className="btn" disabled={busy} onClick={() => startEdit(detail)}>{t('common.edit')}</button>
-                {detail.member_id && (
+                {isAdmin && detail.member_id && (
                   <button type="button" className="btn btn--sky" disabled={busy}
                     onClick={() => navigate(`/app/cases?member=${detail.member_id}`)}>{t('cases.openFor')}</button>
                 )}
-                {isLocked(detail) && (
+                {isAdmin && isLocked(detail) && (
                   <button type="button" className="btn btn--gold" disabled={busy}
                     onClick={() => act(detail.id, 'unlock')}>{t('members.unlock')}</button>
                 )}
-                <button type="button" className="btn btn--ghost" disabled={busy}
-                  onClick={() => act(detail.id, 'reset')}>{t('members.newPassword')}</button>
+                {isAdmin && (
+                  <button type="button" className="btn btn--ghost" disabled={busy}
+                    onClick={() => act(detail.id, 'reset')}>{t('members.newPassword')}</button>
+                )}
               </div>
             )}
           </div>

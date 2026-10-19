@@ -180,7 +180,7 @@ const base = {
       voteNo: 'Osati nyengo ino', tally: 'Mavoti a gulu', accept: 'Vomerezani Umembera',
       decline: 'Kanani Umembera', votingOpen: 'Kuvota kukuyenda',
       acceptVotes: 'Mavoti ovomereza', rejectVotes: 'Mavoti akana', whyJoin: 'Chifukwa chake akufuna kulowa',
-      empty: 'Palibe amene akudikira.', decided: 'Zagamulidwa',
+      empty: 'Palibe amene akudikira.', decided: 'Zagamulidwa', decidedBy: 'Linagamula',
       groupDecides: 'Membala aliyense akhoza kuvota. Wa komiti alemba chomwe gulu lagamula.',
       background: 'Mbiri ya wopempha',
       backgroundHint: 'Awa ndi mayankho omwe wopempha anapereka mu fomu yofunsira kulowa. Werengani musanavote.',

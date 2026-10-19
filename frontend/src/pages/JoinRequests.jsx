@@ -184,6 +184,9 @@ export default function JoinRequests() {
                 <span className={r.status === 'approved' ? 'tag tag--green' : 'tag tag--red'}>
                   {r.status === 'approved' ? t('common.yes') : t('common.no')}
                 </span>
+                {r.decided_by_name && (
+                  <span className="muted">{t('requests.decidedBy')} {r.decided_by_name}</span>
+                )}
                 <span className="muted">{shortDate(r.decided_at)}</span>
               </li>
             ))}

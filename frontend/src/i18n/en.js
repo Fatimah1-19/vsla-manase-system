@@ -173,7 +173,7 @@ const base = {
       voteNo: 'Not this cycle', tally: 'Group votes', accept: 'Approve Membership',
       decline: 'Reject Membership', votingOpen: 'Voting open',
       acceptVotes: 'Accept votes', rejectVotes: 'Reject votes', whyJoin: 'Why they want to join',
-      empty: 'No one is waiting to join.', decided: 'Decided',
+      empty: 'No one is waiting to join.', decided: 'Decided', decidedBy: 'Decided by',
       groupDecides: 'Every member can vote. A committee member records what the group decided.',
       background: 'Applicant background',
       backgroundHint: 'These are the answers the applicant gave in their join form. Read them before voting.',
