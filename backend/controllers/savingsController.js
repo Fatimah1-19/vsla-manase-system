@@ -4,13 +4,44 @@ const { audit } = require('../utils/audit');
 const { emit, EVENTS } = require('../utils/events');
 const { getActiveCycle } = require('../utils/helpers');
 
+// A saving must carry a real calendar date, never in the future: the money is
+// written down on the day it was handed over.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const todayISO = () => new Date().toISOString().slice(0, 10);
+function validDate(value) {
+  if (!ISO_DATE.test(String(value))) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return false;
+  return d.toISOString().slice(0, 10) === value;
+}
+
 // POST /api/savings — treasurer or secretary records money handed over at the meeting
 const recordSaving = wrap(async (req, res) => {
   const { member_id, amount, shares, date, note } = req.body;
   const recordedBy = req.user.id;
 
-  if (!member_id || !amount || Number(amount) <= 0) {
-    return res.status(400).json({ message: 'Choose a member and enter an amount above zero.' });
+  // The member must be chosen, and the amount must be a real, above-zero number.
+  if (!member_id) return res.status(400).json({ message: 'Choose a member.' });
+  const value = Number(amount);
+  if (amount === undefined || amount === null || amount === '' || Number.isNaN(value)) {
+    return res.status(400).json({ message: 'Enter an amount.' });
+  }
+  if (value <= 0) return res.status(400).json({ message: 'The amount must be above zero.' });
+  if (!Number.isFinite(value) || value > 9999999999.99) {
+    return res.status(400).json({ message: 'That amount is not a valid figure.' });
+  }
+  if (shares !== undefined && shares !== null && shares !== '' && Number(shares) < 1) {
+    return res.status(400).json({ message: 'Shares must be at least one.' });
+  }
+
+  // The date is confirmed at the moment of recording: it must be a real date,
+  // and never a day that has not happened yet.
+  const theDate = date || todayISO();
+  if (!validDate(theDate)) {
+    return res.status(400).json({ message: 'Enter a valid transaction date as YYYY-MM-DD.' });
+  }
+  if (theDate > todayISO()) {
+    return res.status(400).json({ message: 'The transaction date cannot be in the future.' });
   }
 
   const member = await one(
@@ -24,10 +55,24 @@ const recordSaving = wrap(async (req, res) => {
   const cycle = await getActiveCycle();
   if (!cycle) return res.status(400).json({ message: 'No saving cycle is running. Start one first.' });
 
+  // The same member cannot be written down twice for the same amount on the
+  // same day — that is almost always a double tap, not two handovers.
+  const duplicate = await one(
+    `SELECT id FROM savings
+      WHERE member_id = $1 AND amount = $2 AND date = $3 AND cycle_id = $4`,
+    [member_id, value, theDate, cycle.id]
+  );
+  if (duplicate) {
+    return res.status(409).json({
+      message: 'That saving is already in the book for this member on this date.',
+      duplicate_id: duplicate.id,
+    });
+  }
+
   const saving = await one(
     `INSERT INTO savings (member_id, cycle_id, amount, shares, date, note, recorded_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, amount::float, date`,
-    [member_id, cycle.id, amount, shares || 1, date || new Date().toISOString().slice(0, 10), note || null, recordedBy]
+    [member_id, cycle.id, value, shares || 1, theDate, note || null, recordedBy]
   );
 
   const totals = await one(
@@ -106,8 +151,19 @@ const updateSaving = wrap(async (req, res) => {
   if (amount !== undefined && Number(amount) <= 0) {
     return res.status(400).json({ message: 'The amount must be above zero.' });
   }
+  if (amount !== undefined && (!Number.isFinite(Number(amount)) || Number.isNaN(Number(amount)))) {
+    return res.status(400).json({ message: 'That amount is not a valid figure.' });
+  }
   if (shares !== undefined && Number(shares) < 1) {
     return res.status(400).json({ message: 'Shares must be at least one.' });
+  }
+  if (date !== undefined && date !== null && date !== '') {
+    if (!validDate(date)) {
+      return res.status(400).json({ message: 'Enter a valid transaction date as YYYY-MM-DD.' });
+    }
+    if (date > todayISO()) {
+      return res.status(400).json({ message: 'The transaction date cannot be in the future.' });
+    }
   }
 
   const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);

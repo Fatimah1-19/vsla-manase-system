@@ -59,7 +59,20 @@ export default function Savings() {
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.member_id || !form.amount) return;
+    // The savings rules are checked here before the request goes out: a member
+    // must be chosen, the amount must be a real figure above zero, and the
+    // transaction date must be a real day that has already happened.
+    if (!form.member_id) { toast.error(t('savings.pickMember')); return; }
+    const amount = Number(form.amount);
+    if (form.amount === '' || Number.isNaN(amount)) { toast.error(t('savings.enterAmount')); return; }
+    if (amount <= 0) { toast.error(t('savings.amountPositive')); return; }
+    if (Number(form.shares) < 1) { toast.error(t('savings.sharesMin')); return; }
+    if (!form.date || form.date > inputDate()) { toast.error(t('savings.badDate')); return; }
+    const who = members.find((m) => String(m.id) === String(form.member_id));
+    // Step four: confirm the transaction before it is written to the book.
+    if (!(await confirm({
+      message: t('savings.confirmRecord', who ? who.full_name : '', money(amount), shortDate(form.date)),
+    }))) return;
     setBusy(true);
     try {
       const res = await api.post('/savings', {
@@ -346,7 +359,7 @@ export default function Savings() {
             <div className="form-row">
               <div>
                 <label className="field-label" htmlFor="se-date">{t('common.date')}</label>
-                <input id="se-date" type="date" value={editing.date}
+                <input id="se-date" type="date" value={editing.date} max={inputDate()}
                   onChange={(e) => setEditing((x) => ({ ...x, date: e.target.value }))} />
               </div>
             </div>
@@ -403,7 +416,7 @@ export default function Savings() {
           <div className="form-row">
             <div>
               <label className="field-label" htmlFor="s-date">{t('common.date')}</label>
-              <input id="s-date" type="date" value={form.date} onChange={change('date')} />
+              <input id="s-date" type="date" value={form.date} max={inputDate()} onChange={change('date')} />
             </div>
           </div>
 
