@@ -326,6 +326,12 @@ export default function Meetings() {
               {detail.attendance.map((a) => (
                 <li key={a.member_id}>
                   <span className="meetings__markName"><span className="vcell"><MemberAvatar memberId={a.member_id} hasAvatar={a.has_avatar} name={a.full_name} size={28} />{a.full_name}</span></span>
+                  {marks[a.member_id] && (
+                    <span className={`tag ${marks[a.member_id] === 'present' ? 'tag--green'
+                      : marks[a.member_id] === 'excused' ? 'tag--gold' : 'tag--red'}`}>
+                      {t(`meetings.${marks[a.member_id]}`)}
+                    </span>
+                  )}
                   <div className="meetings__markBtns" role="group" aria-label={a.full_name}>
                     {['present', 'absent', 'excused'].map((s) => (
                       <button

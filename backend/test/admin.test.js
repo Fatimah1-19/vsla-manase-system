@@ -640,6 +640,7 @@ function run(middleware, user) {
     assert.ok(src.includes('Ledger'), `${page} must read from the shared table`);
   }
   for (const [name, cls] of [['Activity.jsx', 'settings__tableWrap'],
+                             ['AdministrativeActivity.jsx', 'settings__tableWrap'],
                              ['VslaSettings.jsx', 'settings__tableWrap'],
                              ['SystemActivity.jsx', 'settings__tableWrap'],
                              ['Reports.jsx', 'reports__tableWrap']]) {
@@ -670,6 +671,45 @@ function run(middleware, user) {
   assert.ok(tabbar.includes('onMore') && tabbar.includes("t('nav.more')"),
     'the phone navigation must keep every page reachable');
   assert.ok(topbar.includes('onMenu'), 'the phone topbar must be able to open the drawer');
+
+  // §22 the status badges the group reads at a glance ------------------------
+  const badgeDir = path.join(__dirname, '..', '..', 'frontend', 'src', 'pages');
+  const meetingsBadgeSrc = fs.readFileSync(path.join(badgeDir, 'Meetings.jsx'), 'utf8');
+  const membersBadgeSrc = fs.readFileSync(path.join(badgeDir, 'Members.jsx'), 'utf8');
+  assert.ok(meetingsBadgeSrc.includes('tag--green') && meetingsBadgeSrc.includes('tag--gold')
+    && meetingsBadgeSrc.includes('tag--red') && meetingsBadgeSrc.includes('meetings__mark'),
+    'attendance wears a clear badge: present green, excused amber, absent red');
+  for (const state of ['members.active', 'members.inactive', 'members.locked']) {
+    assert.ok(membersBadgeSrc.includes(state), `a member must read as ${state.replace('members.', '')} at a glance`);
+  }
+
+  // §21 a secretary who is also a member keeps her member vote ---------------
+  assert.ok(joinCtrl.includes('canVote') && joinCtrl.includes('ON CONFLICT (request_id, user_id)'),
+    'a vote belongs to one member and is counted once');
+  assert.ok(joinCtrl.includes('COUNT(*)::int AS c FROM users WHERE is_active = TRUE'),
+    'every active member counts once — no office carries a heavier vote');
+  assert.ok(joinRoutes.includes("router.post('/:id/vote', protect, c.vote)"),
+    'the secretary votes on join requests through her member record');
+  assert.ok(joinRoutes.includes("router.patch('/:id', protect, requirePermission('joinRequests.decide')"),
+    'being secretary is not a reason to approve or reject on her own');
+  assert.ok(joinPage.includes('isDecider') && !joinPage.includes('{isCommittee && ('),
+    'the vote buttons are hers; the decide buttons are not');
+
+  // §24 the five offices stay apart ------------------------------------------
+  assert.ok(can('admin', 'cases.manage') && !can('admin', 'savings.record'),
+    'the chairperson leads and decides, and does not write the money');
+  assert.ok(can('treasurer', 'savings.record') && !can('treasurer', 'cases.manage')
+    && !can('treasurer', 'users.manage'),
+    'the treasurer writes the money and nothing else');
+  assert.ok(can('secretary', 'meetings.record') && can('secretary', 'members.create')
+    && !can('secretary', 'savings.record') && !can('secretary', 'cases.manage')
+    && !can('secretary', 'accounts.manage') && !can('secretary', 'users.manage'),
+    'the secretary keeps the records; she is never a second chairperson or treasurer');
+  assert.ok(can('system_admin', 'accounts.manage') && !can('system_admin', 'savings.record')
+    && !can('system_admin', 'meetings.record'),
+    'the administrator runs the system and never the group business');
+  assert.ok(!can('secretary', 'system.settings') && !can('secretary', 'accounts.view'),
+    'the secretary cannot become a system administrator');
 
   // ---- the chairperson's own page: profile, and no role from there --------
   const profileRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'profileRoutes.js'), 'utf8');
