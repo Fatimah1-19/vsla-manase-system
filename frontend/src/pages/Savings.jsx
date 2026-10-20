@@ -280,18 +280,24 @@ export default function Savings() {
                 <option key={m.id} value={m.id}>{m.full_name}</option>
               ))}
             </select>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              aria-label={t('common.date')}
-            />
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              aria-label={t('common.date')}
-            />
+            <label className="toolbar__field">
+              <span>{t('common.from')}</span>
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-label={t('common.from')}
+              />
+            </label>
+            <label className="toolbar__field">
+              <span>{t('common.to')}</span>
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                aria-label={t('common.to')}
+              />
+            </label>
             {anyFilter && (
               <button type="button" className="btn btn--ghost" onClick={clearFilters}>
                 {t('common.clear')}

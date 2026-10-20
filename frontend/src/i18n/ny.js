@@ -43,6 +43,7 @@ const base = {
     yes: 'Inde', no: 'Ayi', confirm: 'Mukutsimikiza?', sending: 'Tikutumiza\u2026',
     saving: 'Tikusunga\u2026', all: 'Zonse',     village: 'Mudzi', role: 'Udindo', language: 'Chilankhulo', email: 'Imelo',
     optional: 'mukafuna', retry: 'Yesaninso', view: 'Onani', today: 'Lero',
+    from: 'Kuyambira', to: 'Mpaka',
   },
 
   login: {
