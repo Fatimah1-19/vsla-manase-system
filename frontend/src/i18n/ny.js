@@ -47,7 +47,7 @@ const base = {
   },
 
   login: {
-    title: 'Lowani', subtitle: 'Gwiritsani ntchito dzina limene mtsogoleri anakupatsani.', backHome: 'Bwererani ku tsamba loyamba',
+    title: 'Lowani', backHome: 'Bwererani ku tsamba loyamba',
     username: 'Dzina lolowera', password: 'Achinsinsi', submit: 'Lowani',
     forgot: 'Ndaiwala achinsinsi anga', joinPrompt: 'Simunalowe nawo?', joinLink: 'Pemphani kulowa',
     attemptsLeft: (n) => `Mwatsala ndi mayesero ${n} akaunti isanatsekedwe.`,

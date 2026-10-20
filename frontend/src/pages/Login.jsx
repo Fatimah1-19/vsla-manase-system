@@ -73,7 +73,6 @@ export default function Login() {
         </div>
 
         <h1 className="login__title">{t('login.title')}</h1>
-        <p className="login__sub">{t('login.subtitle')}</p>
 
         {error && (
           <p className={locked ? 'login__alert login__alert--locked' : 'login__alert'} role="alert">

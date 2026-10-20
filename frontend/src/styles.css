@@ -3787,8 +3787,6 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .login__title { margin: 0 0 0.25rem; font-size: 1.6rem; }
 
-.login__sub { color: var(--slate); font-size: 0.94rem; margin-bottom: 1.2rem; }
-
 .login__alert {
   padding: 0.65rem 0.8rem;
   border-radius: var(--radius-sm);

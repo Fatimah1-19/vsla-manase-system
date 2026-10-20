@@ -45,7 +45,7 @@ const base = {
   },
 
   login: {
-    title: 'Log in', subtitle: 'Use the username the chairperson gave you.', backHome: 'Back to home',
+    title: 'Log in', backHome: 'Back to home',
     username: 'Username', password: 'Password', submit: 'Log in',
     forgot: 'I forgot my password', joinPrompt: 'Not in the group yet?', joinLink: 'Ask to join',
     attemptsLeft: (n) => `${n} more ${n === 1 ? 'try' : 'tries'} before this account locks.`,
