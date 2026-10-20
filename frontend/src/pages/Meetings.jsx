@@ -20,6 +20,7 @@ export default function Meetings() {
   const { t } = useLang();
   const { isRecorder, isCommittee } = useAuth();
   const toast = useToast();
+  const { search } = useLocation();
 
   const [meetings, setMeetings] = useState(null);
   const [open, setOpen] = useState(false);
@@ -31,8 +32,9 @@ export default function Meetings() {
   const [info, setInfo] = useState({ location: '', agenda: '', meeting_time: '' });
 
   // The secretary's menu links straight to a section: the meeting list, the
-  // attendance register, or the written-up meeting records.
-  const tab = new URLSearchParams(window.location.search).get('tab');
+  // attendance register, or the written-up meeting records. Read from the
+  // router so the page follows a menu click without needing a full reload.
+  const tab = new URLSearchParams(search).get('tab');
 
   const load = useCallback(async () => { setMeetings(await api.get('/meetings')); }, []);
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
