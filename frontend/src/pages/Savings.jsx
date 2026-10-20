@@ -263,7 +263,7 @@ export default function Savings() {
         <>
           <div className="toolbar">
             <input
-              className="toolbar__grow"
+              className="toolbar__grow toolbar__grow--fit"
               type="search"
               placeholder={t('common.search')}
               value={search}
