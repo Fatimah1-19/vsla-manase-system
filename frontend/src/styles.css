@@ -153,6 +153,20 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .btn--small { min-height: 32px; padding: 0.2rem 0.7rem; font-size: 0.88rem; border-radius: 9px; }
 .btn--full { width: 100%; }
 
+/* §25: on a phone the small action buttons (Mark paid, Record, Correct…) are
+   the money buttons, so give them the full tap height again and let the
+   toolbar controls breathe. Their text never wraps mid-word. */
+@media (max-width: 560px) {
+  .btn { padding: 0.5rem 0.9rem; }
+  .btn--small {
+    min-height: var(--tap);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.9rem;
+  }
+  .btn { white-space: nowrap; }
+  .toolbar__grow { flex: 1 1 100%; }
+}
+
 /* ---- small shared pieces ---- */
 .tag {
   display: inline-block;
@@ -745,6 +759,62 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   }
   .ledger tbody tr.ledger__group--2 td { padding-left: 0.9rem; }
   .ledger tbody tr.ledger__group--3 td { padding-left: 1.8rem; }
+}
+
+/* §25: the treasurer's money tables (savings, loans, fines, welfare,
+   share-out, financial activity) keep their columns on a phone and scroll
+   sideways, so a figure can be read straight down its column. The name
+   column is pinned so it is always clear whose row is in view. */
+@media (max-width: 780px) {
+  .money-book .ledger { display: table; width: auto; min-width: 560px; border-collapse: collapse; }
+  .money-book .ledger thead { display: table-header-group; }
+  .money-book .ledger tbody { display: table-row-group; }
+  .money-book .ledger tr { display: table-row; padding: 0; border: 0; }
+  .money-book .ledger thead th,
+  .money-book .ledger tbody td {
+    display: table-cell;
+    text-align: left;
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .money-book .ledger thead th::before,
+  .money-book .ledger tbody td::before { content: none; }
+  .money-book .ledger tbody td:first-child {
+    margin: 0;
+    font-size: inherit;
+    font-family: var(--body);
+    font-weight: 400;
+  }
+  .money-book .ledger .is-right { text-align: right; }
+  .money-book .ledger .is-wide-only { display: table-cell; }
+
+  /* Pin the name column while the rest scrolls. */
+  .money-book .ledger thead th:first-child,
+  .money-book .ledger tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: 1px 0 0 var(--rule);
+  }
+  .money-book .ledger thead th:first-child { z-index: 3; background: var(--paper); }
+  .money-book .ledger tbody tr.is-clickable:hover td:first-child { background: var(--leaf-wash); }
+
+  /* The group header rows carry a single spanning cell; keep them flat. */
+  .money-book .ledger tbody tr.ledger__group { display: table-row; padding: 0; }
+  .money-book .ledger tbody tr.ledger__group td {
+    display: table-cell;
+    position: sticky;
+    left: 0;
+    padding: 0.5rem 0.7rem;
+    background: var(--paper);
+    box-shadow: none;
+    font-size: 0.95rem;
+  }
+  .money-book .ledger tbody tr.ledger__group--2 td { padding-left: 1.6rem; }
+  .money-book .ledger tbody tr.ledger__group--3 td { padding-left: 2.6rem; }
 }
 .modal {
   position: fixed;
@@ -4434,7 +4504,11 @@ section[id] { scroll-margin-top: 4.5rem; }
 .reports__facts dd { margin: 0; }
 .reports__facts .is-strong { font-weight: 700; }
 
-.reports__tableWrap { overflow-x: auto; }
+.reports__tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
 .reports__table { width: 100%; border-collapse: collapse; font-size: 0.94rem; }
 .reports__table th {
   text-align: left; padding: 0.5rem 0.6rem; border-bottom: 2px solid var(--rule-dark);
@@ -4443,6 +4517,15 @@ section[id] { scroll-margin-top: 4.5rem; }
 .reports__table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--rule); }
 .reports__table tbody tr:last-child td { border-bottom: 0; }
 .reports__table .is-num { text-align: right; }
+
+/* §25: on a narrow screen a report table keeps its columns and scrolls
+   sideways, rather than folding into blocks — these tables are read as a
+   row of figures, one member or one fine per line. The min-width also stops
+   the columns from crushing together on a phone. */
+@media (max-width: 780px) {
+  .reports__table { min-width: 520px; }
+  .reports__tableWrap { -webkit-overflow-scrolling: touch; }
+}
 
 @media (max-width: 560px) { .reports__repMeta { grid-template-columns: 1fr; } }
 .savings__smsHint {

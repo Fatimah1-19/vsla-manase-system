@@ -105,7 +105,7 @@ export default function ShareOut() {
   // ---- what a plain member sees ----
   if (!isCommittee) {
     return (
-      <div className="shareout">
+      <div className="shareout money-book">
         <PageHeader title={t('shareout.title')} />
         {mine ? (
           <div className="shareout__mine">

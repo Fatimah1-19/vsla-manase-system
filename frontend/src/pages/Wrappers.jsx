@@ -92,7 +92,7 @@ export default function Wrappers() {
   // ------------------------------------------------ member's own view
   if (!isCommittee) {
     return (
-      <div className="wrappers">
+      <div className="wrappers money-book">
         <PageHeader title={t('wrappers.title')} subtitle={t('wrappers.explain', money(mine.levy))} />
         <BackButton />
         <div className="page-grid page-grid--stat">
@@ -143,7 +143,7 @@ export default function Wrappers() {
   ];
 
   return (
-    <div className="wrappers">
+    <div className="wrappers money-book">
       <PageHeader
         title={t('wrappers.title')}
         subtitle={t('wrappers.explain', money(view.levy))}

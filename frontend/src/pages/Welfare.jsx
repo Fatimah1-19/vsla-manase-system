@@ -174,7 +174,7 @@ export default function Welfare() {
   ];
 
   return (
-    <div className="welfare">
+    <div className="welfare money-book">
       <PageHeader
         title={t('welfare.title')}
         subtitle="Money the group keeps aside for sickness, funerals and emergencies."

@@ -223,7 +223,7 @@ export default function Savings() {
   if (!rows) return <Spinner />;
 
   return (
-    <div className="savings">
+    <div className="savings money-book">
       <PageHeader
         title={t('savings.title')}
         subtitle={t('savings.smsNote')}

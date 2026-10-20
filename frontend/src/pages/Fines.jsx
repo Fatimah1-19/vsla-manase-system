@@ -205,7 +205,7 @@ export default function Fines() {
   ];
 
   return (
-    <div className="fines">
+    <div className="fines money-book">
       <PageHeader
         title={t('fines.title')}
         action={canRecordMoney && (

@@ -411,7 +411,7 @@ export default function Loans() {
   ];
 
   return (
-    <div className="loans">
+    <div className="loans money-book">
       <PageHeader
         title={t('loans.title')}
         action={

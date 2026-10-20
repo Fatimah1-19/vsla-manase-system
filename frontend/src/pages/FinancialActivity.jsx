@@ -136,7 +136,7 @@ export default function FinancialActivity() {
   const anyFilter = Object.values(filters).some(Boolean);
 
   return (
-    <div className="finance">
+    <div className="finance money-book">
       <PageHeader title={t('finance.title')} subtitle={t('finance.subtitle')} />
 
       <p className="activity__readonly">{t('finance.integrityNote')}</p>
