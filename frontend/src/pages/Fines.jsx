@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -210,9 +211,12 @@ export default function Fines() {
           <button type="button" className="btn" onClick={() => setOpen(true)}>{t('fines.record')}</button>
         )}
       />
-      <SectionTabs />
+      <SectionTabs hideBack />
 
-      <p className="notice">{t('fines.keptNote')}</p>
+      <div className="row-with-back">
+        <BackButton />
+        <p className="notice">{t('fines.keptNote')}</p>
+      </div>
 
       <div className="page-grid page-grid--stat">
         <StatCard label={isCommittee ? t('dashboard.finesOutstanding') : t('fines.toPay')}

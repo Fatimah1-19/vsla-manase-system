@@ -232,14 +232,16 @@ export default function Savings() {
       <SectionTabs hideBack />
 
       {summary?.cycle ? (
-        <div className="savings__cycle">
+        <div className="row-with-back">
           <BackButton />
-          <Icon name="cycles" size={18} />
-          <span className="savings__cycleLabel">{t('savings.cycle')}</span>
-          <strong className="savings__cycleName">{summary.cycle.cycle_name}</strong>
-          <span className="savings__cycleDates">
-            {shortDate(summary.cycle.start_date)} - {shortDate(summary.cycle.end_date)}
-          </span>
+          <div className="savings__cycle">
+            <Icon name="cycles" size={18} />
+            <span className="savings__cycleLabel">{t('savings.cycle')}</span>
+            <strong className="savings__cycleName">{summary.cycle.cycle_name}</strong>
+            <span className="savings__cycleDates">
+              {shortDate(summary.cycle.start_date)} - {shortDate(summary.cycle.end_date)}
+            </span>
+          </div>
         </div>
       ) : (
         <BackButton />

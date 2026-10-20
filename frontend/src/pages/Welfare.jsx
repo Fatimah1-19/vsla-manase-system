@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -187,13 +188,16 @@ export default function Welfare() {
           </>
         )}
       />
-      <SectionTabs />
+      <SectionTabs hideBack />
 
       {showSummary && (
-        <div className="page-grid page-grid--stat">
-          <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
-          <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
-          <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
+        <div className="row-with-back">
+          <BackButton />
+          <div className="page-grid page-grid--stat row-with-back__grow">
+            <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
+            <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
+            <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
+          </div>
         </div>
       )}
 
