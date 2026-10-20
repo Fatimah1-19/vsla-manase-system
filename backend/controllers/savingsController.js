@@ -2,6 +2,8 @@ const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { audit } = require('../utils/audit');
 const { emit, EVENTS } = require('../utils/events');
+const { sendSMS } = require('../utils/sms');
+const { build } = require('../utils/messages');
 const { getActiveCycle } = require('../utils/helpers');
 
 // A saving must carry a real calendar date, never in the future: the money is
@@ -15,7 +17,10 @@ function validDate(value) {
   return d.toISOString().slice(0, 10) === value;
 }
 
-// POST /api/savings — treasurer or secretary records money handed over at the meeting
+// POST /api/savings — the treasurer records money handed over at the meeting.
+// The entry starts life as pending_verification: it is written in the book at
+// once, but it does not count as money until the secretary has checked it
+// against what was actually handed over.
 const recordSaving = wrap(async (req, res) => {
   const { member_id, amount, shares, date, note } = req.body;
   const recordedBy = req.user.id;
@@ -56,10 +61,12 @@ const recordSaving = wrap(async (req, res) => {
   if (!cycle) return res.status(400).json({ message: 'No saving cycle is running. Start one first.' });
 
   // The same member cannot be written down twice for the same amount on the
-  // same day — that is almost always a double tap, not two handovers.
+  // same day — that is almost always a double tap, not two handovers. An entry
+  // that was rejected is not counted here: it may be written again afresh.
   const duplicate = await one(
     `SELECT id FROM savings
-      WHERE member_id = $1 AND amount = $2 AND date = $3 AND cycle_id = $4`,
+      WHERE member_id = $1 AND amount = $2 AND date = $3 AND cycle_id = $4
+        AND status <> 'rejected'`,
     [member_id, value, theDate, cycle.id]
   );
   if (duplicate) {
@@ -70,13 +77,16 @@ const recordSaving = wrap(async (req, res) => {
   }
 
   const saving = await one(
-    `INSERT INTO savings (member_id, cycle_id, amount, shares, date, note, recorded_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, amount::float, date`,
+    `INSERT INTO savings (member_id, cycle_id, amount, shares, date, note, recorded_by, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'pending_verification') RETURNING id, amount::float, date, status`,
     [member_id, cycle.id, value, shares || 1, theDate, note || null, recordedBy]
   );
 
+  // The running total counts only verified savings — the entry just written is
+  // not yet money. The secretary sees it awaiting her check.
   const totals = await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE member_id = $1 AND cycle_id = $2`,
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
     [member_id, cycle.id]
   );
 
@@ -86,7 +96,7 @@ const recordSaving = wrap(async (req, res) => {
   });
 
   res.status(201).json({
-    message: `Saving recorded for ${member.full_name}.`,
+    message: `Saving recorded for ${member.full_name} and sent for verification.`,
     saving, member_total: totals.total,
     sms_sent: !!(sms && sms.ok), sms_error: sms && sms.ok ? null : (sms && sms.error),
   });
@@ -94,22 +104,26 @@ const recordSaving = wrap(async (req, res) => {
 
 // GET /api/savings
 const listSavings = wrap(async (req, res) => {
-  const { cycle_id, member_id, limit = 200 } = req.query;
+  const { cycle_id, member_id, status, limit = 200 } = req.query;
   const where = [];
   const params = [];
 
   if (cycle_id) { params.push(cycle_id); where.push(`s.cycle_id = $${params.length}`); }
   if (member_id) { params.push(member_id); where.push(`s.member_id = $${params.length}`); }
+  if (status) { params.push(status); where.push(`s.status = $${params.length}`); }
   params.push(Math.min(Number(limit) || 200, 1000));
 
   const rows = await query(
-    `SELECT s.id, s.amount::float, s.shares, s.date, s.note, s.member_id, s.cycle_id,
+    `SELECT s.id, s.amount::float, s.shares, s.date, s.note, s.member_id, s.cycle_id, s.status,
+            s.verified_at, s.rejected_reason,
             m.membership_number, u.full_name, r.full_name AS recorded_by_name,
+            v.full_name AS verified_by_name,
             (m.avatar IS NOT NULL) AS has_avatar
        FROM savings s
        JOIN members m ON m.id = s.member_id
        JOIN users u ON u.id = m.user_id
        LEFT JOIN users r ON r.id = s.recorded_by
+       LEFT JOIN users v ON v.id = s.verified_by
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
       ORDER BY s.date DESC, s.id DESC
       LIMIT $${params.length}`,
@@ -121,17 +135,23 @@ const listSavings = wrap(async (req, res) => {
 // GET /api/savings/summary
 const savingsSummary = wrap(async (req, res) => {
   const cycle = await getActiveCycle();
+  // Only verified savings are money. What is still waiting to be checked is
+  // reported alongside, so the secretary can see what is outstanding.
   const totals = await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS total_savings,
-            COUNT(*)::int AS entries,
-            COUNT(DISTINCT member_id)::int AS savers
+    `SELECT COALESCE(SUM(amount) FILTER (WHERE status = 'verified'),0)::float AS total_savings,
+            COUNT(*) FILTER (WHERE status = 'verified')::int AS entries,
+            COUNT(DISTINCT member_id) FILTER (WHERE status = 'verified')::int AS savers,
+            COALESCE(SUM(amount) FILTER (WHERE status = 'pending_verification'),0)::float AS pending_total,
+            COUNT(*) FILTER (WHERE status = 'pending_verification')::int AS pending_entries,
+            COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected_entries
        FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)`,
     [cycle ? cycle.id : null]
   );
   const perMember = await query(
     `SELECT m.id AS member_id, u.full_name, m.membership_number,
-            COALESCE(SUM(s.amount),0)::float AS total_savings,
-            COALESCE(SUM(s.shares),0)::int AS total_shares
+            COALESCE(SUM(s.amount) FILTER (WHERE s.status = 'verified'),0)::float AS total_savings,
+            COALESCE(SUM(s.shares) FILTER (WHERE s.status = 'verified'),0)::int AS total_shares,
+            COALESCE(SUM(s.amount) FILTER (WHERE s.status = 'pending_verification'),0)::float AS pending_savings
        FROM members m
        JOIN users u ON u.id = m.user_id
        LEFT JOIN savings s ON s.member_id = m.id AND ($1::int IS NULL OR s.cycle_id = $1)
@@ -141,6 +161,100 @@ const savingsSummary = wrap(async (req, res) => {
     [cycle ? cycle.id : null]
   );
   res.json({ cycle, ...totals, per_member: perMember });
+});
+
+// PATCH /api/savings/:id/verify — the secretary checks a saving and accepts it.
+// It becomes money from this moment: it counts toward totals and the books.
+const verifySaving = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+
+  const saving = await one(
+    `SELECT s.*, u.full_name, u.phone, u.language
+       FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
+      WHERE s.id = $1`,
+    [id]
+  );
+  if (!saving) return res.status(404).json({ message: 'That entry is not in the book.' });
+  if (saving.status === 'verified') {
+    return res.status(400).json({ message: 'This saving is already verified.' });
+  }
+
+  // Separation of powers: the treasurer may not check her own entry, and nobody
+  // may verify an entry they wrote themselves.
+  if (Number(saving.recorded_by) === Number(req.user.id)) {
+    return res.status(403).json({ message: 'You cannot verify a saving you recorded yourself.' });
+  }
+
+  await query(
+    `UPDATE savings SET status = 'verified', verified_by = $2, verified_at = NOW(), rejected_reason = NULL
+      WHERE id = $1`,
+    [id, req.user.id]
+  );
+
+  const totals = await one(
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+    [saving.member_id, saving.cycle_id]
+  );
+
+  await audit(req.user.id, 'VERIFY_SAVING', 'savings', id,
+    `${saving.full_name}: ${saving.amount} verified`, { previous: 'pending_verification', next: 'verified' });
+
+  const sms = await sendSMS(
+    saving.phone,
+    build('savingVerified', saving.language, { name: saving.full_name, amount: saving.amount, total: totals.total }),
+    { name: saving.full_name, category: 'saving', sentBy: req.user.id }
+  );
+
+  res.json({
+    message: `Saving of ${saving.amount} verified for ${saving.full_name}.`,
+    member_total: totals.total,
+    sms_sent: !!(sms && sms.ok),
+  });
+});
+
+// PATCH /api/savings/:id/reject — the secretary refuses a saving, with a reason.
+// A rejected entry is never money; the member and the record keep the reason.
+const rejectSaving = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const reason = String(req.body.reason || '').trim();
+
+  const saving = await one(
+    `SELECT s.*, u.full_name, u.phone, u.language
+       FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
+      WHERE s.id = $1`,
+    [id]
+  );
+  if (!saving) return res.status(404).json({ message: 'That entry is not in the book.' });
+  if (saving.status === 'verified') {
+    return res.status(400).json({ message: 'A verified saving cannot be rejected. Record a correction instead.' });
+  }
+  if (saving.status === 'rejected') {
+    return res.status(400).json({ message: 'This saving is already rejected.' });
+  }
+  if (!reason) return res.status(400).json({ message: 'Say why this saving is being rejected.' });
+  if (reason.length > 500) return res.status(400).json({ message: 'Keep the reason shorter.' });
+  if (Number(saving.recorded_by) === Number(req.user.id)) {
+    return res.status(403).json({ message: 'You cannot reject a saving you recorded yourself.' });
+  }
+
+  await query(
+    `UPDATE savings SET status = 'rejected', verified_by = $2, verified_at = NOW(), rejected_reason = $3
+      WHERE id = $1`,
+    [id, req.user.id, reason]
+  );
+
+  await audit(req.user.id, 'REJECT_SAVING', 'savings', id,
+    `${saving.full_name}: ${saving.amount} rejected — ${reason}`,
+    { previous: 'pending_verification', next: 'rejected' });
+
+  await sendSMS(
+    saving.phone,
+    build('savingRejected', saving.language, { name: saving.full_name, amount: saving.amount, note: reason }),
+    { name: saving.full_name, category: 'saving', sentBy: req.user.id }
+  );
+
+  res.json({ message: `Saving of ${saving.amount} rejected for ${saving.full_name}.` });
 });
 
 // PATCH /api/savings/:id — corrections, admin and treasurer only
@@ -194,4 +308,7 @@ const deleteSaving = wrap(async (req, res) => {
   res.json({ message: 'Entry removed.' });
 });
 
-module.exports = { recordSaving, listSavings, savingsSummary, updateSaving, deleteSaving };
+module.exports = {
+  recordSaving, listSavings, savingsSummary, updateSaving, deleteSaving,
+  verifySaving, rejectSaving,
+};

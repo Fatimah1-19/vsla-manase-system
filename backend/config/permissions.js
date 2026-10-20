@@ -29,10 +29,14 @@ const GROUPS = {
  */
 const PERMISSIONS = {
   // ---- savings ----
-  // The secretary reads the money books for her records; the treasurer alone
-  // writes in them. Nobody but the chairperson takes an entry out.
+  // The treasurer alone writes in the books; the secretary alone checks her
+  // work. Nobody may verify her own entry. Nobody but the chairperson takes an
+  // entry out.
   'savings.view': ['admin', 'treasurer', 'secretary'],
   'savings.record': ['treasurer'],
+  // The secretary checks a saving against the money actually handed over.
+  // A saving only counts toward totals once she has verified it.
+  'savings.verify': ['secretary'],
   'savings.delete': ['admin'],
 
   // ---- loans ----
@@ -41,7 +45,10 @@ const PERMISSIONS = {
   // settles. The treasurer records the loan that has been authorised; she never
   // approves it, and never approves her own request.
   'loans.decide': ['admin'],
+  // Recording the money leaving the box is the treasurer's job; the secretary
+  // then checks the two agree. The treasurer records repayments.
   'loans.record': ['treasurer'],
+  'loans.verify': ['secretary'],
 
   // ---- fines ----
   'fines.viewAll': ['admin', 'treasurer', 'secretary'],
@@ -125,8 +132,8 @@ const PERMISSIONS = {
  * is refused with 403. The tests check that this list stays money-only.
  */
 const MONEY_PERMISSIONS = [
-  'savings.view', 'savings.record', 'savings.delete',
-  'loans.viewAll', 'loans.decide', 'loans.record',
+  'savings.view', 'savings.record', 'savings.verify', 'savings.delete',
+  'loans.viewAll', 'loans.decide', 'loans.record', 'loans.verify',
   'fines.viewAll', 'fines.record', 'fines.delete',
   'contributions.view', 'contributions.record', 'contributions.delete',
   'welfare.record',

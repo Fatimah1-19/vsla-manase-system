@@ -4,6 +4,7 @@ import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
@@ -28,7 +29,7 @@ function daysOverdue(loan) {
 /** The standing of a loan: fully paid, overdue, due soon, or running. */
 function standing(loan) {
   if (loan.status === 'repaid' || loan.outstanding <= 0) return 'fullyPaid';
-  if (loan.status === 'approved') {
+  if (loan.status === 'verified') {
     const days = daysOverdue(loan);
     if (days > 0) return 'overdue';
     if (loan.due_date && new Date(loan.due_date).getTime() - Date.now() <= 7 * DAY) return 'dueSoon';
@@ -76,8 +77,9 @@ function groupRepayments(rows) {
 
 export default function Loans() {
   const { t } = useLang();
-  const { user, isCommittee, canRecordMoney, isDecider } = useAuth();
+  const { user, isCommittee, canRecordMoney, isDecider, canVerify } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
   const location = useLocation();
 
   const [loans, setLoans] = useState(null);
@@ -90,6 +92,7 @@ export default function Loans() {
   const [detail, setDetail] = useState(null);       // { loan, repayments }
   const [decisionNote, setDecisionNote] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
+  const [verifyReason, setVerifyReason] = useState('');
 
   // The repayment-history view: search a member, see their payments grouped.
   const [rpSearch, setRpSearch] = useState('');
@@ -198,6 +201,55 @@ export default function Loans() {
     }
   }
 
+  async function recordOut() {
+    if (!detail) return;
+    if (!(await confirm({ message: t('loans.recordLoanNote') }))) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/record`, {});
+      toast.success(res.message);
+      setDetail(await api.get(`/loans/${detail.loan.id}`));
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyLoan() {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/verify`, {});
+      toast.success(res.message);
+      setDetail(await api.get(`/loans/${detail.loan.id}`));
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectVerification() {
+    if (!detail) return;
+    const reason = verifyReason.trim();
+    if (!reason) { toast.error(t('loans.verifyReason')); return; }
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/reject-verification`, { reason });
+      toast.success(res.message);
+      setDetail(null);
+      setVerifyReason('');
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function recordRepayment(e) {
     e.preventDefault();
     if (!repayAmount) return;
@@ -285,14 +337,14 @@ export default function Loans() {
   function pickRecMember(m) {
     setRecMember(m);
     setRecSearch(m.full_name);
-    const open = loans.filter((l) => l.member_id === m.id && l.status === 'approved');
+    const open = loans.filter((l) => l.member_id === m.id && l.status === 'verified');
     setRecLoanId(open.length === 1 ? String(open[0].id) : '');
     setRecAmount('');
   }
 
   async function recordFromPanel(e) {
     e.preventDefault();
-    const loan = loans.find((l) => String(l.id) === recLoanId && l.status === 'approved');
+    const loan = loans.find((l) => String(l.id) === recLoanId && l.status === 'verified');
     if (!loan) { toast.error(t('loans.pickLoan')); return; }
     setBusy(true);
     try {
@@ -320,7 +372,7 @@ export default function Loans() {
   const listQuery = listSearch.trim().toLowerCase();
   // The overdue board lists every loan that is still running or late, worst
   // first, so the treasurer reads what needs chasing at the top.
-  const running = loans.filter((l) => l.status === 'approved' || (l.status === 'repaid' && l.outstanding > 0));
+  const running = loans.filter((l) => l.status === 'verified' || (l.status === 'repaid' && l.outstanding > 0));
   const overdueRows = running.filter((l) => standing(l) === 'overdue');
   const overdueCount = overdueRows.length;
   const overdueOwed = overdueRows.reduce((sum, l) => sum + (Number(l.outstanding) || 0), 0);
@@ -328,7 +380,7 @@ export default function Loans() {
     : filter === 'overdue' ? [...running].sort((a, b) => daysOverdue(b) - daysOverdue(a))
     : loans.filter((l) => l.status === filter))
     .filter((l) => !listQuery || l.full_name.toLowerCase().includes(listQuery));
-  const myOpenLoan = loans.some((l) => ['pending', 'approved'].includes(l.status));
+  const myOpenLoan = loans.some((l) => ['pending', 'approved', 'pending_verification', 'verified'].includes(l.status));
 
   const rpGroups = rpData ? groupRepayments(rpData.repayments) : [];
   const rpQuery = rpSearch.trim().toLowerCase();
@@ -344,7 +396,7 @@ export default function Loans() {
     ? members.filter((m) => m.full_name.toLowerCase().includes(recQuery)
         || String(m.membership_number || '').includes(recQuery)).slice(0, 8)
     : [];
-  const recLoans = recMember ? loans.filter((l) => l.member_id === recMember.id && l.status === 'approved') : [];
+  const recLoans = recMember ? loans.filter((l) => l.member_id === recMember.id && l.status === 'verified') : [];
   const recLoan = recLoans.find((l) => String(l.id) === recLoanId) || null;
 
   const columns = [
@@ -372,7 +424,7 @@ export default function Loans() {
         return <span className={late ? 'loans__late' : ''}>{shortDate(l.due_date)}</span>;
       } },
     { key: 'status', label: t('common.status'),
-      render: (l) => <StatusTag status={l.status}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</StatusTag> },
+      render: (l) => <StatusTag status={l.status} /> },
   ];
 
   // The overdue board: member, what was lent, what has come back, what is owed,
@@ -437,7 +489,7 @@ export default function Loans() {
       />
 
       <div className="loans__filters" role="group" aria-label={t('common.status')}>
-        {['all', 'pending', 'approved', 'overdue', 'repaid', 'rejected', 'repayments'].map((f) => (
+        {['all', 'pending', 'approved', 'pending_verification', 'verified', 'overdue', 'repaid', 'rejected', 'repayments'].map((f) => (
           <button
             key={f}
             type="button"
@@ -446,7 +498,8 @@ export default function Loans() {
           >
             {f === 'all' ? t('common.all')
               : f === 'repayments' ? t('loans.viewRepayments')
-              : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
+              : f === 'repaid' ? t('loans.repaidStatus')
+              : t(`status.${f}`)}
           </button>
         ))}
       </div>
@@ -722,7 +775,36 @@ export default function Loans() {
               </div>
             )}
 
+            {/* The chairperson has approved; the treasurer now records the money
+                leaving the box. Nothing is live until the secretary verifies it. */}
             {detail.loan.status === 'approved' && canRecordRepayment && (
+              <div className="loans__decide">
+                <p className="notice">{t('loans.recordLoanNote')}</p>
+                <button type="button" className="btn" disabled={busy} onClick={recordOut}>
+                  {t('loans.recordLoan')}
+                </button>
+              </div>
+            )}
+
+            {/* The secretary checks the recording against the approval, then the
+                loan is live and can take repayments. */}
+            {detail.loan.status === 'pending_verification' && canVerify && (
+              <div className="loans__decide">
+                <p className="notice">{t('loans.verifyLoanNote')}</p>
+                <div className="loans__decideBtns">
+                  <button type="button" className="btn" disabled={busy} onClick={verifyLoan}>
+                    {t('loans.verifyLoan')}
+                  </button>
+                  <button type="button" className="btn btn--danger" disabled={busy} onClick={rejectVerification}>
+                    {t('loans.rejectVerification')}
+                  </button>
+                </div>
+                <label className="field-label" htmlFor="l-vreason">{t('loans.verifyReason')}</label>
+                <textarea id="l-vreason" rows={2} value={verifyReason} onChange={(e) => setVerifyReason(e.target.value)} />
+              </div>
+            )}
+
+            {detail.loan.status === 'verified' && canRecordRepayment && (
               <form className="loans__repay" onSubmit={recordRepayment}>
                 <label className="field-label" htmlFor="l-repay">{t('loans.recordRepayment')}</label>
                 <div className="loans__repayRow">

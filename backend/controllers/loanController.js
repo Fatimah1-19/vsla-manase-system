@@ -49,11 +49,13 @@ const borrowingLimit = wrap(async (req, res) => {
 
   const activeCycle = await getActiveCycle();
   const savings = (await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE member_id = $1 AND cycle_id = $2`,
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
     [memberId, activeCycle ? activeCycle.id : null]
   )).total;
   const open = await one(
-    `SELECT id, status FROM loans WHERE member_id = $1 AND status IN ('pending','approved') LIMIT 1`, [memberId]
+    `SELECT id, status FROM loans WHERE member_id = $1
+      AND status IN ('pending','approved','pending_verification','verified') LIMIT 1`, [memberId]
   );
   res.json({
     multiplier, interest_rate: rate, savings,
@@ -79,12 +81,14 @@ const applyLoan = wrap(async (req, res) => {
   if (!member) return res.status(404).json({ message: 'That member is not active.' });
 
   const openLoan = await one(
-    `SELECT id, status FROM loans WHERE member_id = $1 AND status IN ('pending','approved')`,
+    `SELECT id, status FROM loans WHERE member_id = $1
+      AND status IN ('pending','approved','pending_verification','verified')`,
     [borrowerId]
   );
   if (openLoan) {
+    const waiting = openLoan.status === 'pending';
     return res.status(400).json({
-      message: openLoan.status === 'pending'
+      message: waiting
         ? 'There is already a loan request waiting for the committee.'
         : 'This loan must be repaid before borrowing again.',
     });
@@ -94,7 +98,8 @@ const applyLoan = wrap(async (req, res) => {
   if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
   const savingsRow = await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings WHERE member_id = $1 AND cycle_id = $2`,
+    `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
     [borrowerId, cycle.id]
   );
   const totalSavings = savingsRow.total;
@@ -136,6 +141,10 @@ const applyLoan = wrap(async (req, res) => {
 });
 
 // PATCH /api/loans/:id/decision  { status: 'approved' | 'rejected', note }
+// The chairperson settles the committee's decision. Approving means the request
+// is authorised, nothing more: no money has left the box yet. The treasurer
+// records the money leaving, then the secretary checks it. That separation is
+// the whole point.
 const decideLoan = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const { status, note } = req.body;
@@ -144,9 +153,6 @@ const decideLoan = wrap(async (req, res) => {
     return res.status(400).json({ message: 'The decision must be approved or rejected.' });
   }
 
-  // One approval at a time: the box is checked and the loan is approved
-  // inside the same locked transaction, so two committee members pressing
-  // "approve" together can never lend out the same money twice.
   const outcome = await tx(async (client) => {
     await client.query('SELECT pg_advisory_xact_lock(7001)');
     const run = async (text, params) => (await client.query(text, params)).rows;
@@ -166,30 +172,15 @@ const decideLoan = wrap(async (req, res) => {
       return { code: 403, message: 'You cannot decide your own loan request.' };
     }
 
-    if (status === 'approved') {
-      const available = await cashInBox(loan.cycle_id, run);
-      if (Number(loan.amount) > available) {
-        return {
-          code: 400, available,
-          message: `The box only has ${available.toLocaleString()} available. That is less than this loan.`,
-        };
-      }
-
-      // The loan runs three months from the day it is given, but never past the
-      // day the cycle closes.
-      const [cycle] = await run(`SELECT end_date FROM cycles WHERE id = $1`, [loan.cycle_id]);
-      loan.due_date = ymd(dueWithinCycle(cycle && cycle.end_date));
-    }
-
     await client.query(
-      `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4,
-              due_date = COALESCE($5, due_date) WHERE id = $1`,
-      [id, status, note || null, req.user.id, status === 'approved' ? loan.due_date : null]
+      `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4
+        WHERE id = $1`,
+      [id, status, note || null, req.user.id]
     );
     return { loan };
   });
 
-  if (outcome.code) return res.status(outcome.code).json({ message: outcome.message, available: outcome.available });
+  if (outcome.code) return res.status(outcome.code).json({ message: outcome.message });
   const loan = outcome.loan;
 
   const [sms] = await emit(EVENTS.LOAN_DECIDED, {
@@ -198,10 +189,149 @@ const decideLoan = wrap(async (req, res) => {
 
   res.json({
     message: status === 'approved'
-      ? `Loan approved. ${loan.full_name} has been told.`
+      ? `Loan approved. The treasurer will record the money leaving the box. ${loan.full_name} has been told.`
       : `Loan turned down. ${loan.full_name} has been told.`,
     sms_sent: !!(sms && sms.ok),
   });
+});
+
+// PATCH /api/loans/:id/record — the treasurer writes down the money leaving the
+// box. The loan becomes pending_verification: the cash is out, but it is not
+// live and takes no repayments until the secretary has checked it.
+const recordLoan = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+
+  const outcome = await tx(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock(7001)');
+    const run = async (text, params) => (await client.query(text, params)).rows;
+
+    const loan = (await run(
+      `SELECT l.*, u.full_name, u.phone, u.language
+         FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+        WHERE l.id = $1 FOR UPDATE OF l`,
+      [id]
+    ))[0];
+    if (!loan) return { code: 404, message: 'That loan does not exist.' };
+    if (loan.status === 'pending') {
+      return { code: 400, message: 'This request has not been approved by the chairperson yet.' };
+    }
+    if (loan.status !== 'approved') {
+      return { code: 400, message: 'Only an approved loan can have its money recorded.' };
+    }
+
+    // The box is checked at the moment the money actually leaves, inside the
+    // same locked transaction, so two people recording at once cannot lend the
+    // same money twice.
+    const available = await cashInBox(loan.cycle_id, run);
+    if (Number(loan.amount) > available) {
+      return {
+        code: 400, available,
+        message: `The box only has ${available.toLocaleString()} available. That is less than this loan.`,
+      };
+    }
+
+    // The loan runs three months from the day it is given, but never past the
+    // day the cycle closes.
+    const [cycle] = await run(`SELECT end_date FROM cycles WHERE id = $1`, [loan.cycle_id]);
+    const due = ymd(dueWithinCycle(cycle && cycle.end_date));
+
+    await client.query(
+      `UPDATE loans SET status = 'pending_verification', recorded_by = $2, recorded_at = NOW(),
+              due_date = $3
+        WHERE id = $1`,
+      [id, req.user.id, due]
+    );
+    return { loan: { ...loan, due_date: due } };
+  });
+
+  if (outcome.code) return res.status(outcome.code).json({ message: outcome.message, available: outcome.available });
+
+  await audit(req.user.id, 'RECORD_LOAN', 'loans', id,
+    `${outcome.loan.full_name}: ${outcome.loan.amount} money recorded; awaiting verification`,
+    { previous: 'approved', next: 'pending_verification' });
+
+  res.json({ message: 'Loan money recorded. Waiting for the secretary to verify.' });
+});
+
+// PATCH /api/loans/:id/verify — the secretary checks that the money recorded
+// leaving the box agrees with the approval. The loan is then live.
+const verifyLoan = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+
+  const loan = await one(
+    `SELECT l.*, u.full_name, u.phone, u.language
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.id = $1`,
+    [id]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
+  if (loan.status === 'verified') return res.status(400).json({ message: 'This loan is already verified.' });
+  if (loan.status !== 'pending_verification') {
+    return res.status(400).json({ message: 'Only a recorded loan can be verified.' });
+  }
+
+  // Nobody checks their own hand: the treasurer recorded the money, so she
+  // cannot be the one to verify it.
+  if (Number(loan.recorded_by) === Number(req.user.id)) {
+    return res.status(403).json({ message: 'You cannot verify a loan you recorded yourself.' });
+  }
+
+  await query(
+    `UPDATE loans SET status = 'verified', verified_by = $2, verified_at = NOW(), rejected_reason = NULL
+      WHERE id = $1`,
+    [id, req.user.id]
+  );
+
+  const verified = withBalance({ ...loan, status: 'verified', total_repaid: 0 });
+  const [sms] = await emit(EVENTS.LOAN_DECIDED, {
+    decidedBy: req.user.id, loan: { ...loan, status: 'verified' }, status: 'approved', note: null,
+  });
+
+  await audit(req.user.id, 'VERIFY_LOAN', 'loans', id,
+    `${loan.full_name}: ${loan.amount} verified and live`, { previous: 'pending_verification', next: 'verified' });
+
+  res.json({
+    message: `Loan verified and now live for ${loan.full_name}.`,
+    loan: verified, sms_sent: !!(sms && sms.ok),
+  });
+});
+
+// PATCH /api/loans/:id/reject-verification — the secretary refuses the recorded
+// loan, with a reason. It never becomes live. The chairperson may decide afresh.
+const rejectLoanVerification = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const reason = String(req.body.reason || '').trim();
+
+  const loan = await one(
+    `SELECT l.*, u.full_name, u.phone, u.language
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.id = $1`,
+    [id]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
+  if (loan.status !== 'pending_verification') {
+    return res.status(400).json({ message: 'Only a recorded loan can be rejected here.' });
+  }
+  if (!reason) return res.status(400).json({ message: 'Say why this loan is being rejected.' });
+  if (reason.length > 500) return res.status(400).json({ message: 'Keep the reason shorter.' });
+  if (Number(loan.recorded_by) === Number(req.user.id)) {
+    return res.status(403).json({ message: 'You cannot reject a loan you recorded yourself.' });
+  }
+
+  await query(
+    `UPDATE loans SET status = 'rejected', verified_by = $2, verified_at = NOW(), rejected_reason = $3
+      WHERE id = $1`,
+    [id, req.user.id, reason]
+  );
+
+  await emit(EVENTS.LOAN_DECIDED, {
+    decidedBy: req.user.id, loan, status: 'rejected', note: reason,
+  });
+  await audit(req.user.id, 'REJECT_LOAN_VERIFICATION', 'loans', id,
+    `${loan.full_name}: ${loan.amount} rejected — ${reason}`,
+    { previous: 'pending_verification', next: 'rejected' });
+
+  res.json({ message: `Loan recording rejected for ${loan.full_name}.` });
 });
 
 // POST /api/loans/:id/repayments
@@ -220,8 +350,8 @@ const recordRepayment = wrap(async (req, res) => {
     [loanId]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
-  if (loan.status !== 'approved') {
-    return res.status(400).json({ message: 'Only an approved loan can take repayments.' });
+  if (loan.status !== 'verified') {
+    return res.status(400).json({ message: 'Only a live (verified) loan can take repayments.' });
   }
 
   const paidRow = await one(
@@ -299,7 +429,12 @@ const listLoans = wrap(async (req, res) => {
        LEFT JOIN users a ON a.id = l.approved_by
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
       ORDER BY
-        CASE l.status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 ELSE 3 END,
+        CASE l.status
+          WHEN 'pending' THEN 1
+          WHEN 'approved' THEN 2
+          WHEN 'pending_verification' THEN 3
+          WHEN 'verified' THEN 4
+          ELSE 5 END,
         l.id DESC`,
     params
   );
@@ -406,7 +541,7 @@ const overdueLoans = wrap(async (req, res) => {
     `SELECT l.*, u.full_name, u.phone, u.language, m.membership_number,
             COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.status = 'approved' AND l.due_date < CURRENT_DATE
+      WHERE l.status = 'verified' AND l.due_date < CURRENT_DATE
       ORDER BY l.due_date`
   );
   res.json(rows.map(withBalance));
@@ -419,7 +554,7 @@ const sendReminders = wrap(async (req, res) => {
     `SELECT l.*, u.full_name, u.phone, u.language,
             COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.status = 'approved' AND l.due_date <= CURRENT_DATE + ($1 || ' days')::interval`,
+      WHERE l.status = 'verified' AND l.due_date <= CURRENT_DATE + ($1 || ' days')::interval`,
     [String(days)]
   );
 
@@ -441,5 +576,6 @@ const sendReminders = wrap(async (req, res) => {
 });
 
 module.exports = {
-  applyLoan, decideLoan, recordRepayment, listLoans, getLoan, listRepayments, overdueLoans, sendReminders, borrowingLimit,
+  applyLoan, decideLoan, recordLoan, verifyLoan, rejectLoanVerification,
+  recordRepayment, listLoans, getLoan, listRepayments, overdueLoans, sendReminders, borrowingLimit,
 };

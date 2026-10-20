@@ -193,6 +193,9 @@ export function AuthProvider({ children }) {
       // The money books are the treasurer's to write in. The chairperson and the
       // secretary read them; the secretary never changes a transaction.
       canRecordMoney: user?.role === 'treasurer',
+      // The secretary checks the treasurer's work: savings and recorded loans are
+      // only money once she has verified them. She never approves a loan.
+      canVerify: user?.role === 'secretary',
       // The members vote; the chairperson alone settles a join request. The
       // treasurer keeps the money, the secretary keeps the record of the result.
       isDecider: user?.role === 'admin',

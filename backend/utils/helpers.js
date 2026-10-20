@@ -59,6 +59,21 @@ async function setSetting(key, value, group = 'group') {
 
 const isYes = (v) => String(v).trim().toLowerCase() === 'yes';
 
+/**
+ * Only a verified saving is real money. A saving the treasurer has written but
+ * the secretary has not yet checked (pending_verification) or has refused
+ * (rejected) is kept on the record but must never be added up: it does not
+ * count toward a member's total, her borrowing limit, the cash in the box or
+ * the share-out. Every money question that sums savings carries this filter.
+ */
+const VERIFIED_SAVING = `status = 'verified'`;
+
+/** The same rule, said with a table alias, for queries that join savings. */
+function verifiedSaving(alias = '') {
+  const col = alias ? `${alias}.status` : 'status';
+  return `${col} = 'verified'`;
+}
+
 /** Total owed on a loan: principal, plus interest only if she opted in. */
 function loanTotals(loan) {
   const principal = Number(loan.amount);
@@ -120,11 +135,11 @@ async function cashInBox(cycleId, run) {
   if (!cycleId) return 0;
   const exec = run || query;
   const rows = await exec(
-    `SELECT
-       COALESCE((SELECT SUM(amount) FROM savings WHERE cycle_id = $1),0)
+     `SELECT
+       COALESCE((SELECT SUM(amount) FROM savings WHERE cycle_id = $1 AND status = 'verified'),0)
      + COALESCE((SELECT SUM(r.amount) FROM loan_repayments r JOIN loans l ON l.id = r.loan_id WHERE l.cycle_id = $1),0)
      + COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE AND cycle_id = $1),0)
-     - COALESCE((SELECT SUM(amount) FROM loans WHERE cycle_id = $1 AND status IN ('approved','repaid','defaulted')),0)
+     - COALESCE((SELECT SUM(amount) FROM loans WHERE cycle_id = $1 AND status IN ('verified','repaid','defaulted')),0)
        AS cash`,
     [cycleId]
   );
@@ -134,4 +149,5 @@ async function cashInBox(cycleId, run) {
 module.exports = {
   clearCache, cashInBox, getActiveCycle, getSetting, setSetting, isYes, loanTotals,
   activeMembersWithPhone, generateUsername, nextMembershipNumber, tempPassword,
+  VERIFIED_SAVING, verifiedSaving,
 };

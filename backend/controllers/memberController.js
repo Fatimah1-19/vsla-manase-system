@@ -6,10 +6,10 @@ const MEMBER_SUMMARY = `
          m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
          u.id AS user_id, u.full_name, u.phone, u.username, u.role, u.language, u.is_active,
          (m.avatar IS NOT NULL) AS has_avatar,
-         COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id), 0)::float AS total_savings,
-         COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id), 0)::int   AS total_shares,
+         COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id AND s.status = 'verified'), 0)::float AS total_savings,
+         COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id AND s.status = 'verified'), 0)::int   AS total_shares,
          COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.member_id = m.id AND f.paid = FALSE), 0)::float AS unpaid_fines,
-         (SELECT COUNT(*)::int FROM loans l WHERE l.member_id = m.id AND l.status = 'approved') AS active_loans
+         (SELECT COUNT(*)::int FROM loans l WHERE l.member_id = m.id AND l.status = 'verified') AS active_loans
     FROM members m
     JOIN users u ON u.id = m.user_id
 `;
@@ -36,7 +36,7 @@ const getMember = wrap(async (req, res) => {
   if (!member) return res.status(404).json({ message: 'That member is not on the list.' });
 
   const [savings, loans, fines, attendance, documents, wrappers] = await Promise.all([
-    query(`SELECT id, amount::float, shares, date, note FROM savings WHERE member_id = $1 ORDER BY date DESC, id DESC`, [id]),
+    query(`SELECT id, amount::float, shares, date, note, status, rejected_reason FROM savings WHERE member_id = $1 ORDER BY date DESC, id DESC`, [id]),
     query(
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id), 0)::float AS total_repaid

@@ -21,7 +21,7 @@ const FEED_SQL = `
   SELECT 'savings' AS kind, s.id, s.date, s.member_id, u.full_name,
          (m.avatar IS NOT NULL) AS has_avatar, s.amount::float AS amount,
          ('SAV-' || s.id) AS reference, r.full_name AS recorded_by_name,
-         NULL AS status, s.note
+         s.status, s.note
     FROM savings s
     JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
     LEFT JOIN users r ON r.id = s.recorded_by

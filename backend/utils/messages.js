@@ -21,6 +21,14 @@ const T = {
     en: (p) => `Hello ${p.name}, your saving of ${money(p.amount)} was recorded on ${day(p.date)}. Your total saved this cycle is ${money(p.total)}. — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, ndalama zanu zosunga za ${money(p.amount)} zalembedwa pa ${day(p.date)}. Zonse zomwe mwasunga nyengo ino ndi ${money(p.total)}. — ${GROUP}`,
   },
+  savingVerified: {
+    en: (p) => `Hello ${p.name}, your saving of ${money(p.amount)} has been checked and confirmed. Your total saved this cycle is ${money(p.total)}. — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, ndalama zanu zosunga za ${money(p.amount)} zayang'aniridwa ndi kutsimikiziridwa. Zonse zomwe mwasunga nyengo ino ndi ${money(p.total)}. — ${GROUP}`,
+  },
+  savingRejected: {
+    en: (p) => `Hello ${p.name}, your saving of ${money(p.amount)} could not be confirmed. ${p.note ? 'Reason: ' + p.note + '. ' : ''}Please speak to the secretary. — ${GROUP}`,
+    ny: (p) => `Moni ${p.name}, ndalama zanu zosunga za ${money(p.amount)} sizinatsimikizidwe. ${p.note ? 'Chifukwa: ' + p.note + '. ' : ''}Chonde lankhulani ndi mlembi. — ${GROUP}`,
+  },
   loanApplied: {
     en: (p) => `Hello ${p.name}, your loan request of ${money(p.amount)} has been received and is waiting for the committee. — ${GROUP}`,
     ny: (p) => `Moni ${p.name}, pempho lanu la ngongole ya ${money(p.amount)} lalandiridwa ndipo likudikira komiti. — ${GROUP}`,

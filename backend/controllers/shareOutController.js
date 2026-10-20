@@ -16,7 +16,7 @@ async function computeShareOut(cycleId) {
     query(
     `SELECT m.id AS member_id, m.membership_number, m.status, u.full_name, u.phone, u.language,
             COALESCE((SELECT SUM(s.amount) FROM savings s
-                       WHERE s.member_id = m.id AND s.cycle_id = $1),0)::float AS member_savings,
+                       WHERE s.member_id = m.id AND s.cycle_id = $1 AND s.status = 'verified'),0)::float AS member_savings,
             -- interest this member actually paid on their own loans in this cycle
             COALESCE((SELECT SUM(r.interest_part) FROM loan_repayments r
                         JOIN loans l ON l.id = r.loan_id
@@ -26,7 +26,7 @@ async function computeShareOut(cycleId) {
             COALESCE((SELECT SUM(x.due - x.paid) FROM (
                         SELECT l.amount + CASE WHEN l.with_interest THEN l.amount * l.interest_rate / 100 ELSE 0 END AS due,
                                COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0) AS paid
-                          FROM loans l WHERE l.member_id = m.id AND l.status = 'approved') x),0)::float AS unpaid_loan
+                          FROM loans l WHERE l.member_id = m.id AND l.status = 'verified') x),0)::float AS unpaid_loan
        FROM members m JOIN users u ON u.id = m.user_id
       ORDER BY u.full_name`,
     [cycleId]),
@@ -57,10 +57,10 @@ const preview = wrap(async (req, res) => {
 
   const [result, openLoans, eligible] = await Promise.all([
     computeShareOut(cycle.id),
-    one(`SELECT COUNT(*)::int AS c FROM loans WHERE status IN ('pending','approved')`),
+    one(`SELECT COUNT(*)::int AS c FROM loans WHERE status IN ('pending','approved','pending_verification','verified')`),
     // How many members actually saved into this cycle: these are the ones the
     // share-out is worked out for. Read-only; the calculation stays untouched.
-    one(`SELECT COUNT(DISTINCT member_id)::int AS c FROM savings WHERE cycle_id = $1`, [cycle.id]),
+    one(`SELECT COUNT(DISTINCT member_id)::int AS c FROM savings WHERE cycle_id = $1 AND status = 'verified'`, [cycle.id]),
   ]);
   res.json({
     cycle,

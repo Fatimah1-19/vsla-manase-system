@@ -94,8 +94,8 @@ const PEOPLE = [
         const date = new Date(Date.now() - (5 - week) * 7 * 86400000).toISOString().slice(0, 10);
         for (const m of members) {
           await client.query(
-            `INSERT INTO savings (member_id, cycle_id, amount, shares, date, recorded_by)
-             VALUES ($1,$2,$3,$4,$5,$6)`,
+            `INSERT INTO savings (member_id, cycle_id, amount, shares, date, recorded_by, status, verified_at)
+             VALUES ($1,$2,$3,$4,$5,$6,'verified',NOW())`,
             [m.id, cycle.id, 1000 * (1 + (m.id % 3)), 1 + (m.id % 3), date, admin.id]
           );
         }

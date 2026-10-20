@@ -565,6 +565,65 @@ CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_logs(user_id);
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS previous_value TEXT;
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value      TEXT;
 
+-- =====================================================================
+--  FINANCIAL CONTROL: SAVINGS VERIFICATION
+--  The treasurer writes a saving in the book; the secretary checks it
+--  against the money that was actually handed over before it counts.
+--  Until it is verified the entry does not count toward totals, the
+--  borrowing limit or the share-out. A rejected entry never counts.
+-- =====================================================================
+
+-- A saving now carries where it stands: written down, waiting to be checked,
+-- checked and good, or refused.
+ALTER TABLE savings ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending_verification';
+ALTER TABLE savings DROP CONSTRAINT IF EXISTS savings_status_check;
+ALTER TABLE savings ADD CONSTRAINT savings_status_check
+  CHECK (status IN ('pending_verification','verified','rejected'));
+
+-- Who checked it, when, and (if refused) why.
+ALTER TABLE savings ADD COLUMN IF NOT EXISTS verified_by     INT REFERENCES users(id);
+ALTER TABLE savings ADD COLUMN IF NOT EXISTS verified_at     TIMESTAMPTZ;
+ALTER TABLE savings ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
+
+-- Savings already in the book before this change were never verified; treat
+-- them as good so no old money disappears from the totals.
+UPDATE savings SET status = 'verified', verified_at = created_at WHERE status = 'pending_verification';
+
+CREATE INDEX IF NOT EXISTS idx_savings_status ON savings(status);
+
+-- =====================================================================
+--  FINANCIAL CONTROL: LOAN APPROVAL AND DISBURSEMENT
+--  Two offices, two steps. The chairperson approves the request; the
+--  treasurer records the money leaving the box; the secretary checks it.
+--  Only a verified loan is live and can take repayments.
+-- =====================================================================
+
+ALTER TABLE loans DROP CONSTRAINT IF EXISTS loans_status_check;
+ALTER TABLE loans ADD CONSTRAINT loans_status_check
+  CHECK (status IN ('pending','approved','pending_verification','verified','rejected','repaid','defaulted'));
+
+-- Who recorded the money leaving the box, when, and who checked it.
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS recorded_by     INT REFERENCES users(id);
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS recorded_at     TIMESTAMPTZ;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS verified_by     INT REFERENCES users(id);
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS verified_at     TIMESTAMPTZ;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
+
+-- A loan already 'approved' under the old rules was already handed out and is
+-- taking repayments; treat it as verified so it keeps working.
+UPDATE loans SET status = 'verified', verified_at = COALESCE(decided_at, applied_at)
+ WHERE status = 'approved';
+
+-- A member can have one loan moving through the flow at a time. Extend the
+-- guard so a request being recorded or checked also counts as open.
+DROP INDEX IF EXISTS one_open_loan_per_member;
+DO $$ BEGIN
+  CREATE UNIQUE INDEX IF NOT EXISTS one_open_loan_per_member
+    ON loans (member_id) WHERE status IN ('pending','approved','pending_verification','verified');
+EXCEPTION WHEN unique_violation THEN
+  RAISE NOTICE 'Skipped one_open_loan_per_member: some members already have two open loans.';
+END $$;
+
 CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
 BEGIN
   RAISE EXCEPTION 'audit_logs is append-only';

@@ -48,12 +48,15 @@ const getDashboard = wrap(async (req, res) => {
     // Everything the member board needs, asked together instead of one by one.
     const [savings, loans, fines, finesList, share, nextMeeting, multiplierSetting, levySetting, owing,
            groupMoney, groupLoans, groupCash, recentContrib] = await Promise.all([
-      one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares,
-                  COUNT(*)::int AS entries, MAX(date) AS last_date
+      one(`SELECT COALESCE(SUM(amount) FILTER (WHERE status='verified'),0)::float AS total,
+                  COALESCE(SUM(shares) FILTER (WHERE status='verified'),0)::int AS shares,
+                  COUNT(*) FILTER (WHERE status='verified')::int AS entries, MAX(date) AS last_date,
+                  COALESCE(SUM(amount) FILTER (WHERE status='pending_verification'),0)::float AS pending,
+                  COUNT(*) FILTER (WHERE status='pending_verification')::int AS pending_entries
              FROM savings WHERE member_id = $1 AND ($2::int IS NULL OR cycle_id = $2)`,
           [memberId, cycle ? cycle.id : null]),
       query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
-               FROM loans l WHERE l.member_id = $1 AND l.status IN ('pending','approved') ORDER BY l.id DESC`, [memberId]),
+               FROM loans l WHERE l.member_id = $1 AND l.status IN ('pending','approved','pending_verification','verified') ORDER BY l.id DESC`, [memberId]),
       one(`SELECT COALESCE(SUM(amount),0)::float AS unpaid FROM fines WHERE member_id = $1 AND paid = FALSE`, [memberId]),
       query(
         `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
@@ -73,12 +76,12 @@ const getDashboard = wrap(async (req, res) => {
       arrears(),
 
       // The whole group's money, so the box is not a mystery to the women who fill it.
-      one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
+      one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
                   COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
       query(`SELECT l.amount::float, l.with_interest, l.interest_rate::float,
                     COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
-               FROM loans l WHERE l.status = 'approved'`),
+               FROM loans l WHERE l.status = 'verified'`),
       cashInBox(cycle ? cycle.id : null),
       query(`SELECT s.id, s.amount::float, s.date, u.full_name
                FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
@@ -102,7 +105,7 @@ const getDashboard = wrap(async (req, res) => {
     const [trendBuckets, recentEntries] = await Promise.all([
       query(
         `SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v
-           FROM savings WHERE member_id = $1 AND date >= $2::date GROUP BY 1`,
+           FROM savings WHERE member_id = $1 AND status='verified' AND date >= $2::date GROUP BY 1`,
         [memberId, from]
       ),
       query(
@@ -228,8 +231,8 @@ const getDashboard = wrap(async (req, res) => {
     monthlyFlow, todayTick, contribMonthly, expectedFines,
     upcomingCount, membershipChanges,
   ] = await Promise.all([
-    one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)),0)::float AS total_savings,
-                COALESCE((SELECT SUM(amount) FROM loans WHERE status = 'approved'),0)::float AS loans_out,
+    one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
+                COALESCE((SELECT SUM(amount) FROM loans WHERE status IN ('verified','repaid','defaulted')),0)::float AS loans_out,
                 COALESCE((SELECT SUM(amount) FROM loan_repayments),0)::float AS repaid,
                 COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
@@ -238,9 +241,11 @@ const getDashboard = wrap(async (req, res) => {
                 COUNT(*) FILTER (WHERE status='inactive')::int AS inactive FROM members`),
     one(`SELECT COUNT(*) FILTER (WHERE status='pending')::int  AS pending,
                 COUNT(*) FILTER (WHERE status='approved')::int AS approved,
+                COUNT(*) FILTER (WHERE status='pending_verification')::int AS awaiting_verification,
+                COUNT(*) FILTER (WHERE status='verified')::int AS verified,
                 COUNT(*) FILTER (WHERE status='repaid')::int   AS repaid,
                 COUNT(*) FILTER (WHERE status='rejected')::int AS rejected,
-                COUNT(*) FILTER (WHERE status='approved' AND due_date < CURRENT_DATE)::int AS overdue
+                COUNT(*) FILTER (WHERE status='verified' AND due_date < CURRENT_DATE)::int AS overdue
            FROM loans`),
     one(`SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
                 COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0)::float AS payouts
@@ -255,7 +260,7 @@ const getDashboard = wrap(async (req, res) => {
     query(
       `SELECT l.amount::float, l.with_interest, l.interest_rate::float,
               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
-         FROM loans l WHERE l.status = 'approved'`
+         FROM loans l WHERE l.status = 'verified'`
     ),
 
     // The monthly wrappers money: collected this month, and who is behind.
@@ -329,16 +334,16 @@ const getDashboard = wrap(async (req, res) => {
     // The money crew charts what has been coming in for the last six months.
     wantsMoney ? Promise.all([
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings
-              WHERE date >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status='verified' AND date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments
               WHERE date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
-              WHERE status IN ('approved','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
     ]) : null,
 
     // What moved today, for the treasurer's opening line.
     wantsMoney ? one(
-      `SELECT COALESCE((SELECT SUM(amount)::float FROM savings WHERE date::date = CURRENT_DATE),0) AS saved,
+      `SELECT COALESCE((SELECT SUM(amount)::float FROM savings WHERE status='verified' AND date::date = CURRENT_DATE),0) AS saved,
               COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE date::date = CURRENT_DATE),0) AS repaid,
               COALESCE((SELECT SUM(amount)::float FROM fines WHERE paid = TRUE AND date::date = CURRENT_DATE),0) AS fines_paid`
     ) : null,
@@ -473,7 +478,7 @@ const publicImpact = wrap(async (req, res) => {
   const [members, loans, meetings, cycle, multiplier, rate, levy, fee] = await Promise.all([
     one(`SELECT COUNT(*)::int AS total FROM members WHERE status = 'active'`),
     one(
-      `SELECT COUNT(*) FILTER (WHERE status='approved')::int AS approved,
+      `SELECT COUNT(*) FILTER (WHERE status='verified')::int AS given,
               COUNT(*) FILTER (WHERE status='repaid')::int   AS repaid,
               COUNT(*)::int AS total FROM loans`
     ),
@@ -485,7 +490,7 @@ const publicImpact = wrap(async (req, res) => {
     getSetting('registration_fee', '1000'),
   ]);
 
-  const completed = loans.approved + loans.repaid;
+  const completed = loans.given + loans.repaid;
   const recoveryRate = completed > 0 ? Math.round((loans.repaid / completed) * 100) : 0;
 
   let weeksElapsed = 0;

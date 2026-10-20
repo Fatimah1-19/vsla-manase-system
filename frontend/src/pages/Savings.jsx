@@ -14,6 +14,7 @@ import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Icon from '../components/Icon.jsx';
 import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
 import '../styles.css';
@@ -22,7 +23,7 @@ const blank = { member_id: '', amount: '', shares: '1', date: inputDate(), note:
 
 export default function Savings() {
   const { t } = useLang();
-  const { canRecordMoney, isAdmin } = useAuth();
+  const { canRecordMoney, isAdmin, canVerify } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -37,6 +38,8 @@ export default function Savings() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [editing, setEditing] = useState(null);   // the entry being corrected
+  const [verifying, setVerifying] = useState(null); // the entry the secretary is checking
+  const [rejectReason, setRejectReason] = useState('');
 
   // The treasurer's menu can open this page on its summary or on its history.
   const [params] = useSearchParams();
@@ -123,6 +126,37 @@ export default function Savings() {
     }
   }
 
+  async function verify(row) {
+    if (!(await confirm({ message: t('savings.confirmVerify', money(row.amount), row.full_name) }))) return;
+    setBusy(true);
+    try {
+      toast.success((await api.patch(`/savings/${row.id}/verify`, {})).message);
+      setVerifying(null);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reject(e) {
+    e.preventDefault();
+    const reason = rejectReason.trim();
+    if (!reason) { toast.error(t('savings.rejectReason')); return; }
+    setBusy(true);
+    try {
+      toast.success((await api.patch(`/savings/${verifying.id}/reject`, { reason })).message);
+      setVerifying(null);
+      setRejectReason('');
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const filtered = useMemo(() => {
     if (!rows) return [];
     const q = search.trim().toLowerCase();
@@ -137,7 +171,7 @@ export default function Savings() {
   }, [rows, search, memberId, from, to]);
 
   const filteredTotal = useMemo(
-    () => filtered.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
+    () => filtered.reduce((sum, r) => sum + (r.status === 'verified' ? Number(r.amount) || 0 : 0), 0),
     [filtered]
   );
 
@@ -156,7 +190,7 @@ export default function Savings() {
       const mKey = String(r.date).slice(0, 7);
       if (!months.has(mKey)) months.set(mKey, { key: mKey, total: 0, dates: new Map() });
       const m = months.get(mKey);
-      m.total += Number(r.amount) || 0;
+      m.total += r.status === 'verified' ? Number(r.amount) || 0 : 0;
       const dKey = String(r.date).slice(0, 10);
       if (!m.dates.has(dKey)) m.dates.set(dKey, { key: dKey, rows: [] });
       m.dates.get(dKey).rows.push(r);
@@ -183,10 +217,29 @@ export default function Savings() {
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'status', label: t('common.status'),
+      render: (r) => <StatusTag status={r.status} /> },
     { key: 'note', label: t('savings.note'), hideOnPhone: true,
       render: (r) => <span className="muted">{r.note || '—'}</span> },
     { key: 'recorded_by_name', label: t('savings.recordedBy'), hideOnPhone: true,
       render: (r) => <span className="muted">{r.recorded_by_name || '—'}</span> },
+    ...(canVerify ? [{ key: 'v', label: '', align: 'right',
+      render: (r) => (
+        <span className="row-actions">
+          {r.status === 'pending_verification' && (
+            <>
+              <button type="button" className="btn btn--small"
+                onClick={() => verify(r)}>
+                {t('savings.verify')}
+              </button>
+              <button type="button" className="btn btn--small btn--danger"
+                onClick={() => { setVerifying(r); setRejectReason(''); }}>
+                {t('savings.reject')}
+              </button>
+            </>
+          )}
+        </span>
+      ) }] : []),
     ...(canRecordMoney || isAdmin ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (
         <span className="row-actions">
@@ -252,7 +305,18 @@ export default function Savings() {
           <StatCard label={t('savings.thisCycle')} value={money(summary.total_savings)} tone="gold" big />
           <StatCard label={t('common.total')} value={`${summary.entries} ${t('savings.entries')}`} />
           <StatCard label={t('nav.members')} value={`${summary.savers} ${t('savings.savers')}`} />
+          {(canVerify || isAdmin || canRecordMoney) && (
+            <StatCard
+              label={t('status.pending_verification')}
+              value={`${summary.pending_entries || 0}`}
+              tone={(summary.pending_entries || 0) > 0 ? 'gold' : undefined}
+            />
+          )}
         </div>
+      )}
+
+      {(canVerify || isAdmin) && (summary?.pending_entries || 0) > 0 && (
+        <p className="notice notice--warn">{t('savings.pendingBanner', summary.pending_entries)}</p>
       )}
 
       {showSummary && savers.length > 0 && (
@@ -445,6 +509,37 @@ export default function Savings() {
 
           <p className="savings__smsHint">{t('savings.smsNote')}</p>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!verifying}
+        title={verifying ? `${t('savings.reject')} — ${verifying.full_name}` : ''}
+        onClose={() => { setVerifying(null); setRejectReason(''); }}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => { setVerifying(null); setRejectReason(''); }}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" form="saving-reject-form" className="btn btn--danger" disabled={busy}>
+              {busy ? t('common.saving') : t('savings.reject')}
+            </button>
+          </>
+        }
+      >
+        {verifying && (
+          <form id="saving-reject-form" onSubmit={reject} noValidate>
+            <p className="notice">
+              {money(verifying.amount)} — {shortDate(verifying.date)}
+            </p>
+            <div className="form-row">
+              <div>
+                <label className="field-label" htmlFor="sr-reason">{t('savings.rejectReason')}</label>
+                <textarea id="sr-reason" rows={2} value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)} required />
+              </div>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

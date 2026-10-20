@@ -37,6 +37,7 @@ export default {
     outstanding: 'Zotsala', overdue: 'Zapitirira nthawi', cancelled: 'Zathetsedwa',
     draft: 'Choyambirira', confirmed: 'Zatsimikizika', distributed: 'Zagawidwa',
     approved: 'Zavomerezedwa', rejected: 'Zakanidwa', repaid: 'Zabwezedwa', defaulted: 'Zalephera',
+    pending_verification: 'Zodikira kutsimikizika', verified: 'Zatsimikizika',
     unpaid: 'Sizinalipidwe', waiting: 'Zodikira', open: 'Zotseguka', inactive: 'Osagwira',
     locked: 'Zotsekedwa', withdrawn: 'Zachotsedwa', closed: 'Zatsekedwa', excused: 'Olephedwa',
     sent: 'Zatumizidwa', failed: 'Zalephera',
@@ -193,6 +194,15 @@ export default {
   savings: {
     confirmRemove: (name, amount) => `Chotsani ${amount} yosungidwa ndi ${name}? Sizingabwezedwe.`,
     editNote: 'Zosinthidwa zimalembedwa pa mndandanda wa zomwe zachitika, ndi dzina lanu.',
+    verify: 'Tsimikizani', reject: 'Kanani', verifyTitle: 'Yang\'anani zosunga izi',
+    verifyNote: 'Ziyang\'aneni ndi ndalama zomwe zaperekedwa, kenako tsimikizani.',
+    rejectReason: 'Chifukwa chiyani zosunga izi zikukanidwa?',
+    verifyThis: 'Tsimikizani zosunga', rejectThis: 'Kanani zosunga',
+    pendingBanner: (n) => `Zosunga ${n} zikudikira kutsimikizika.`,
+    confirmVerify: (amount, name) => `Tsimikizani zosunga za ${amount} za ${name}? Zidzawerengedwa ngati ndalama kuyambira tsopano.`,
+    confirmReject: (amount, name) => `Kanani zosunga za ${amount} za ${name}? Sizidzawerengedwa ngati ndalama.`,
+    noPending: 'Palibe chomwe chikudikira kutsimikizika.',
+    verifiedBy: 'Zatsimikizidwa ndi', pendingTag: 'Zodikira', verifiedTag: 'Zatsimikizika', rejectedTag: 'Zakanidwa',
   },
 
   loans: {
@@ -215,6 +225,19 @@ export default {
     paymentCount: 'Malipiro', noRepayments: 'Palibe zobweza zopezeka.',
     cycleWord: 'Nyengo yosunga', principalOnly: 'ndalama zazikulu zokha',
     loanRef: (id) => `Ngongole #${id}`,
+    awaitingRecord: 'Zodikira kulembedwa',
+    awaitingVerification: 'Zodikira kutsimikizika',
+    recordLoan: 'Lembani ndalama zotuluka',
+    recordLoanNote: 'Tsimikizani kuti ndalama zaperekedwa kuchokera mu bokosi.',
+    verifyLoan: 'Tsimikizani ngongole',
+    verifyLoanNote: 'Yang\'anani ndalama zolembedwa ndi zomwe zidavomerezedwa, kenako pangani ngongole kukhala yogwira.',
+    rejectVerification: 'Kanani',
+    verifyReason: 'Chifukwa chiyani kulembedwa uku kukukanidwa?',
+    awaitingRecordTag: 'Zodikira kulembedwa', verifiedTag: 'Zatsimikizika',
+    pendingVerificationTag: 'Zodikira kutsimikizika',
+    noSelfVerify: 'Simungatsimikize ngongole yomwe munayilemba nokha.',
+    liveNow: 'Ngongole iyi ikugwira ndipo ikhoza kulandira zobweza.',
+    statusLine: 'Mkhalidwe',
   },
 
   fines: {

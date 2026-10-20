@@ -39,6 +39,7 @@ export default {
     outstanding: 'Outstanding', overdue: 'Overdue', cancelled: 'Cancelled',
     draft: 'Draft', confirmed: 'Confirmed', distributed: 'Handed out',
     approved: 'Approved', rejected: 'Rejected', repaid: 'Repaid', defaulted: 'Defaulted',
+    pending_verification: 'Pending verification', verified: 'Verified',
     unpaid: 'Unpaid', waiting: 'Waiting', open: 'Open', inactive: 'Inactive',
     locked: 'Locked', withdrawn: 'Withdrawn', closed: 'Closed', excused: 'Excused',
     sent: 'Sent', failed: 'Failed',
@@ -195,6 +196,15 @@ export default {
   savings: {
     confirmRemove: (name, amount) => `Remove ${amount} saved by ${name}? This cannot be undone.`,
     editNote: 'Corrections are written in the activity log, with your name.',
+    verify: 'Verify', reject: 'Reject', verifyTitle: 'Check this saving',
+    verifyNote: 'Check it against the money actually handed over, then confirm it.',
+    rejectReason: 'Why is this saving being rejected?',
+    verifyThis: 'Verify saving', rejectThis: 'Reject saving',
+    pendingBanner: (n) => `${n} saving(s) are waiting to be verified.`,
+    confirmVerify: (amount, name) => `Confirm the saving of ${amount} for ${name}? It will count as money from now on.`,
+    confirmReject: (amount, name) => `Reject the saving of ${amount} for ${name}? It will not count as money.`,
+    noPending: 'Nothing is waiting to be verified.',
+    verifiedBy: 'Verified by', pendingTag: 'Pending', verifiedTag: 'Verified', rejectedTag: 'Rejected',
   },
 
   loans: {
@@ -217,6 +227,20 @@ export default {
     paymentCount: 'Payments', noRepayments: 'No repayments found.',
     cycleWord: 'Saving cycle', principalOnly: 'principal only',
     loanRef: (id) => `Loan #${id}`,
+    // ---- approval and disbursement, split between the offices ----
+    awaitingRecord: 'Waiting to be recorded',
+    awaitingVerification: 'Waiting to be verified',
+    recordLoan: 'Record the money out',
+    recordLoanNote: 'Confirm that the money has been handed over from the box.',
+    verifyLoan: 'Verify the loan',
+    verifyLoanNote: 'Check the money recorded against the approval, then make the loan live.',
+    rejectVerification: 'Reject',
+    verifyReason: 'Why is this recording being rejected?',
+    awaitingRecordTag: 'Awaiting recording', verifiedTag: 'Verified',
+    pendingVerificationTag: 'Pending verification',
+    noSelfVerify: 'You cannot verify a loan you recorded yourself.',
+    liveNow: 'This loan is live and can take repayments.',
+    statusLine: 'Standing',
   },
 
   fines: {

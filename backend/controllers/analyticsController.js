@@ -27,11 +27,11 @@ const analytics = wrap(async (req, res) => {
     Object.fromEntries((await query(sql, [from])).map((r) => [r.ym, r.v]));
 
   const [savingsBy, repaidBy, interestBy, givenBy, finesBy, wrappersBy, welfareInBy, welfareOutBy] = await Promise.all([
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings WHERE date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings WHERE status='verified' AND date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments WHERE date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(interest_part)::float AS v FROM loan_repayments WHERE date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
-              WHERE status IN ('approved','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`),
+              WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM fines WHERE paid = TRUE AND date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(paid_on,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM monthly_contributions WHERE paid_on >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM welfare_fund WHERE type = 'contribution' AND date >= $1::date GROUP BY 1`),
@@ -49,7 +49,7 @@ const analytics = wrap(async (req, res) => {
   const ranking = await query(
     `SELECT m.id AS member_id, u.full_name, COALESCE(SUM(s.amount),0)::float AS total
        FROM members m JOIN users u ON u.id = m.user_id
-       LEFT JOIN savings s ON s.member_id = m.id AND s.cycle_id = $1
+       LEFT JOIN savings s ON s.member_id = m.id AND s.cycle_id = $1 AND s.status = 'verified'
       WHERE m.status = 'active' GROUP BY m.id, u.full_name ORDER BY total DESC, u.full_name`,
     [cid]
   );
@@ -72,16 +72,16 @@ const analytics = wrap(async (req, res) => {
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id`
   );
   const today = new Date().toISOString().slice(0, 10);
-  const statusCount = { pending: 0, approved: 0, repaid: 0, rejected: 0, defaulted: 0 };
+  const statusCount = { pending: 0, approved: 0, pending_verification: 0, verified: 0, repaid: 0, rejected: 0, defaulted: 0 };
   let dueSum = 0; let paidSum = 0; let outstanding = 0; let overdueOutstanding = 0; let lentPrincipal = 0;
   const borrowers = [];
 
   for (const l of loanRows) {
     statusCount[l.status] = (statusCount[l.status] || 0) + 1;
-    if (!['approved', 'repaid'].includes(l.status)) continue;
+    if (!['verified', 'repaid'].includes(l.status)) continue;
     const { totalDue } = loanTotals(l);
     dueSum += totalDue; paidSum += Math.min(l.total_repaid, totalDue); lentPrincipal += l.amount;
-    if (l.status === 'approved') {
+    if (l.status === 'verified') {
       const owing = Math.max(0, totalDue - l.total_repaid);
       const overdue = !!l.due_date && l.due_date < today;
       outstanding += owing;

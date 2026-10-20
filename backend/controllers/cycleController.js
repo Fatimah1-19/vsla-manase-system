@@ -7,7 +7,7 @@ const { getActiveCycle, clearCache } = require('../utils/helpers');
 const listCycles = wrap(async (req, res) => {
   const rows = await query(
     `SELECT c.*, c.share_value::float AS share_value,
-            COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.cycle_id = c.id), 0)::float AS total_savings
+            COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.cycle_id = c.id AND s.status = 'verified'), 0)::float AS total_savings
        FROM cycles c ORDER BY c.start_date DESC`
   );
   res.json(rows);
