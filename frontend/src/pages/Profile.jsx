@@ -320,6 +320,8 @@ export default function Profile() {
             <div><dt>{t('members.number')}</dt><dd>{m?.membership_number || '—'}</dd></div>
             <div><dt>{t('members.id')}</dt><dd>{m?.id ?? user.member_id ?? '—'}</dd></div>
             <div><dt>{t('members.joined')}</dt><dd>{m?.date_joined ? shortDate(m.date_joined) : '—'}</dd></div>
+            <div><dt>{t('common.phone')}</dt><dd>{details.phone || '—'}</dd></div>
+            <div><dt>{t('common.email')}</dt><dd>{details.email || '—'}</dd></div>
           </dl>
 
           <form onSubmit={saveDetails} noValidate className="profile__form">

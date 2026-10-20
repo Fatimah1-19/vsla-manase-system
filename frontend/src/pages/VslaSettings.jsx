@@ -54,7 +54,7 @@ const REQ_TAG_BY_STATUS = { pending: STATUS_TAG.waiting, approved: STATUS_TAG.in
  * current value of every rule and proposes a change; the chairperson confirms it.
  * Text messages are her own switch and take effect at once.
  */
-export default function VslaSettings() {
+export default function VslaSettings({ readOnly = false }) {
   const { t } = useLang();
   const toast = useToast();
   const { section: routeSection } = useParams();
@@ -71,9 +71,9 @@ export default function VslaSettings() {
   const load = useCallback(async () => {
     const [rows, sys, changes, smsInfo] = await Promise.all([
       api.get('/settings/group-rules'),
-      api.get('/settings/system'),
-      api.get('/admin/config-changes').catch(() => []),
-      api.get('/admin/sms').catch(() => null),
+      readOnly ? Promise.resolve([]) : api.get('/settings/system'),
+      readOnly ? Promise.resolve([]) : api.get('/admin/config-changes').catch(() => []),
+      readOnly ? Promise.resolve(null) : api.get('/admin/sms').catch(() => null),
     ]);
     setSms(smsInfo);
     const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
@@ -92,7 +92,7 @@ export default function VslaSettings() {
       if (c.status === 'pending' && c.payload) Object.keys(c.payload).forEach((k) => keys.add(k));
     }
     setPendingKeys(keys);
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
@@ -147,7 +147,10 @@ export default function VslaSettings() {
   function updateQuestion(i, patch) { setQuestions((qs) => qs.map((q, j) => (j === i ? { ...q, ...patch } : q))); }
   function removeQuestion(i) { setQuestions((qs) => qs.filter((_, j) => j !== i)); }
 
-  if (!section) return <Navigate to="/app/admin/settings/general" replace />;
+  const readOnlyIds = ['savings', 'loans', 'fines', 'welfare', 'shareout'];
+  if (!section || (readOnly && !readOnlyIds.includes(section.id))) {
+    return <Navigate to={readOnly ? '/app/settings/savings' : '/app/admin/settings/general'} replace />;
+  }
   if (!group || !system) return <Spinner />;
 
   const setGroupVal = (k, v) => setGroup((g) => ({ ...g, [k]: v }));
@@ -190,7 +193,8 @@ export default function VslaSettings() {
   const swFields = SWITCH_FIELDS[section.id] || [];
   const editable = numFields.length > 0 || swFields.length > 0 || section.id === 'membership';
   const changeLink = (key) => (
-    <a className="btn btn--ghost btn--small" href={`#edit-${key}`}>{t('settings.change')}</a>
+    readOnly ? <span className="muted">—</span>
+      : <a className="btn btn--ghost btn--small" href={`#edit-${key}`}>{t('settings.change')}</a>
   );
 
   return (
@@ -433,7 +437,7 @@ export default function VslaSettings() {
         )}
 
         {/* ---- propose a change ---- */}
-        {editable && section.id !== 'sms' && (
+        {!readOnly && editable && section.id !== 'sms' && (
           <form onSubmit={propose} className="settings__form" id="settingsEdit">
             <p className="settings__note">{t('settings.proposedToChairNote')}</p>
 
@@ -520,7 +524,7 @@ export default function VslaSettings() {
                     <td>{c.decided_by_name || '—'}</td>
                     <td>{c.decided_at ? dateTime(c.decided_at) : '—'}</td>
                     <td>
-                      {c.status === 'pending'
+                      {!readOnly && c.status === 'pending'
                         ? <button type="button" className="btn btn--ghost btn--small" disabled={busy} onClick={() => withdraw(c.id)}>{t('settings.withdraw')}</button>
                         : '—'}
                     </td>

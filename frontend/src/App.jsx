@@ -76,6 +76,10 @@ export default function App() {
         <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
         <Route path="activity/administrative" element={<ProtectedRoute roles={COMMITTEE}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
+        {/* The financial rules, read-only for the treasurer and the chairperson:
+            they work by the active settings and may not change them here. */}
+        <Route path="settings" element={<Navigate to="/app/settings/savings" replace />} />
+        <Route path="settings/:section" element={<ProtectedRoute roles={['admin', 'treasurer']}><VslaSettings readOnly /></ProtectedRoute>} />
         <Route path="admin/users" element={<ProtectedRoute roles={['system_admin']}><AdminUsers /></ProtectedRoute>} />
         <Route path="admin/roles" element={<ProtectedRoute roles={['system_admin']}><AdminRoles /></ProtectedRoute>} />
         <Route path="admin/settings" element={<Navigate to="/app/admin/settings/general" replace />} />

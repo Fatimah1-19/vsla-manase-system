@@ -9,6 +9,8 @@ export default {
     gParticipation: 'Kugwiritsidwa ntchito kwa mamembala',
     gMembership: 'Kusamalira mamembala', gFinancial: 'Kusamalira ndalama', gGroup: 'Kusamalira gulu',
     gReports: 'Malipoti', gActivity: 'Zochitika', gMeetings: 'Misonkhano', gRecords: 'Zolembedwa za kasamalidwe',
+    gSettings: 'Zokhazikika za gulu', financialSettings: 'Zokhudza ndalama',
+    setSavings: 'Zokhazikika za kusunga', setLoans: 'Zokhazikika za ngongole', setFines: 'Zokhazikika za chindapusa', setWelfare: 'Zokhazikika za chitukuko', setShareout: 'Zokhazikika za kugawana',
     membershipVoting: 'Kuvota kwa mamembala', officeElections: 'Kusankha oyendetsa gulu', memberDetails: 'Zambiri za membala',
     loanRepayments: 'Kubwezera ngongole', attendance: 'Kupezeka', settingsApproval: 'Kutsimikizira zokhazikika za gulu',
     financialReports: 'Malipoti a ndalama', membershipReports: 'Malipoti a mamembala', loanReports: 'Malipoti a ngongole',
@@ -308,6 +310,9 @@ export default {
   settings: {
     adminSubtitle: 'Zonse zomwe gulu ndi dongosolo limagwiritsa ntchito. Mtsogoleri wa dongosolo yekha ndiye amasintha izi.',
     vslaSubtitle: 'Malamulo amene gulu limakhala nawo. Woyang\'anira dongosolo amapempha kusintha; mtsogoleri amatsimikizira.',
+    readOnlyTitle: 'Zokhudza ndalama',
+    readOnlySubtitle: 'Malamulo amene malonda anu amatsatira. Woyang\'anira dongosolo yekha ndiye amasintha; mtsogoleri amatsimikizira kusintha kulikonse.',
+    readOnlyNote: 'Awa ndi malamulo amene akugwira ntchito. Lembani malonda anu mwa iwo — simungasinthe lamulo kuno.',
     proposeToChair: 'Tumizani kwa mtsogoleri',
     proposedToChair: 'Zatumizidwa kwa mtsogoleri kuti zitsimikizidwe.',
     proposedToChairNote: 'Mukasunga, zosinthazo zimatumizidwa kwa mtsogoleri. Zimagwira ntchito mtsogoleri akatsimikizira.',

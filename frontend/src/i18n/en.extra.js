@@ -10,6 +10,8 @@ export default {
     gParticipation: 'Member participation',
     gMembership: 'Membership', gFinancial: 'Financial management', gGroup: 'Group management',
     gReports: 'Reports', gActivity: 'Activity', gMeetings: 'Meetings', gRecords: 'Administrative records',
+    gSettings: 'Group settings', financialSettings: 'Financial settings',
+    setSavings: 'Savings settings', setLoans: 'Loan settings', setFines: 'Fine settings', setWelfare: 'Welfare settings', setShareout: 'Share-out settings',
     membershipVoting: 'Membership Voting', officeElections: 'Office Elections', memberDetails: 'Member Details',
     loanRepayments: 'Loan Repayments', attendance: 'Attendance', settingsApproval: 'VSLA Settings Approval',
     financialReports: 'Financial Reports', membershipReports: 'Membership Reports', loanReports: 'Loan Reports',
@@ -310,6 +312,9 @@ export default {
   settings: {
     adminSubtitle: 'Everything the group and the system run on. Only the administrator changes these.',
     vslaSubtitle: 'The rules the group lives by. The administrator proposes a change; the chairperson confirms it.',
+    readOnlyTitle: 'Financial settings',
+    readOnlySubtitle: 'The rules your transactions follow. Only the administrator may change these; the chairperson confirms any change.',
+    readOnlyNote: 'These are the active rules. Record your transactions using them — you cannot change a rule here.',
     proposeToChair: 'Send to the chairperson',
     proposedToChair: 'Sent to the chairperson to confirm.',
     proposedToChairNote: 'When you save, the change is sent to the chairperson. It takes effect once the chairperson confirms it.',
