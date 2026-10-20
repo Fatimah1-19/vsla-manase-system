@@ -245,6 +245,7 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 }
 .toolbar__grow { flex: 1; min-width: 180px; }
 .toolbar__grow--fit { flex: 0 1 220px; min-width: 140px; }
+.toolbar--align-end { align-items: flex-end; }
 .toolbar__field { display: flex; flex-direction: column; gap: 0.2rem; }
 .toolbar__field > span { font-size: 0.78rem; font-weight: 600; color: var(--slate); }
 .toolbar__field > input, .toolbar__field > select { margin: 0; }
