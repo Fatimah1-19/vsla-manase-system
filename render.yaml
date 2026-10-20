@@ -4,7 +4,9 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install
+    # db:setup applies the schema migrations (it is idempotent), so columns like
+    # users.email and tables like transaction_corrections exist after every deploy.
+    buildCommand: npm install && npm run db:setup
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
