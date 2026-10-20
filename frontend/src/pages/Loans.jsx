@@ -443,21 +443,22 @@ export default function Loans() {
         }
       />
 
-      <BackButton />
-
-      <div className="loans__filters" role="group" aria-label={t('common.status')}>
-        {['all', 'pending', 'approved', 'overdue', 'repaid', 'rejected', 'repayments'].map((f) => (
-          <button
-            key={f}
-            type="button"
-            className={filter === f ? 'loans__filter is-on' : 'loans__filter'}
-            onClick={() => (f === 'repayments' ? openRepayments() : setFilter(f))}
-          >
-            {f === 'all' ? t('common.all')
-              : f === 'repayments' ? t('loans.viewRepayments')
-              : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
-          </button>
-        ))}
+      <div className="section__head">
+        <BackButton />
+        <div className="loans__filters" role="group" aria-label={t('common.status')}>
+          {['all', 'pending', 'approved', 'overdue', 'repaid', 'rejected', 'repayments'].map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={filter === f ? 'loans__filter is-on' : 'loans__filter'}
+              onClick={() => (f === 'repayments' ? openRepayments() : setFilter(f))}
+            >
+              {f === 'all' ? t('common.all')
+                : f === 'repayments' ? t('loans.viewRepayments')
+                : t(`loans.${f === 'repaid' ? 'repaidStatus' : f}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {filter === 'repayments' ? (

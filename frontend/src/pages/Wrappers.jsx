@@ -151,9 +151,8 @@ export default function Wrappers() {
         action={canRecordMoney && <button type="button" className="btn" onClick={() => startRecord(null)}>{t('wrappers.record')}</button>}
       />
 
-      <BackButton />
-
       <div className="toolbar">
+        <BackButton />
         <label className="field-label wrappers__monthLabel" htmlFor="w-month">{t('wrappers.month')}</label>
         <input id="w-month" type="month" value={month} max={thisMonth()} onChange={(e) => setMonth(e.target.value || thisMonth())} />
       </div>

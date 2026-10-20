@@ -16,7 +16,7 @@ const sameTarget = (a, b) => a.split('?')[0] === b.split('?')[0]
  * stay short and clean. When someone has stepped into a sub-view, a back button
  * takes her home to the section's main entry.
  */
-export default function SectionTabs() {
+export default function SectionTabs({ hideBack = false }) {
   const { user } = useAuth();
   const { t } = useLang();
   const location = useLocation();
@@ -28,7 +28,7 @@ export default function SectionTabs() {
   const onHome = home && sameTarget(home.to, here);
 
   const cameFrom = new URLSearchParams(location.search).get('from');
-  if (links.length < 2) return cameFrom ? <BackButton /> : null;
+  if (links.length < 2) return cameFrom && !hideBack ? <BackButton /> : null;
 
   // A tab is on when it names the same page and the same query string.
   const isOn = (to) => to.split('?')[0] === location.pathname
@@ -36,7 +36,9 @@ export default function SectionTabs() {
 
   return (
     <div className="section__head">
-      {!cameFrom && home && !onHome ? (
+      {cameFrom ? (
+        hideBack ? null : <BackButton />
+      ) : home && !onHome ? (
         <Link to={home.to} className="section__back">
           <Icon name="back" size={16} />
           <span>{t('common.back')}</span>

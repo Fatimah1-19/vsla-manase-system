@@ -229,7 +229,7 @@ export default function Savings() {
         subtitle={t('savings.smsNote')}
         action={canRecordMoney && <button type="button" className="btn" onClick={() => setOpen(true)}>{t('savings.record')}</button>}
       />
-      <SectionTabs />
+      <SectionTabs hideBack />
 
       {summary?.cycle ? (
         <div className="savings__cycle">
