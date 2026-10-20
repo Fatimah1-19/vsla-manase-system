@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import PersonHeader from '../components/PersonHeader.jsx';
 import Avatar from '../components/Avatar.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
@@ -254,6 +255,7 @@ export default function Profile() {
   return (
     <div className="profile">
       <PageHeader title={t('profile.title')} />
+      <BackButton />
       <PersonHeader
         name={user.full_name}
         role={t(`roles.${user.role}`)}

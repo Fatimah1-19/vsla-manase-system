@@ -3,6 +3,7 @@ import { api, fetchFile } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { dateTime, humanAction } from '../utils/format.js';
@@ -184,6 +185,8 @@ export default function Activity() {
   return (
     <div className="activity">
       <PageHeader title={t('nav.activity')} subtitle={t('activity.subtitle')} />
+
+      <BackButton />
 
       <div className="activity__tabs" role="tablist">
         {['sessions', 'log'].map((k) => (

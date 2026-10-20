@@ -4,6 +4,7 @@ import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { humanAction } from '../utils/format.js';
@@ -60,6 +61,8 @@ export default function SystemActivity() {
   return (
     <div className="activity">
       <PageHeader title={t('nav.systemActivity')} subtitle={t('admin.systemActivitySubtitle')} />
+
+      <BackButton />
 
       <div className="activity__filters">
         <input

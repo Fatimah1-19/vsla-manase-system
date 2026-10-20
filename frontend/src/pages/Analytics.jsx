@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -207,6 +208,8 @@ export default function Analytics() {
           </button>
         }
       />
+
+      <BackButton />
 
       <div className="analytics__tabRow no-print">
         <div className="analytics__tabs" role="tablist" aria-label={t('nav.analyticsReports')}>

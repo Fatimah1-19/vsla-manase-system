@@ -152,5 +152,11 @@ export const sectionLinksFor = (role, pathname) => {
  */
 export const sectionHomeFor = (role, pathname) => {
   const items = navFor(role).filter((i) => pathOf(i.to) === pathname);
-  return items.find((i) => !i.sub) || null;
+  const home = items.find((i) => !i.sub);
+  if (home) return home;
+  // A sub-entry that lives alone on its pathname (e.g. the system activity log)
+  // still needs a way home: fall back to the first main entry of its group.
+  const sub = items.find((i) => i.sub && i.group);
+  if (!sub) return null;
+  return navFor(role).find((i) => i.group === sub.group && !i.sub) || null;
 };

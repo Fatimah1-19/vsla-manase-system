@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -189,6 +190,7 @@ export default function Meetings() {
         </div>
       )}
 
+      <BackButton />
       <nav className="meetings__tabs">
         <Link to="/app/meetings" className={`meetings__tab${!tab ? ' is-on' : ''}`}>{t('meetings.title')}</Link>
         <Link to="/app/meetings?tab=attendance" className={`meetings__tab${tab === 'attendance' ? ' is-on' : ''}`}>
