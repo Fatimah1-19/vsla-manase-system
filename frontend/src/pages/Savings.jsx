@@ -261,7 +261,7 @@ export default function Savings() {
 
       {showHistory && (
         <>
-          <div className="toolbar">
+          <div className="toolbar toolbar--align-end">
             <input
               className="toolbar__grow toolbar__grow--fit"
               type="search"
