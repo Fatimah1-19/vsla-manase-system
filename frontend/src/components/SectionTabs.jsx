@@ -36,9 +36,7 @@ export default function SectionTabs() {
 
   return (
     <div className="section__head">
-      {cameFrom ? (
-        <BackButton />
-      ) : home && !onHome ? (
+      {!cameFrom && home && !onHome ? (
         <Link to={home.to} className="section__back">
           <Icon name="back" size={16} />
           <span>{t('common.back')}</span>

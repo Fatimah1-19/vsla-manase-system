@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -230,8 +231,9 @@ export default function Savings() {
       />
       <SectionTabs />
 
-      {summary?.cycle && (
+      {summary?.cycle ? (
         <div className="savings__cycle">
+          <BackButton />
           <Icon name="cycles" size={18} />
           <span className="savings__cycleLabel">{t('savings.cycle')}</span>
           <strong className="savings__cycleName">{summary.cycle.cycle_name}</strong>
@@ -239,6 +241,8 @@ export default function Savings() {
             {shortDate(summary.cycle.start_date)} - {shortDate(summary.cycle.end_date)}
           </span>
         </div>
+      ) : (
+        <BackButton />
       )}
 
       {summary && showSummary && (
