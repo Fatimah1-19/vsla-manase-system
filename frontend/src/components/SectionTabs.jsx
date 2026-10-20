@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { sectionLinksFor, sectionHomeFor } from './navItems.js';
 import Icon from './Icon.jsx';
+import BackButton from './BackButton.jsx';
 import '../styles.css';
 
 const normalize = (s) => s.replace(/\?$/, '').replace(/^\?/, '');
@@ -26,7 +27,8 @@ export default function SectionTabs() {
   const here = `${location.pathname}${location.search}`;
   const onHome = home && sameTarget(home.to, here);
 
-  if (links.length < 2) return null;
+  const cameFrom = new URLSearchParams(location.search).get('from');
+  if (links.length < 2) return cameFrom ? <BackButton /> : null;
 
   // A tab is on when it names the same page and the same query string.
   const isOn = (to) => to.split('?')[0] === location.pathname
@@ -34,12 +36,14 @@ export default function SectionTabs() {
 
   return (
     <div className="section__head">
-      {home && !onHome && (
+      {cameFrom ? (
+        <BackButton />
+      ) : home && !onHome ? (
         <Link to={home.to} className="section__back">
           <Icon name="back" size={16} />
           <span>{t('common.back')}</span>
         </Link>
-      )}
+      ) : null}
       <div className="section__tabs" role="tablist">
         {links.map((item) => (
           <Link

@@ -171,19 +171,19 @@ export default function Meetings() {
         <div className="meetings__recordings">
           <span className="meetings__recordLabel">{t('meetings.otherRecordings')}</span>
           <div className="meetings__recordLinks">
-            <Link to="/app/savings" className="btn btn--ghost btn--small">
+            <Link to="/app/savings?from=/app/meetings" className="btn btn--ghost btn--small">
               <Icon name="savings" size={18} />{t('nav.savings')}
             </Link>
-            <Link to="/app/fines" className="btn btn--ghost btn--small">
+            <Link to="/app/fines?from=/app/meetings" className="btn btn--ghost btn--small">
               <Icon name="fines" size={18} />{t('nav.fines')}
             </Link>
-            <Link to="/app/loans" className="btn btn--ghost btn--small">
+            <Link to="/app/loans?from=/app/meetings" className="btn btn--ghost btn--small">
               <Icon name="loans" size={18} />{t('nav.loans')}
             </Link>
-            <Link to="/app/welfare" className="btn btn--ghost btn--small">
+            <Link to="/app/welfare?from=/app/meetings" className="btn btn--ghost btn--small">
               <Icon name="welfare" size={18} />{t('nav.welfare')}
             </Link>
-            <Link to="/app/wrappers" className="btn btn--ghost btn--small">
+            <Link to="/app/wrappers?from=/app/meetings" className="btn btn--ghost btn--small">
               <Icon name="wrappers" size={18} />{t('nav.wrappers')}
             </Link>
           </div>

@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -94,6 +95,7 @@ export default function Wrappers() {
     return (
       <div className="wrappers">
         <PageHeader title={t('wrappers.title')} subtitle={t('wrappers.explain', money(mine.levy))} />
+        <BackButton />
         <div className="page-grid page-grid--stat">
           <StatCard label={t('wrappers.monthly')} value={money(mine.levy)} tone="gold" />
           <StatCard label={t('wrappers.totalPaid')} value={money(mine.total_paid)} tone="green" />
@@ -148,6 +150,8 @@ export default function Wrappers() {
         subtitle={t('wrappers.explain', money(view.levy))}
         action={canRecordMoney && <button type="button" className="btn" onClick={() => startRecord(null)}>{t('wrappers.record')}</button>}
       />
+
+      <BackButton />
 
       <div className="toolbar">
         <label className="field-label wrappers__monthLabel" htmlFor="w-month">{t('wrappers.month')}</label>
