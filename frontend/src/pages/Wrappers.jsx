@@ -7,6 +7,7 @@ import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
@@ -15,8 +16,6 @@ import MemberAvatar from '../components/MemberAvatar.jsx';
 import { Ring } from '../components/Charts.jsx';
 import { money, shortDate, inputDate, monthLong, thisMonth } from '../utils/format.js';
 import '../styles.css';
-
-const STATUS_TAG = { paid: 'green', partial: 'gold', unpaid: 'red' };
 
 /**
  * The fixed monthly contribution every member pays for the group's wrappers.
@@ -99,7 +98,7 @@ export default function Wrappers() {
         <div className="page-grid page-grid--stat">
           <StatCard label={t('wrappers.monthly')} value={money(mine.levy)} tone="gold" />
           <StatCard label={t('wrappers.totalPaid')} value={money(mine.total_paid)} tone="green" />
-          <StatCard label={t('wrappers.stillOwed')} value={money(mine.owed)} tone={mine.owed > 0 ? 'red' : 'plain'} />
+          <StatCard label={t('wrappers.stillOwed')} value={money(mine.owed)} tone={mine.owed > 0 ? 'gold' : 'plain'} />
         </div>
         <section className="panel">
           <h2 className="panel__title">{t('wrappers.myMonths')}</h2>
@@ -109,7 +108,7 @@ export default function Wrappers() {
                 <li key={m.month}>
                   <span>{monthLong(m.month)}</span>
                   <span className="money">{money(m.paid)}</span>
-                  <span className={`tag tag--${STATUS_TAG[m.status]}`}>{t(`wrappers.${m.status}`)}</span>
+                  <StatusTag status={m.status}>{t(`wrappers.${m.status}`)}</StatusTag>
                 </li>
               ))}
             </ul>
@@ -136,7 +135,7 @@ export default function Wrappers() {
     { key: 'balance', label: t('wrappers.balance'), align: 'right', money: true, hideOnPhone: true,
       render: (r) => (r.balance > 0 ? <span className="money money--neg">{money(r.balance)}</span> : '—') },
     { key: 'status', label: t('common.status'),
-      render: (r) => <span className={`tag tag--${STATUS_TAG[r.status]}`}>{t(`wrappers.${r.status}`)}</span> },
+      render: (r) => <StatusTag status={r.status}>{t(`wrappers.${r.status}`)}</StatusTag> },
     ...(canRecordMoney ? [{ key: 'x', label: '', align: 'right',
       render: (r) => r.balance > 0 && (
         <button type="button" className="btn btn--small" onClick={() => startRecord(r)}>{t('wrappers.record')}</button>
@@ -161,7 +160,7 @@ export default function Wrappers() {
         <div className="page-grid page-grid--stat wrappers__stats">
           <StatCard label={t('wrappers.collected')} value={money(tot.collected)} tone="green" big />
           <StatCard label={t('wrappers.expected')} value={money(tot.expected)} />
-          <StatCard label={t('wrappers.outstanding')} value={money(tot.outstanding)} tone={tot.outstanding > 0 ? 'red' : 'plain'} />
+          <StatCard label={t('wrappers.outstanding')} value={money(tot.outstanding)} tone={tot.outstanding > 0 ? 'gold' : 'plain'} />
         </div>
         <Ring value={rate} label={t('wrappers.paidCount', tot.paid_count, tot.member_count)} tone="auto" />
       </div>

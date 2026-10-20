@@ -33,6 +33,18 @@ export default {
 
   roles: { system_admin: 'Administrator' },
 
+  // The group's status badges (§24). One word each, shown on a coloured tag.
+  status: {
+    active: 'Active', paid: 'Paid', completed: 'Completed', pending: 'Pending',
+    outstanding: 'Outstanding', overdue: 'Overdue', cancelled: 'Cancelled',
+    draft: 'Draft', confirmed: 'Confirmed', distributed: 'Handed out',
+    approved: 'Approved', rejected: 'Rejected', repaid: 'Repaid', defaulted: 'Defaulted',
+    unpaid: 'Unpaid', waiting: 'Waiting', open: 'Open', inactive: 'Inactive',
+    locked: 'Locked', withdrawn: 'Withdrawn', closed: 'Closed', excused: 'Excused',
+    sent: 'Sent', failed: 'Failed',
+    duesoon: 'Due soon', fullypaid: 'Fully paid', partial: 'Part paid', absent: 'Absent',
+  },
+
   chair: {
     queueTitle: 'Waiting for your decision',
     joinsTitle: 'Join requests to decide',

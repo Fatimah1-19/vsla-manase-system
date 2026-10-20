@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -181,12 +182,12 @@ export default function Fines() {
     { key: 'paid', label: t('common.status'),
       render: (r) => (
         r.paid
-          ? <span className="tag tag--green">{t('fines.paid')}</span>
+          ? <StatusTag status="paid">{t('fines.paid')}</StatusTag>
           : canRecordMoney
             ? <button type="button" className="btn btn--small btn--ghost" onClick={(e) => { e.stopPropagation(); markPaid(r.id); }}>
                 {t('fines.markPaid')}
               </button>
-            : <span className="tag tag--red">{t('fines.unpaid')}</span>
+            : <StatusTag status="outstanding">{t('fines.unpaid')}</StatusTag>
       ) },
     ...(isAdmin ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (

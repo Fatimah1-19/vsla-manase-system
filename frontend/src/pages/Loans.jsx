@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -14,15 +15,6 @@ import MemberAvatar from '../components/MemberAvatar.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { money, shortDate, monthLong, plainNumber } from '../utils/format.js';
 import '../styles.css';
-
-const STATUS_TAG = {
-  pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red',
-};
-
-// The plain standing of a loan, as the treasurer reads it at a glance.
-const STANDING_TAG = {
-  overdue: 'red', dueSoon: 'gold', active: 'green', fullyPaid: 'blue',
-};
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -380,7 +372,7 @@ export default function Loans() {
         return <span className={late ? 'loans__late' : ''}>{shortDate(l.due_date)}</span>;
       } },
     { key: 'status', label: t('common.status'),
-      render: (l) => <span className={`tag tag--${STATUS_TAG[l.status]}`}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</span> },
+      render: (l) => <StatusTag status={l.status}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</StatusTag> },
   ];
 
   // The overdue board: member, what was lent, what has come back, what is owed,
@@ -414,7 +406,7 @@ export default function Loans() {
     { key: 'standing', label: t('common.status'),
       render: (l) => {
         const s = standing(l);
-        return <span className={`tag tag--${STANDING_TAG[s]}`}>{t(STANDING_LABEL[s])}</span>;
+        return <StatusTag status={s}>{t(STANDING_LABEL[s])}</StatusTag>;
       } },
   ];
 

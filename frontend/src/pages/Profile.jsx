@@ -13,13 +13,13 @@ import PasswordInput from '../components/PasswordInput.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
 import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const MAX_BYTES = 2 * 1024 * 1024;
-const STATUS_TAG = { pending: 'gold', approved: 'green', rejected: 'red', repaid: 'blue', defaulted: 'red' };
 const ACCOUNT_TAG = { active: 'green', suspended: 'grey', locked: 'gold' };
 const ACCOUNT_LABEL = { active: 'statusActive', suspended: 'statusSuspended', locked: 'statusLocked' };
 
@@ -208,15 +208,21 @@ export default function Profile() {
       render: (r) => (r.month ? monthLong(r.month) : '—') },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'paid', label: t('common.status'),
-      render: (r) => <span className={r.paid ? 'tag tag--green' : 'tag tag--red'}>{r.paid ? t('fines.paid') : t('fines.unpaid')}</span> },
+      render: (r) => (
+        <StatusTag status={r.paid ? 'paid' : 'outstanding'}>
+          {r.paid ? t('fines.paid') : t('fines.unpaid')}
+        </StatusTag>
+      ) },
   ];
 
   const welfareColumns = [
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
     { key: 'type', label: t('profile.welfareType'),
-      render: (r) => (r.type === 'payout'
-        ? <span className="tag tag--blue">{t('welfare.payout')}</span>
-        : <span className="tag tag--green">{t('welfare.contribution')}</span>) },
+      render: (r) => (
+        <StatusTag status={r.type === 'contribution' ? 'active' : 'outstanding'} tone={r.type === 'contribution' ? 'green' : 'gold'}>
+          {r.type === 'payout' ? t('welfare.payout') : t('welfare.contribution')}
+        </StatusTag>
+      ) },
     { key: 'notes', label: t('common.reason'), hideOnPhone: true, render: (r) => r.notes || r.category || '—' },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true,
       render: (r) => <span className={r.type === 'payout' ? 'money money--neg' : 'money'}>{money(r.amount)}</span> },
@@ -231,8 +237,8 @@ export default function Profile() {
   const shareoutColumns = [
     { key: 'cycle_name', label: t('profile.cycle'), render: (r) => r.cycle_name || '—' },
     { key: 'status', label: t('common.status'),
-      render: (r) => <span className={`tag tag--${r.status === 'distributed' ? 'green' : 'gold'}`}>
-        {r.status === 'distributed' ? t('profile.handedOut') : t('profile.notDistributed')}</span> },
+      render: (r) => <StatusTag status={r.status}>
+        {r.status === 'distributed' ? t('profile.handedOut') : t('profile.notDistributed')}</StatusTag> },
     { key: 'date_distributed', label: t('profile.dateHandedOut'), hideOnPhone: true,
       render: (r) => (r.date_distributed ? shortDate(r.date_distributed) : '—') },
     { key: 'member_savings', label: t('profile.totalSavings'), align: 'right', money: true, render: (r) => money(r.member_savings) },
@@ -249,7 +255,7 @@ export default function Profile() {
       render: (l) => <span className={l.outstanding > 0 ? 'money money--neg' : 'money'}>{money(l.outstanding)}</span> },
     { key: 'due_date', label: t('loans.dueDate'), hideOnPhone: true, render: (l) => shortDate(l.due_date) },
     { key: 'status', label: t('common.status'),
-      render: (l) => <span className={`tag tag--${STATUS_TAG[l.status]}`}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</span> },
+      render: (l) => <StatusTag status={l.status}>{t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}</StatusTag> },
   ];
 
   return (

@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
@@ -102,9 +103,9 @@ export default function FinancialActivity() {
           : <span className="muted">{t('finance.group')}</span>) },
       { key: 'kind', label: t('finance.type'),
         render: (r) => (
-          <span className={`tag ${r.kind === 'correction' ? 'tag--grey' : 'tag--blue'}`}>
+          <StatusTag status={r.kind} tone={r.kind === 'correction' ? 'grey' : 'blue'}>
             {t(KIND_LABEL[r.kind] || r.kind)}
-          </span>
+          </StatusTag>
         ) },
       { key: 'amount', label: t('common.amount'), align: 'right', money: true,
         render: (r) => (r.amount == null ? <span className="muted">—</span> : money(r.amount)) },
@@ -113,7 +114,7 @@ export default function FinancialActivity() {
       { key: 'recorded_by_name', label: t('finance.recordedBy'), hideOnPhone: true,
         render: (r) => r.recorded_by_name || <span className="muted">{t('finance.system')}</span> },
       { key: 'status', label: t('common.status'),
-        render: (r) => (r.status ? <span className="tag">{r.status}</span> : <span className="muted">—</span>) },
+        render: (r) => (r.status ? <StatusTag status={r.status} /> : <span className="muted">—</span>) },
       {
         key: 'x', label: '', align: 'right',
         render: (r) => (canRecordMoney && CORRECTABLE[r.kind]

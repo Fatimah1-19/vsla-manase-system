@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StatCard from '../components/StatCard.jsx';
@@ -129,9 +130,9 @@ export default function Welfare() {
         : <span className="muted">Whole group</span>) },
     { key: 'type', label: t('common.status'),
       render: (r) => (
-        <span className={r.type === 'contribution' ? 'tag tag--green' : 'tag tag--gold'}>
+        <StatusTag status={r.type === 'contribution' ? 'active' : 'outstanding'} tone={r.type === 'contribution' ? 'green' : 'gold'}>
           {t(`welfare.${r.type}`)}
-        </span>
+        </StatusTag>
       ) },
     { key: 'category', label: t('welfare.category'), hideOnPhone: true,
       render: (r) => (r.category ? t(`welfare.${r.category}`) : '—') },
@@ -162,9 +163,9 @@ export default function Welfare() {
   const typeColumns = [
     { key: 'type', label: t('common.status'),
       render: (r) => (
-        <span className={r.type === 'contribution' ? 'tag tag--green' : 'tag tag--gold'}>
+        <StatusTag status={r.type === 'contribution' ? 'active' : 'outstanding'} tone={r.type === 'contribution' ? 'green' : 'gold'}>
           {t(`welfare.${r.type}`)}
-        </span>
+        </StatusTag>
       ) },
     { key: 'category', label: t('welfare.category'), hideOnPhone: true,
       render: (r) => (r.category ? t(`welfare.${r.category}`) : '—') },

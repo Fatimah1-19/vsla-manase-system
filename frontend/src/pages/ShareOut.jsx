@@ -8,6 +8,7 @@ import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
@@ -181,9 +182,9 @@ export default function ShareOut() {
           <span className="savings__cycleDates">
             {shortDate(preview.cycle.start_date)} - {shortDate(preview.cycle.end_date)}
           </span>
-          <span className={preview.cycle_status === 'completed' ? 'tag tag--green' : 'tag tag--blue'}>
+          <StatusTag status={preview.cycle_status === 'completed' ? 'completed' : 'active'}>
             {preview.cycle_status === 'completed' ? t('shareout.cycleCompleted') : t('shareout.cycleActive')}
-          </span>
+          </StatusTag>
         </div>
       )}
 
@@ -275,13 +276,10 @@ export default function ShareOut() {
                 render: (h) => h.cycle_name || `#${h.id}` },
               { key: 'status', label: t('common.status'),
                 render: (h) => (
-                  <span className={
-                    h.status === 'distributed' ? 'tag tag--green'
-                      : h.status === 'confirmed' ? 'tag tag--blue' : 'tag tag--gold'
-                  }>
+                  <StatusTag status={h.status}>
                     {h.status === 'distributed' ? t('shareout.distributed')
                       : h.status === 'confirmed' ? t('shareout.confirmedTag') : t('shareout.draft')}
-                  </span>
+                  </StatusTag>
                 ) },
               { key: 'total_savings', label: t('shareout.savedByMembers'), align: 'right', money: true, hideOnPhone: true,
                 render: (h) => money(h.total_savings) },
@@ -298,13 +296,10 @@ export default function ShareOut() {
             {history.map((h) => (
               <li key={h.id}>
                 <span>{h.cycle_name || `#${h.id}`}</span>
-                <span className={
-                  h.status === 'distributed' ? 'tag tag--green'
-                    : h.status === 'confirmed' ? 'tag tag--blue' : 'tag tag--gold'
-                }>
+                <StatusTag status={h.status}>
                   {h.status === 'distributed' ? shortDate(h.date_distributed)
                     : h.status === 'confirmed' ? t('shareout.confirmedTag') : 'draft'}
-                </span>
+                </StatusTag>
                 <span className="money">{money(h.total_fund)}</span>
               </li>
             ))}

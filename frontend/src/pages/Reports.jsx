@@ -4,6 +4,7 @@ import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
+import StatusTag from '../components/StatusTag.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import StatCard from '../components/StatCard.jsx';
@@ -13,7 +14,6 @@ import '../styles.css';
 
 const STATUSES = ['absent', 'excused'];
 
-const LOAN_TONE = { pending: 'maize', approved: 'sky', repaid: 'leaf', rejected: 'flame', defaulted: 'flame' };
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i);
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({
@@ -56,9 +56,6 @@ const MEMBERSHIP_EVENT_KEYS = {
 const EVENT_STATUS_KEYS = {
   active: 'members.active', inactive: 'members.inactive',
   approved: 'members.statusApproved', rejected: 'members.statusRejected',
-};
-const EVENT_STATUS_TONES = {
-  active: 'tag--green', approved: 'tag--green', inactive: 'tag--red', rejected: 'tag--red',
 };
 // A "change" is any membership event other than the joining itself.
 const CHANGE_KEYS = ['approved', 'rejected', 'deactivated', 'reactivated',
@@ -181,10 +178,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     { key: 'agenda', label: t('meetings.agenda'), hideOnPhone: true,
       render: (r) => r.agenda || <span className="muted">—</span> },
     { key: 'status', label: t('common.status'),
-      render: (r) => <span className={`tag tag--${r.status === 'excused' ? 'blue' : 'red'}`}>{t(`meetings.${r.status}`)}</span> },
+      render: (r) => <StatusTag status={r.status}>{t(`meetings.${r.status}`)}</StatusTag> },
     { key: 'unpaid_fines_on_date', label: t('reports.unpaidFine'), align: 'right',
       render: (r) => (r.unpaid_fines_on_date > 0
-        ? <span className="tag tag--gold">{r.unpaid_fines_on_date}</span>
+        ? <StatusTag status="outstanding">{r.unpaid_fines_on_date}</StatusTag>
         : <span className="muted">—</span>) },
   ];
 
@@ -333,20 +330,15 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
               </tr>
             </thead>
             <tbody>
-              {group.loans.map((l) => {
-                const tone = l.status === 'repaid' ? 'green'
-                  : (l.status === 'rejected' || l.status === 'defaulted') ? 'red'
-                  : l.status === 'approved' ? 'blue' : 'gold';
-                return (
-                  <tr key={l.id}>
-                    <td>{shortDate(l.applied_at)}</td>
-                    <td>{l.full_name}</td>
-                    <td className="is-num money">{money(l.amount)}</td>
-                    <td><span className={`tag tag--${tone}`}>{t(`loans.${loanStatusKey(l.status)}`)}</span></td>
-                    <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
-                  </tr>
-                );
-              })}
+              {group.loans.map((l) => (
+                <tr key={l.id}>
+                  <td>{shortDate(l.applied_at)}</td>
+                  <td>{l.full_name}</td>
+                  <td className="is-num money">{money(l.amount)}</td>
+                  <td><StatusTag status={l.status}>{t(`loans.${loanStatusKey(l.status)}`)}</StatusTag></td>
+                  <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -377,8 +369,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                   <td>{f.full_name}</td>
                   <td className="is-num money">{money(f.amount)}</td>
                   <td>{f.paid
-                    ? <span className="tag tag--green">{t('reports.reportPaid')}</span>
-                    : <span className="tag tag--red">{t('reports.reportUnpaid')}</span>}</td>
+                    ? <StatusTag status="paid">{t('reports.reportPaid')}</StatusTag>
+                    : <StatusTag status="outstanding">{t('reports.reportUnpaid')}</StatusTag>}</td>
                 </tr>
               ))}
             </tbody>
@@ -548,11 +540,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                 <tr key={so.id}>
                   <td>{so.cycle_name || <span className="muted">—</span>}</td>
                   <td>
-                    <span className={`tag tag--${so.status === 'distributed' ? 'green'
-                      : so.status === 'confirmed' ? 'blue' : 'gold'}`}>
+                    <StatusTag status={so.status}>
                       {so.status === 'distributed' ? shortDate(so.date_distributed)
                         : so.status === 'confirmed' ? t('shareout.confirmedTag') : so.status}
-                    </span>
+                    </StatusTag>
                   </td>
                   <td className="is-num money">{money(so.total_savings)}</td>
                   <td className="is-num money">{money(so.total_interest)}</td>
@@ -634,9 +625,9 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                 <td>{m.full_name}</td>
                 <td>{m.membership_number}</td>
                 <td>
-                  <span className={`tag tag--${m.status === 'active' ? 'green' : 'red'}`}>
+                  <StatusTag status={m.status}>
                     {m.status === 'active' ? t('members.active') : t('members.inactive')}
-                  </span>
+                  </StatusTag>
                 </td>
                 <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
               </tr>
@@ -670,11 +661,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                 <td>{r.full_name}</td>
                 <td>{shortDate(r.created_at)}</td>
                 <td>
-                  <span className={`tag tag--${r.status === 'approved' ? 'green'
-                    : r.status === 'rejected' ? 'grey' : 'gold'}`}>
+                  <StatusTag status={r.status} tone={r.status === 'rejected' ? 'grey' : undefined}>
                     {r.status === 'pending' ? t('requests.votingOpen')
                       : r.status === 'approved' ? t('common.yes') : t('common.no')}
-                  </span>
+                  </StatusTag>
                 </td>
                 <td className="is-num">{r.yes_votes}</td>
                 <td className="is-num">{r.no_votes}</td>
@@ -716,9 +706,9 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                   <td>{m.membership_number}</td>
                   <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
                   <td>
-                    <span className={`tag tag--${m.status === 'active' ? 'green' : 'red'}`}>
+                    <StatusTag status={m.status}>
                       {m.status === 'active' ? t('members.active') : t('members.inactive')}
-                    </span>
+                    </StatusTag>
                   </td>
                 </tr>
               ))}
@@ -755,7 +745,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                   <td>{m.full_name}</td>
                   <td>{m.membership_number}</td>
                   <td>{m.date_joined ? shortDate(m.date_joined) : <span className="muted">—</span>}</td>
-                  <td><span className="tag tag--red">{t('members.inactive')}</span></td>
+                  <td><StatusTag status="inactive">{t('members.inactive')}</StatusTag></td>
                 </tr>
               ))}
             </tbody>
@@ -792,9 +782,9 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                   <td>{e.performed_by || <span className="muted">—</span>}</td>
                   <td>
                     {e.status
-                      ? <span className={`tag ${EVENT_STATUS_TONES[e.status] || 'tag--grey'}`}>
+                      ? <StatusTag status={e.status}>
                           {t(EVENT_STATUS_KEYS[e.status] || 'common.none')}
-                        </span>
+                        </StatusTag>
                       : <span className="muted">—</span>}
                   </td>
                 </tr>
@@ -1012,20 +1002,15 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                   </tr>
                 </thead>
                 <tbody>
-                  {report.loans.map((l) => {
-                    const tone = l.status === 'repaid' ? 'green'
-                      : (l.status === 'rejected' || l.status === 'defaulted') ? 'red'
-                      : l.status === 'approved' ? 'blue' : 'gold';
-                    return (
-                      <tr key={l.id}>
-                        <td>{shortDate(l.applied_at)}</td>
-                        <td className="is-num money">{money(l.amount)}</td>
-                        <td><span className={`tag tag--${tone}`}>{t(`loans.${loanStatusKey(l.status)}`)}</span></td>
-                        <td>{l.due_date ? shortDate(l.due_date) : '—'}</td>
-                        <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
-                      </tr>
-                    );
-                  })}
+                  {report.loans.map((l) => (
+                    <tr key={l.id}>
+                      <td>{shortDate(l.applied_at)}</td>
+                      <td className="is-num money">{money(l.amount)}</td>
+                      <td><StatusTag status={l.status}>{t(`loans.${loanStatusKey(l.status)}`)}</StatusTag></td>
+                      <td>{l.due_date ? shortDate(l.due_date) : '—'}</td>
+                      <td className="is-num money money--neg">{l.outstanding > 0 ? money(l.outstanding) : '—'}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1056,8 +1041,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
                     <td>{f.reason || <span className="muted">—</span>}</td>
                     <td className="is-num money">{money(f.amount)}</td>
                     <td>{f.paid
-                      ? <span className="tag tag--green">{t('reports.reportPaid')}</span>
-                      : <span className="tag tag--red">{t('reports.reportUnpaid')}</span>}</td>
+                      ? <StatusTag status="paid">{t('reports.reportPaid')}</StatusTag>
+                      : <StatusTag status="outstanding">{t('reports.reportUnpaid')}</StatusTag>}</td>
                   </tr>
                 ))}
               </tbody>

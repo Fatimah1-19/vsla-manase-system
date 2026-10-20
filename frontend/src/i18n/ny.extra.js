@@ -31,6 +31,18 @@ export default {
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
+  // Mabaji a mkhalidwe (§24). Liwu limodzi pa tag iliyonse.
+  status: {
+    active: 'Akugwira', paid: 'Zalipidwa', completed: 'Zatha', pending: 'Zodikira',
+    outstanding: 'Zotsala', overdue: 'Zapitirira nthawi', cancelled: 'Zathetsedwa',
+    draft: 'Choyambirira', confirmed: 'Zatsimikizika', distributed: 'Zagawidwa',
+    approved: 'Zavomerezedwa', rejected: 'Zakanidwa', repaid: 'Zabwezedwa', defaulted: 'Zalephera',
+    unpaid: 'Sizinalipidwe', waiting: 'Zodikira', open: 'Zotseguka', inactive: 'Osagwira',
+    locked: 'Zotsekedwa', withdrawn: 'Zachotsedwa', closed: 'Zatsekedwa', excused: 'Olephedwa',
+    sent: 'Zatumizidwa', failed: 'Zalephera',
+    duesoon: 'Nthawi yochepa', fullypaid: 'Zabwezedwa zonse', partial: 'Zilipidwe pang\'ono', absent: 'Sanabwere',
+  },
+
   chair: {
     queueTitle: 'Zodikira chigamulo chanu',
     joinsTitle: 'Opempha kulowa okhudza chigamulo',
