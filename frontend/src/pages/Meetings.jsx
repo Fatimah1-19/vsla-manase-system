@@ -190,16 +190,18 @@ export default function Meetings() {
         </div>
       )}
 
-      <BackButton />
-      <nav className="meetings__tabs">
-        <Link to="/app/meetings" className={`meetings__tab${!tab ? ' is-on' : ''}`}>{t('meetings.title')}</Link>
-        <Link to="/app/meetings?tab=attendance" className={`meetings__tab${tab === 'attendance' ? ' is-on' : ''}`}>
-          {t('meetings.attendance')}
-        </Link>
-        <Link to="/app/meetings?tab=records" className={`meetings__tab${tab === 'records' ? ' is-on' : ''}`}>
-          {t('meetings.recordsTitle')}
-        </Link>
-      </nav>
+      <div className="meetings__tabsRow">
+        <BackButton />
+        <nav className="meetings__tabs">
+          <Link to="/app/meetings" className={`meetings__tab${!tab ? ' is-on' : ''}`}>{t('meetings.title')}</Link>
+          <Link to="/app/meetings?tab=attendance" className={`meetings__tab${tab === 'attendance' ? ' is-on' : ''}`}>
+            {t('meetings.attendance')}
+          </Link>
+          <Link to="/app/meetings?tab=records" className={`meetings__tab${tab === 'records' ? ' is-on' : ''}`}>
+            {t('meetings.recordsTitle')}
+          </Link>
+        </nav>
+      </div>
 
       {tab === 'attendance' ? (
         <section className="meetings__section">

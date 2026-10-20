@@ -3843,6 +3843,8 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .meetings__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
 
+.meetings__tabsRow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+.meetings__tabsRow .meetings__tabs { flex: 1 1 auto; margin-bottom: 0; }
 .meetings__tabs { display: flex; gap: 0.35rem; overflow-x: auto; margin-bottom: 1rem; padding-bottom: 2px; border-bottom: 1px solid var(--rule); }
 .meetings__tab {
   flex: 0 0 auto; min-height: 42px; padding: 0.4rem 0.95rem; background: none; cursor: pointer;
