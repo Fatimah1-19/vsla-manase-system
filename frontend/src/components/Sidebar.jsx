@@ -17,6 +17,13 @@ export default function Sidebar({ open, onNavigate }) {
   // The sidebar shows only the main entry of each section. The extra views
   // (history, summary, record, change password…) live inside the page itself.
   const items = navFor(user.role).filter((i) => !i.sub);
+  // How many visible entries share each group. A heading is only worth showing
+  // when a group actually holds more than one entry, otherwise it just repeats
+  // the entry directly below it.
+  const groupCount = items.reduce((acc, i) => {
+    if (i.group) acc[i.group] = (acc[i.group] || 0) + 1;
+    return acc;
+  }, {});
   const icon = (name) => <Icon name={name} size={22} className="sidebar__icon" />;
   // A main entry is on whenever its page is open, even if its own address
   // carries a query (e.g. the treasurer's loan applications).
@@ -31,9 +38,9 @@ export default function Sidebar({ open, onNavigate }) {
       <ul className="sidebar__list">
         {items.map((item, i) => (
           <Fragment key={`${item.to}-${i}`}>
-            {item.group && item.group !== items[i - 1]?.group && (
-              <li className="sidebar__group">{t(item.group)}</li>
-            )}
+             {item.group && item.group !== items[i - 1]?.group && groupCount[item.group] > 1 && (
+               <li className="sidebar__group">{t(item.group)}</li>
+             )}
             <li>
               {item.to.includes('?') ? (
                 /* A link with a tab query is a plain link, but its page still lights up. */
