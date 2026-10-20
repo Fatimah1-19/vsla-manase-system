@@ -1,6 +1,6 @@
 const { query } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
-const { setSetting } = require('../utils/helpers');
+const { setSetting, getSetting } = require('../utils/helpers');
 const { audit } = require('../utils/audit');
 const { DEFAULT_QUESTIONS, SETTING_KEY, serialise } = require('../utils/screening');
 const { backfillAbsenceFines } = require('./fineController');
@@ -129,8 +129,14 @@ const proposeGroupRules = wrap(async (req, res) => {
 /** Apply group-rule changes (used when the treasurer confirms a proposal). */
 async function applyGroupRules(payload, userId) {
   const keys = Object.keys(payload || {}).filter((k) => isGroupRule(k));
-  for (const key of keys) await setSetting(key, payload[key], 'group');
-  await audit(userId, 'UPDATE_SETTINGS', 'settings', null, keys.join(', '));
+  const before = {};
+  for (const key of keys) {
+    before[key] = await getSetting(key);
+    await setSetting(key, payload[key], 'group');
+  }
+  const previous = keys.map((k) => `${k}=${before[k]}`).join(', ');
+  const next = keys.map((k) => `${k}=${payload[k]}`).join(', ');
+  await audit(userId, 'UPDATE_SETTINGS', 'settings', null, keys.join(', '), { previous, next });
 
   let fines_created = 0;
   if (keys.includes('absence_fine') && Number(payload.absence_fine) > 0) {
@@ -160,8 +166,10 @@ const updateSystemSettings = wrap(async (req, res) => {
   const keys = Object.keys(updates).filter((k) => k in SYSTEM_SETTINGS);
   if (!keys.length) return res.status(400).json({ message: 'Nothing to change.' });
 
+  const previous = {};
   for (const key of keys) {
     const value = String(updates[key]).trim();
+    previous[key] = await getSetting(key);
     if (SYSTEM_SETTINGS[key].bool) {
       if (!['true', 'false'].includes(value.toLowerCase())) {
         return res.status(400).json({ message: 'Text messages must be on or off.' });
@@ -175,7 +183,9 @@ const updateSystemSettings = wrap(async (req, res) => {
     await setSetting(key, value, 'system');
   }
 
-  await audit(req.user.id, 'UPDATE_SYSTEM_SETTINGS', 'settings', null, keys.join(', '));
+  await audit(req.user.id, 'UPDATE_SYSTEM_SETTINGS', 'settings', null, keys.join(', '),
+    { previous: keys.map((k) => `${k}=${previous[k]}`).join(', '),
+      next: keys.map((k) => `${k}=${String(updates[k]).trim()}`).join(', ') });
   res.json({ message: 'Saved.', updated: keys });
 });
 

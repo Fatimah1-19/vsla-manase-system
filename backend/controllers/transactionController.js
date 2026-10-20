@@ -215,7 +215,8 @@ const recordCorrection = wrap(async (req, res) => {
 
   // The correction is also written to the trail, with the old and the new value.
   await audit(req.user.id, 'CORRECT_TRANSACTION', entity_type, id,
-    `${meta.label} #${id}: ${previous} -> ${next}; reason: ${why}`);
+    `${meta.label} #${id}: ${previous} -> ${next}; reason: ${why}`,
+    { previous, next });
 
   res.status(201).json({
     message: 'Correction recorded. The original entry is unchanged.',

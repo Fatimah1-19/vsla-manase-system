@@ -227,7 +227,8 @@ const markPaid = wrap(async (req, res) => {
   const updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
   if (!updated) return res.status(404).json({ message: 'That fine is not in the book.' });
   await audit(req.user.id, 'FINE_PAID', 'fines', id,
-    `paid unpaid -> paid, amount ${updated.amount}, reason: payment received`);
+    `paid unpaid -> paid, amount ${updated.amount}, reason: payment received`,
+    { previous: 'unpaid', next: 'paid' });
   res.json({ message: 'Fine marked as paid.' });
 });
 

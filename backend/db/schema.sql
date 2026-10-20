@@ -559,6 +559,12 @@ CREATE INDEX IF NOT EXISTS idx_change_requests_approver ON change_requests(appro
 CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_logs(user_id);
 
+-- An audit entry may record what a value was before and what it became. Both are
+-- optional: a plain "X was recorded" line carries neither. They are kept in their
+-- own columns so the history is structured, not buried in free text.
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS previous_value TEXT;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value      TEXT;
+
 CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
 BEGIN
   RAISE EXCEPTION 'audit_logs is append-only';

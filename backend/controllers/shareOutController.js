@@ -135,7 +135,8 @@ const confirmShareOut = wrap(async (req, res) => {
     return res.status(400).json({ message: 'This share-out has already been handed out.' });
   }
 
-  await audit(req.user.id, 'CONFIRM_SHAREOUT', 'share_out', id, null);
+  await audit(req.user.id, 'CONFIRM_SHAREOUT', 'share_out', id, null,
+    { previous: 'draft', next: 'confirmed' });
   res.json({ message: 'Figures confirmed. Ready to hand out.' });
 });
 
@@ -191,7 +192,8 @@ const distribute = wrap(async (req, res) => {
     await new Promise((r) => setTimeout(r, 350));
   }
 
-  await audit(req.user.id, 'DISTRIBUTE_SHAREOUT', 'share_out', id, `${lines.length} member(s), ${sent} notified`);
+  await audit(req.user.id, 'DISTRIBUTE_SHAREOUT', 'share_out', id, `${lines.length} member(s), ${sent} notified`,
+    { previous: 'confirmed', next: 'distributed' });
 
   res.json({
     message: `Share-out handed out. ${sent} of ${lines.length} member(s) were texted.`,

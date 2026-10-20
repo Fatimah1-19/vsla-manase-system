@@ -772,6 +772,7 @@ export default {
     readOnly: 'This trail is read-only. Entries can never be edited, deleted or hidden.',
     colUser: 'User', colAction: 'Action', colRecord: 'Affected record',
     colDate: 'Date', colTime: 'Time', colStatus: 'Status',
+    colPrevious: 'Previous value', colNew: 'New value',
     statusDone: 'Success', statusFailed: 'Failed',
     adminNote: 'Every record the secretary keeps: the register, the meetings and the attendance. Read-only.',
     actCreated: 'Member record created', actUpdated: 'Member information updated',

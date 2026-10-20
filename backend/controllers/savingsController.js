@@ -177,7 +177,8 @@ const updateSaving = wrap(async (req, res) => {
   );
 
   await audit(req.user.id, 'UPDATE_SAVING', 'savings', id,
-    `was ${existing.amount} (${existing.shares} shares), now ${amount ?? existing.amount} (${shares ?? existing.shares} shares)`);
+    `was ${existing.amount} (${existing.shares} shares), now ${amount ?? existing.amount} (${shares ?? existing.shares} shares)`,
+    { previous: `${existing.amount} / ${existing.shares} shares`, next: `${amount ?? existing.amount} / ${shares ?? existing.shares} shares` });
   res.json({ message: 'Entry corrected.' });
 });
 

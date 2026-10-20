@@ -39,6 +39,7 @@ function buildFilters(req) {
 }
 
 const SELECT = `SELECT a.id, a.action, a.entity_type, a.entity_id, a.details, a.created_at,
+                       a.previous_value, a.new_value,
                        a.user_id, u.full_name, u.role
                   FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id`;
 
@@ -74,13 +75,14 @@ const exportAudit = wrap(async (req, res) => {
     const s = v == null ? '' : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const header = ['When', 'Who', 'Role', 'Action', 'Type', 'Record', 'Details'];
+  const header = ['When', 'Who', 'Role', 'Action', 'Type', 'Record', 'Details', 'Previous', 'New'];
   const lines = [header.join(',')];
   for (const r of rows) {
     lines.push([
       r.created_at ? new Date(r.created_at).toISOString() : '',
       r.full_name || 'System', r.role || '', r.action || '',
       r.entity_type || '', r.entity_id == null ? '' : r.entity_id, r.details || '',
+      r.previous_value || '', r.new_value || '',
     ].map(cell).join(','));
   }
 

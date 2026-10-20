@@ -762,6 +762,7 @@ export default {
     readOnly: 'Mndandanda uwu suwomboledwa. Zolembedwa sizisinthidwa, kuchotsedwa kapena kubisidwa.',
     colUser: 'Wogwiritsa', colAction: 'Zochita', colRecord: 'Chomwe chakhudzidwa',
     colDate: 'Tsiku', colTime: 'Nthawi', colStatus: 'Mkhalidwe',
+    colPrevious: 'Mtengo wakale', colNew: 'Mtengo watsopano',
     statusDone: 'Zapambana', statusFailed: 'Zalephera',
     adminNote: 'Zolembedwa zonse za mlembi: kaundula, misonkhano ndi kupezekapo. Zowerengedwa zokha.',
     actCreated: 'Zolembedwa za membala zapangidwa', actUpdated: 'Zambiri za membala zasinthidwa',

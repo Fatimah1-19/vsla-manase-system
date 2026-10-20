@@ -125,6 +125,8 @@ function LogTab({ t, toast }) {
                   <th>{t('activity.colUser')}</th>
                   <th>{t('activity.colAction')}</th>
                   <th>{t('activity.colRecord')}</th>
+                  <th>{t('activity.colPrevious')}</th>
+                  <th>{t('activity.colNew')}</th>
                   <th>{t('activity.colDate')}</th>
                   <th>{t('activity.colTime')}</th>
                   <th>{t('activity.colStatus')}</th>
@@ -141,6 +143,8 @@ function LogTab({ t, toast }) {
                         {event.details ? <span className="muted"> · {event.details}</span> : null}
                       </td>
                       <td>{prettyRecord(event.entity_type, event.entity_id)}</td>
+                      <td>{event.previous_value || '—'}</td>
+                      <td>{event.new_value || '—'}</td>
                       <td>{dateOnly(event.created_at)}</td>
                       <td>{timeOnly(event.created_at)}</td>
                       <td>
