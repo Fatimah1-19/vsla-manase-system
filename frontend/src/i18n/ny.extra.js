@@ -238,6 +238,12 @@ export default {
     noSelfVerify: 'Simungatsimikize ngongole yomwe munayilemba nokha.',
     liveNow: 'Ngongole iyi ikugwira ndipo ikhoza kulandira zobweza.',
     statusLine: 'Mkhalidwe',
+    purposeNeeded: 'Nenani ngongole iyi ili ya chiyani.',
+    idDocument: 'Chikalata chozindikiritsa',
+    idDocumentHelp: 'Phatikizani chizindikiro chovomerezeka (PDF, JPG kapena PNG, mpaka 2 MB). Amasungidwa mwachinsinsi ndipo amaonetsedwa kokha kwa maofesi omwe amagwira ngongole.',
+    existingLoan: (s) => `Membala uyu ali kale ndi ngongole yomwe ili ${s}. Iyenera kubwezedwa asanapemphe yatsopano.`,
+    viewIdDocument: 'Tsegulani chikalata chozindikiritsa',
+    idConfidential: 'Chikalata ichi ndi chachinsinsi: wapampando, msungichuma ndi mlembi okha angachitsegule, ndipo kutsegula kulikonse kumalembedwa.',
   },
 
   fines: {

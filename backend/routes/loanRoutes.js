@@ -10,6 +10,9 @@ router.get('/repayments', c.listRepayments);                    // committee: an
 router.post('/', c.applyLoan);                                  // a member may apply for herself
 router.post('/remind', requirePermission('loans.record'), c.sendReminders);
 router.get('/:id', c.getLoan);
+// The ID filed with the application, for the offices that sit on a loan. Every
+// opening by an office is written in the audit trail.
+router.get('/:id/id-document', c.getIdDocument);
 // The chairperson settles the committee's decision (approve / reject).
 router.patch('/:id/decision', requirePermission('loans.decide'), c.decideLoan);
 // The treasurer records the money leaving the box; the secretary verifies it.

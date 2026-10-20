@@ -146,8 +146,51 @@ async function cashInBox(cycleId, run) {
   return +Number(rows[0]?.cash || 0).toFixed(2);
 }
 
+/**
+ * An official identification document, kept inside the database. This is the
+ * one place the ID-file rules live: which kinds of file are allowed, how big
+ * they may be, and that the first bytes really match the type claimed. It is
+ * shared by the loan application and anywhere else an ID is filed.
+ *
+ * Returns { ok, error } on a bad file, or { ok, document } with the row freshly
+ * written to member_documents. `run` lets a caller pass a transaction client.
+ */
+const ID_DOC_MIME = ['application/pdf', 'image/jpeg', 'image/png'];
+const ID_DOC_MAX_BYTES = 2 * 1024 * 1024;
+
+async function storeIdDocument({ memberId, file_name, mime_type, data, uploadedBy }, run) {
+  const exec = run || query;
+  if (!ID_DOC_MIME.includes(mime_type)) {
+    return { ok: false, error: 'Only PDF, JPG or PNG files are accepted.' };
+  }
+  if (!data || typeof data !== 'string') {
+    return { ok: false, error: 'Choose a file to upload.' };
+  }
+
+  const buffer = Buffer.from(data, 'base64');
+  if (!buffer.length) return { ok: false, error: 'That file is empty.' };
+  if (buffer.length > ID_DOC_MAX_BYTES) {
+    return { ok: false, error: 'The file is too big. The limit is 2 MB.' };
+  }
+
+  const head = buffer.subarray(0, 4).toString('hex');
+  const ok = (mime_type === 'application/pdf' && head === '25504446')
+          || (mime_type === 'image/png' && head === '89504e47')
+          || (mime_type === 'image/jpeg' && head.startsWith('ffd8'));
+  if (!ok) return { ok: false, error: 'That file does not look like the type you chose.' };
+
+  const rows = await exec(
+    `INSERT INTO member_documents (member_id, document_type, original_name, mime_type, size_bytes, data, uploaded_by)
+     VALUES ($1,'national_id',$2,$3,$4,$5,$6)
+     RETURNING id, document_type, original_name, mime_type, size_bytes, uploaded_at`,
+    [memberId, String(file_name || 'id-document').slice(0, 200), mime_type, buffer.length, buffer, uploadedBy]
+  );
+  return { ok: true, document: rows[0] };
+}
+
 module.exports = {
   clearCache, cashInBox, getActiveCycle, getSetting, setSetting, isYes, loanTotals,
   activeMembersWithPhone, generateUsername, nextMembershipNumber, tempPassword,
   VERIFIED_SAVING, verifiedSaving,
+  ID_DOC_MIME, ID_DOC_MAX_BYTES, storeIdDocument,
 };

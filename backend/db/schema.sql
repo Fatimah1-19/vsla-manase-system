@@ -624,6 +624,18 @@ EXCEPTION WHEN unique_violation THEN
   RAISE NOTICE 'Skipped one_open_loan_per_member: some members already have two open loans.';
 END $$;
 
+-- =====================================================================
+--  LOAN APPLICATION: IDENTIFICATION DOCUMENT
+--  The applicant files an official ID with the request. The paper itself is
+--  kept in member_documents (inside the database, never at a public web
+--  address); the loan points at it. Only the offices that sit on a loan
+--  (chairperson, treasurer, secretary) may open it, and every opening is
+--  written in the audit trail. A member may open her own copy.
+-- =====================================================================
+
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_document_id INT REFERENCES member_documents(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_loans_id_document ON loans(id_document_id);
+
 CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
 BEGIN
   RAISE EXCEPTION 'audit_logs is append-only';

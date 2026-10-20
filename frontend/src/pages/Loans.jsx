@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { api } from '../api/client.js';
+import { api, fetchFile } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -39,6 +39,14 @@ function standing(loan) {
 }
 
 const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '' };
+
+/** Read a chosen file into the base64 the API accepts (no data: prefix). */
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result).split(',')[1]);
+  r.onerror = () => reject(new Error('Could not read that file.'));
+  r.readAsDataURL(file);
+});
 
 /**
  * A flat list of repayments (newest first) becomes Cycle/Year -> Month -> Date
@@ -87,6 +95,7 @@ export default function Loans() {
   const [filter, setFilter] = useState('all');
   const [applyOpen, setApplyOpen] = useState(false);
   const [form, setForm] = useState(blankApply);
+  const [idFile, setIdFile] = useState(null);       // the ID document chosen for this request
   const [busy, setBusy] = useState(false);
 
   const [detail, setDetail] = useState(null);       // { loan, repayments }
@@ -152,18 +161,27 @@ export default function Loans() {
 
   async function apply(e) {
     e.preventDefault();
+    if (!form.purpose.trim()) { toast.error(t('loans.purposeNeeded')); return; }
     setBusy(true);
     try {
       const body = {
         amount: Number(form.amount),
         with_interest: form.with_interest,
-        purpose: form.purpose || null,
+        purpose: form.purpose.trim(),
       };
       if (isCommittee && form.member_id) body.member_id = Number(form.member_id);
+      if (idFile) {
+        body.id_document = {
+          file_name: idFile.name,
+          mime_type: idFile.type,
+          data: await toBase64(idFile),
+        };
+      }
       const res = await api.post('/loans', body);
       toast.success(res.message);
       setApplyOpen(false);
       setForm(blankApply);
+      setIdFile(null);
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -177,6 +195,19 @@ export default function Loans() {
       setDetail(await api.get(`/loans/${row.id}`));
       setDecisionNote('');
       setRepayAmount('');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }
+
+  // Open the ID filed with a request. The file comes back through an
+  // authenticated call, so it is never on a public web address.
+  async function openIdDocument() {
+    if (!detail?.loan?.id) return;
+    try {
+      const url = await fetchFile(`/loans/${detail.loan.id}/id-document`);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err) {
       toast.error(err.message);
     }
@@ -680,7 +711,8 @@ export default function Loans() {
             <div className="form-row">
               <div>
                 <label className="field-label" htmlFor="l-member">{t('loans.borrower')}</label>
-                <select id="l-member" value={form.member_id} onChange={change('member_id')} required>
+                <select id="l-member" value={form.member_id}
+                  onChange={(e) => { setForm((f) => ({ ...f, member_id: e.target.value })); setIdFile(null); }} required>
                   <option value="">—</option>
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -692,10 +724,37 @@ export default function Loans() {
             </div>
           )}
 
+          {/* A request needs a description of what the money is for. */}
+          <div className="form-row">
+            <div>
+              <label className="field-label" htmlFor="l-purpose">{t('loans.purpose')}</label>
+              <textarea id="l-purpose" rows={2} value={form.purpose} onChange={change('purpose')} required />
+            </div>
+          </div>
+
+          {/* The applicant files an official ID so the committee can identify her. */}
+          <div className="form-row">
+            <div>
+              <label className="field-label" htmlFor="l-id">{t('loans.idDocument')}</label>
+              <input id="l-id" type="file" accept="application/pdf,image/jpeg,image/png"
+                onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
+              <p className="muted">{t('loans.idDocumentHelp')}</p>
+              {idFile && <p className="muted">{idFile.name}</p>}
+            </div>
+          </div>
+
           {limit && (
             <p className={Number(form.amount) > limit.max_loan ? 'notice notice--danger' : 'notice'}>
               {t('loans.limitLine', limit.multiplier, money(limit.savings), money(limit.max_loan))}
               {' '}{t('loans.rateLine', limit.interest_rate)}
+            </p>
+          )}
+
+          {/* What she already owes: a request cannot be filed while a loan is
+              running, so the applicant is told before she tries. */}
+          {limit?.open_loan && (
+            <p className="notice notice--warn">
+              {t('loans.existingLoan', t(`status.${limit.open_loan.status}`))}
             </p>
           )}
 
@@ -717,13 +776,6 @@ export default function Loans() {
               <span className="loans__interestHelp">{t('loans.withInterestHelp')}</span>
             </span>
           </label>
-
-          <div className="form-row">
-            <div>
-              <label className="field-label" htmlFor="l-purpose">{t('loans.purpose')}</label>
-              <textarea id="l-purpose" rows={2} value={form.purpose} onChange={change('purpose')} />
-            </div>
-          </div>
         </form>
       </Modal>
 
@@ -759,6 +811,17 @@ export default function Loans() {
                 <div><dt>{t('common.reason')}</dt><dd>{detail.loan.decision_note}</dd></div>
               )}
             </dl>
+
+            {/* The ID filed with the request. Only the offices that sit on a
+                loan may open it; ordinary members never see another's ID. */}
+            {detail.loan.id_document_id && (isCommittee || user?.role === 'member') && (
+              <div className="loans__decide">
+                <button type="button" className="btn btn--ghost" onClick={openIdDocument}>
+                  {t('loans.viewIdDocument')}
+                </button>
+                <p className="muted">{t('loans.idConfidential')}</p>
+              </div>
+            )}
 
             {detail.loan.status === 'pending' && canDecide && (
               <div className="loans__decide">

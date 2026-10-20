@@ -4,7 +4,7 @@ const { sendSMS } = require('../utils/sms');
 const { build } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { emit, EVENTS } = require('../utils/events');
-const { getActiveCycle, getSetting, loanTotals, cashInBox } = require('../utils/helpers');
+const { getActiveCycle, getSetting, loanTotals, cashInBox, storeIdDocument } = require('../utils/helpers');
 
 const withBalance = (loan) => {
   const { interest, totalDue } = loanTotals(loan);
@@ -65,12 +65,15 @@ const borrowingLimit = wrap(async (req, res) => {
 
 // POST /api/loans — a member borrows from the group's own money
 const applyLoan = wrap(async (req, res) => {
-  const { member_id, amount, with_interest = true, purpose } = req.body;
+  const { member_id, amount, with_interest = true, purpose, id_document } = req.body;
 
   // A member may only borrow for herself; the committee may file on her behalf.
   const borrowerId = req.user.role === 'member' ? req.user.member_id : Number(member_id);
   if (!borrowerId) return res.status(400).json({ message: 'Choose who the loan is for.' });
   if (!amount || Number(amount) <= 0) return res.status(400).json({ message: 'Enter an amount above zero.' });
+  if (!purpose || !String(purpose).trim()) {
+    return res.status(400).json({ message: 'Say what the loan is for.' });
+  }
 
   const member = await one(
     `SELECT m.id, u.full_name, u.phone, u.language
@@ -79,6 +82,16 @@ const applyLoan = wrap(async (req, res) => {
     [borrowerId]
   );
   if (!member) return res.status(404).json({ message: 'That member is not active.' });
+
+  // The applicant must file an ID document with the request: either one sent
+  // now with this application, or one already on her record.
+  const hasOnFile = await one(
+    `SELECT id FROM member_documents WHERE member_id = $1 AND document_type = 'national_id' LIMIT 1`,
+    [borrowerId]
+  );
+  if (!id_document && !hasOnFile) {
+    return res.status(400).json({ message: 'Attach an identification document with the request.' });
+  }
 
   const openLoan = await one(
     `SELECT id, status FROM loans WHERE member_id = $1
@@ -124,12 +137,38 @@ const applyLoan = wrap(async (req, res) => {
   const defaultRate = Number(await getSetting('default_interest_rate', '10'));
   const carriesInterest = with_interest !== false && String(with_interest) !== 'false';
 
-  const loan = await one(
-    `INSERT INTO loans (member_id, cycle_id, amount, with_interest, interest_rate, purpose, due_date, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'pending') RETURNING *`,
-   [borrowerId, cycle.id, amount, carriesInterest, carriesInterest ? defaultRate : 0,
-   purpose || null, ymd(due)]
-  );
+  // The ID document and the loan are written together: the paper is filed, and
+  // the loan points at it, so the two can never drift apart.
+  const loan = await tx(async (client) => {
+    const run = async (text, params) => (await client.query(text, params)).rows;
+
+    let idDocumentId = hasOnFile ? hasOnFile.id : null;
+    if (id_document) {
+      const stored = await storeIdDocument({
+        memberId: borrowerId,
+        file_name: id_document.file_name,
+        mime_type: id_document.mime_type,
+        data: id_document.data,
+        uploadedBy: req.user.id,
+      }, run);
+      if (!stored.ok) {
+        const err = new Error(stored.error);
+        err.status = 400;
+        throw err;
+      }
+      idDocumentId = stored.document.id;
+      await audit(req.user.id, 'UPLOAD_DOCUMENT', 'member_documents', idDocumentId,
+        `national_id for loan application by member ${borrowerId}`);
+    }
+
+    const rows = await run(
+      `INSERT INTO loans (member_id, cycle_id, amount, with_interest, interest_rate, purpose, due_date, status, id_document_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',$8) RETURNING *`,
+      [borrowerId, cycle.id, amount, carriesInterest, carriesInterest ? defaultRate : 0,
+       String(purpose).trim(), ymd(due), idDocumentId]
+    );
+    return rows[0];
+  });
 
   await emit(EVENTS.LOAN_APPLIED, { recordedBy: req.user.id, member, loan });
 
@@ -465,6 +504,42 @@ const getLoan = wrap(async (req, res) => {
   res.json({ loan: withBalance(loan), repayments });
 });
 
+// GET /api/loans/:id/id-document — open the ID filed with this application.
+// Only the offices that sit on a loan may open it; every opening is written in
+// the audit trail. A member may open her own copy, and nobody else can.
+const getIdDocument = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const loan = await one(
+    `SELECT l.id, l.member_id, l.id_document_id FROM loans l WHERE l.id = $1`,
+    [id]
+  );
+  if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
+  if (!loan.id_document_id) {
+    return res.status(404).json({ message: 'No identification document was filed with this application.' });
+  }
+
+  const isOwner = req.user.role === 'member' && loan.member_id === req.user.member_id;
+  const isLoanOffice = ['admin', 'treasurer', 'secretary'].includes(req.user.role);
+  if (!isOwner && !isLoanOffice) {
+    return res.status(403).json({ message: 'You cannot open that document.' });
+  }
+
+  const doc = await one(`SELECT * FROM member_documents WHERE id = $1`, [loan.id_document_id]);
+  if (!doc) return res.status(404).json({ message: 'That document is no longer on file.' });
+
+  // Reading someone else's identification is an important act: it is recorded.
+  if (!isOwner) {
+    await audit(req.user.id, 'VIEW_ID_DOCUMENT', 'loans', id,
+      `Opened the ID document (member ${loan.member_id})`);
+  }
+
+  res.setHeader('Content-Type', doc.mime_type);
+  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_name)}"`);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.send(doc.data);
+});
+
 // GET /api/loans/repayments?member_id= — every repayment a member has made,
 // newest first, with a running summary. The committee may look at one member
 // or the whole group; a member only ever sees her own.
@@ -577,5 +652,5 @@ const sendReminders = wrap(async (req, res) => {
 
 module.exports = {
   applyLoan, decideLoan, recordLoan, verifyLoan, rejectLoanVerification,
-  recordRepayment, listLoans, getLoan, listRepayments, overdueLoans, sendReminders, borrowingLimit,
+  recordRepayment, listLoans, getLoan, getIdDocument, listRepayments, overdueLoans, sendReminders, borrowingLimit,
 };

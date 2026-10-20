@@ -241,6 +241,12 @@ export default {
     noSelfVerify: 'You cannot verify a loan you recorded yourself.',
     liveNow: 'This loan is live and can take repayments.',
     statusLine: 'Standing',
+    purposeNeeded: 'Say what the loan is for.',
+    idDocument: 'Identification document',
+    idDocumentHelp: 'Attach an official ID (PDF, JPG or PNG, up to 2 MB). It is kept privately and shown only to the offices that handle the loan.',
+    existingLoan: (s) => `This member already has a loan that is ${s}. It must be settled before a new request.`,
+    viewIdDocument: 'Open the ID document',
+    idConfidential: 'This document is private: only the chairperson, treasurer and secretary may open it, and each opening is recorded.',
   },
 
   fines: {
