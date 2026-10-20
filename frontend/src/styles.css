@@ -1000,15 +1000,15 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   gap: 0.5rem;
   margin-top: 0.7rem;
   min-height: var(--tap);
-  background: var(--flame);
-  border: 1.5px solid #C44A3C;
-  color: #fff;
+  background: transparent;
+  border: 1.5px solid rgba(226, 96, 78, 0.55);
+  color: #F08A78;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
-.sidebar__logout:hover { background: #9A2E24; border-color: #8A2A21; }
+.sidebar__logout:hover { background: rgba(226, 96, 78, 0.14); border-color: #F08A78; color: #FFA894; }
 .sidebar__logout:active { transform: translateY(1px); }
 
 /* On a phone the sidebar is a drawer; the bottom bar does the day-to-day work. */
@@ -4240,8 +4240,16 @@ section[id] { scroll-margin-top: 4.5rem; }
 
 .profile__field { margin-bottom: 0.9rem; }
 
+.section__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 1.1rem; }
+.section__back {
+  display: inline-flex; align-items: center; gap: 0.3rem; flex: 0 0 auto;
+  min-height: 40px; padding: 0.35rem 0.8rem; text-decoration: none;
+  color: var(--slate); font-weight: 600; border-radius: 8px;
+  border: 1px solid var(--rule); background: #fff;
+}
+.section__back:hover { color: var(--leaf-dark); border-color: var(--leaf); background: var(--mint); }
 .section__tabs {
-  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.1rem;
+  display: flex; flex-wrap: wrap; gap: 0.35rem; flex: 1 1 auto; margin-bottom: 0;
   padding-bottom: 2px; border-bottom: 1px solid var(--rule);
 }
 .section__tab {

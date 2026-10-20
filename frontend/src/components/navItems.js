@@ -144,3 +144,13 @@ export const sectionLinksFor = (role, pathname) => {
   const items = navFor(role).filter((i) => pathOf(i.to) === pathname);
   return items.length > 1 ? items : [];
 };
+
+/**
+ * The section's main entry — the one that stays in the sidebar. The pages use
+ * it for the back button, so someone who opened a sub-view (a history, a
+ * record form) can step back to the section's home.
+ */
+export const sectionHomeFor = (role, pathname) => {
+  const items = navFor(role).filter((i) => pathOf(i.to) === pathname);
+  return items.find((i) => !i.sub) || null;
+};
