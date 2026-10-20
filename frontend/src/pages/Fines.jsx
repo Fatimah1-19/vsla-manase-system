@@ -278,8 +278,14 @@ export default function Fines() {
               <option value="">{t('fines.allTypes')}</option>
               {types.map((x) => <option key={x.key} value={x.key}>{t(TYPE_LABEL[x.key] || 'fines.typeOther')}</option>)}
             </select>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t('common.date')} />
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('common.date')} />
+            <label className="toolbar__field">
+              <span>{t('fines.from')}</span>
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t('fines.from')} />
+            </label>
+            <label className="toolbar__field">
+              <span>{t('fines.to')}</span>
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('fines.to')} />
+            </label>
             {anyFilter && (
               <button type="button" className="btn btn--ghost" onClick={clearFilters}>{t('common.clear')}</button>
             )}

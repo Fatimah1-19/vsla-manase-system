@@ -214,6 +214,7 @@ export default {
     outstanding: 'Zotsala kulipira',
     byType: 'Zindapusa mwa mtundu',
     entry: 'chindapusa',
+    from: 'Kuyambira', to: 'Mpaka',
     amountNote: 'Mtengo wa chindapusa chokhazikitsidwa umatsatira Malamulo a Zindapusa a gulu ndipo sungasinthidwe pano. Chindapusa cha "zina" chokha chimatenga mtengo womwe mwalemba.',
     fixedAmount: 'Wakhazikitsidwa ndi gulu mu Malamulo a Zindapusa.',
     meetingDate: 'Tsiku la msonkhano',

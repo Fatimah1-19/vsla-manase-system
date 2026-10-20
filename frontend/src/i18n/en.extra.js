@@ -216,6 +216,7 @@ export default {
     outstanding: 'Still owing',
     byType: 'Fines by type',
     entry: 'fine',
+    from: 'From', to: 'To',
     amountNote: 'The amount of a fixed fine follows the group\u2019s Fine Settings and cannot be changed here. Only an "other" fine takes an amount you type.',
     fixedAmount: 'Set by the group in Fine Settings.',
     meetingDate: 'Meeting date',
