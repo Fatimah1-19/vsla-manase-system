@@ -93,6 +93,9 @@ const PERMISSIONS = {
   'members.create': ['admin', 'secretary'],
   'members.edit': ['admin', 'secretary'],
   // Membership papers (forms, copies of the record) are kept with the register.
+  // The committee may read the whole shelf; only the chairperson and the
+  // secretary file or remove a paper.
+  'members.documents.view': ['admin', 'treasurer', 'secretary'],
   'members.documents': ['admin', 'secretary'],
   'approvals.view': ['admin', 'treasurer'],
   'approvals.decide': ['admin', 'treasurer'],

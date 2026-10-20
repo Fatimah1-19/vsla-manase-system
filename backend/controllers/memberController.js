@@ -68,6 +68,21 @@ const getMember = wrap(async (req, res) => {
   res.json({ member, savings, loans: loansWithBalance, fines, attendance, documents, wrappers });
 });
 
+// GET /api/members/documents — every membership paper the register holds, so
+// the committee can read the whole shelf instead of opening one member at a time.
+const listAllDocuments = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT d.id, d.member_id, d.document_type, d.original_name, d.mime_type,
+            d.size_bytes, d.uploaded_at,
+            u.full_name, m.membership_number
+       FROM member_documents d
+       JOIN members m ON m.id = d.member_id
+       JOIN users u ON u.id = m.user_id
+      ORDER BY d.uploaded_at DESC, d.id DESC`
+  );
+  res.json(rows);
+});
+
 // GET /api/members/me — shortcut for the logged-in woman
 const getMyRecord = wrap(async (req, res) => {
   if (!req.user.member_id) return res.status(404).json({ message: 'You do not have a member record yet.' });
@@ -90,4 +105,4 @@ const getMemberAvatar = wrap(async (req, res) => {
   res.send(row.avatar);
 });
 
-module.exports = { listMembers, getMember, getMyRecord, getMemberAvatar };
+module.exports = { listMembers, getMember, getMyRecord, getMemberAvatar, listAllDocuments };

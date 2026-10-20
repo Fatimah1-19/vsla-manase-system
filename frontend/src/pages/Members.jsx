@@ -119,6 +119,8 @@ export default function Members() {
   const [feeForm, setFeeForm] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
   const [events, setEvents] = useState(null);   // the whole register's story
+  const [allDocs, setAllDocs] = useState(null);  // every membership paper on file
+  const [records, setRecords] = useState(null);  // the register with each member's balances
   const [docType, setDocType] = useState(DOC_TYPES[1]);
   const [docBusy, setDocBusy] = useState(false);
   const docRef = useRef(null);
@@ -143,6 +145,18 @@ export default function Members() {
   useEffect(() => {
     if (view !== 'history') return;
     api.get('/users/history').then((d) => setEvents(d.events)).catch((e) => toast.error(e.message));
+  }, [view, toast]);
+
+  // The whole shelf of membership papers, for the documents section.
+  useEffect(() => {
+    if (view !== 'documents') return;
+    api.get('/members/documents').then(setAllDocs).catch((e) => toast.error(e.message));
+  }, [view, toast]);
+
+  // The register with each member's balances, for the records section.
+  useEffect(() => {
+    if (view !== 'details') return;
+    api.get('/members?all=true').then(setRecords).catch((e) => toast.error(e.message));
   }, [view, toast]);
 
   // Is any committee office empty? If so the chairperson (or, if the chairperson
@@ -397,6 +411,79 @@ export default function Members() {
   }
 
   if (!people) return <Spinner />;
+
+  // /app/members?view=details is the Member Records section: the register read
+  // as a plain record sheet, every member's number, standing and balances.
+  if (view === 'details') {
+    return (
+      <div className="members">
+        <PageHeader title={t('nav.memberRecords')} subtitle={t('members.recordsNote')} />
+        <SectionTabs />
+        {!records ? (
+          <Spinner />
+        ) : (
+          <Ledger
+            columns={[
+              { key: 'full_name', label: t('common.name'),
+                render: (p) => (
+                  <span className="vcell">
+                    <MemberAvatar memberId={p.id} hasAvatar={p.has_avatar} name={p.full_name} size={34} />
+                    <span className="vcell__name">{p.full_name}</span>
+                  </span>
+                ) },
+              { key: 'membership_number', label: t('members.number'), render: (p) => p.membership_number || '—' },
+              { key: 'village', label: t('common.village'), hideOnPhone: true, render: (p) => p.village || '—' },
+              { key: 'date_joined', label: t('members.joined'), render: (p) => (p.date_joined ? shortDate(p.date_joined) : '—') },
+              { key: 'state', label: t('common.status'),
+                render: (p) => (p.is_active
+                  ? <span className="tag tag--green">{t('members.active')}</span>
+                  : <span className="tag tag--red">{t('members.inactive')}</span>) },
+              { key: 'total_shares', label: t('members.shares'), render: (p) => plainNumber(p.total_shares) },
+              { key: 'total_savings', label: t('members.savings'), render: (p) => money(p.total_savings) },
+              { key: 'active_loans', label: t('dashboard.activeLoans'), render: (p) => plainNumber(p.active_loans) },
+              { key: 'unpaid_fines', label: t('fines.unpaidFines'), render: (p) => money(p.unpaid_fines) },
+            ]}
+            rows={records}
+            empty={<EmptyState title={t('members.empty')} />}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // /app/members?view=documents is the Membership Documents section: every
+  // paper the register holds, with the ones the committee may open.
+  if (view === 'documents') {
+    return (
+      <div className="members">
+        <PageHeader title={t('nav.membershipDocuments')} subtitle={t('members.documentsNote')} />
+        <SectionTabs />
+        {!allDocs ? (
+          <Spinner />
+        ) : allDocs.length === 0 ? (
+          <EmptyState title={t('common.none')} />
+        ) : (
+          <Ledger
+            columns={[
+              { key: 'full_name', label: t('common.name') },
+              { key: 'membership_number', label: t('members.number'), hideOnPhone: true,
+                render: (d) => d.membership_number || '—' },
+              { key: 'document_type', label: t('profile.docType'),
+                render: (d) => <span className="tag tag--grey">{t(`profile.doc_${d.document_type}`)}</span> },
+              { key: 'original_name', label: t('profile.docFile'), render: (d) => d.original_name || '—' },
+              { key: 'uploaded_at', label: t('members.colDate'), render: (d) => shortDate(d.uploaded_at) },
+              { key: 'action', label: t('common.actions'),
+                render: (d) => (
+                  <button type="button" className="btn btn--small btn--ghost"
+                    onClick={() => openMemberDoc(d)}>{t('common.view')}</button>
+                ) },
+            ]}
+            rows={allDocs}
+          />
+        )}
+      </div>
+    );
+  }
 
   const isLocked = (p) => p.locked_until && new Date(p.locked_until) > new Date();
 
