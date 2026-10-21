@@ -194,6 +194,7 @@ export default function Profile() {
     { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
     { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
     { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
+    { key: 'status', label: t('common.status'), render: (r) => <StatusTag status={r.status} /> },
     { key: 'note', label: t('savings.note'), hideOnPhone: true, render: (r) => r.note || '—' },
   ];
 

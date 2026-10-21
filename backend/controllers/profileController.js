@@ -28,7 +28,7 @@ const getMyProfile = wrap(async (req, res) => {
   );
 
   const [savings, loanRows, fines, documents, share, welfare, months, shareouts, cycle] = await Promise.all([
-    query(`SELECT id, amount::float, shares, date, note FROM savings WHERE member_id = $1
+    query(`SELECT id, amount::float, shares, date, note, status FROM savings WHERE member_id = $1
             ORDER BY date DESC, id DESC LIMIT 60`, [memberId]),
     query(`SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
                   COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
@@ -43,7 +43,7 @@ const getMyProfile = wrap(async (req, res) => {
     query(`SELECT id, document_type, original_name, mime_type, size_bytes, uploaded_at
              FROM member_documents WHERE member_id = $1 ORDER BY id DESC`, [memberId]),
     one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares
-           FROM savings WHERE member_id = $1`, [memberId]),
+           FROM savings WHERE member_id = $1 AND status = 'verified'`, [memberId]),
     query(`SELECT id, amount::float, type, category, date, notes FROM welfare_fund
             WHERE member_id = $1 ORDER BY date DESC, id DESC`, [memberId]),
     query(`SELECT id, TO_CHAR(period, 'YYYY-MM') AS period, amount::float AS amount, paid_on
@@ -66,7 +66,11 @@ const getMyProfile = wrap(async (req, res) => {
   });
 
   const multiplier = Number(await getSetting('loan_multiplier', '2'));
-  const outstanding = +loans.filter((l) => l.status === 'approved').reduce((a, l) => a + l.outstanding, 0).toFixed(2);
+  // A loan is live — and so owed — once the secretary has verified it (the
+  // "active" stage). Only then does money leave the box, and only then do
+  // verified repayments reduce what is still owed.
+  const activeLoans = loans.filter((l) => l.status === 'verified' && l.outstanding > 0);
+  const outstanding = +activeLoans.reduce((a, l) => a + l.outstanding, 0).toFixed(2);
   const unpaidFines = +fines.filter((f) => !f.paid).reduce((a, f) => a + f.amount, 0).toFixed(2);
   res.json({
     member, savings, loans, fines, documents, welfare, months, shareouts,
@@ -74,7 +78,7 @@ const getMyProfile = wrap(async (req, res) => {
     totals: {
       savings: share.total,
       shares: share.shares,
-      active_loans: loans.filter((l) => l.status === 'approved').length,
+      active_loans: activeLoans.length,
       outstanding,
       unpaid_fines: unpaidFines,
       // What is really still hers in the box right now: her savings less what she owes.
