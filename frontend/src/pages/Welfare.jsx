@@ -49,6 +49,16 @@ export default function Welfare() {
   const showHistory = view !== 'summary';
 
   const load = useCallback(async () => {
+    // A member reads her own welfare record only. The offices read the whole
+    // book, the fund balance and the summary.
+    if (!isCommittee) {
+      const mine = await api.get('/welfare/mine');
+      setBalance({ balance: mine.balance, contributions: mine.contributions, payouts: mine.payouts });
+      setRows(mine.entries);
+      setSummary(null);
+      return;
+    }
+
     const [b, list, sum] = await Promise.all([
       api.get('/welfare/balance'),
       api.get('/welfare'),
@@ -176,8 +186,10 @@ export default function Welfare() {
   return (
     <div className="welfare money-book">
       <PageHeader
-        title={t('welfare.title')}
-        subtitle="Money the group keeps aside for sickness, funerals and emergencies."
+        title={isCommittee ? t('welfare.title') : t('welfare.myTitle')}
+        subtitle={isCommittee
+          ? "Money the group keeps aside for sickness, funerals and emergencies."
+          : t('welfare.mySubtitle')}
         action={canRecordMoney && (
           <>
             <button type="button" className="btn" onClick={() => setMode('contribution')}>
@@ -195,7 +207,7 @@ export default function Welfare() {
         <div className="row-with-back">
           <BackButton />
           <div className="page-grid page-grid--stat row-with-back__grow">
-            <StatCard label={t('welfare.balance')} value={money(balance.balance)} tone="gold" big />
+            <StatCard label={isCommittee ? t('welfare.balance') : t('welfare.myBalance')} value={money(balance.balance)} tone="gold" big />
             <StatCard label={t('welfare.contribution')} value={money(balance.contributions)} tone="green" />
             <StatCard label={t('welfare.payout')} value={money(balance.payouts)} />
           </div>

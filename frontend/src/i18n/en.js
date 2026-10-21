@@ -15,6 +15,7 @@ const base = {
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
     savingsManagement: 'Savings management', loanManagement: 'Loan management',
     memberManagement: 'Member management', welfareManagement: 'Welfare fund management',
+    myWelfare: 'My welfare record',
     analyticsReports: 'Analytics & Reports', meetingsManagement: 'Meetings management',
     finesManagement: 'Fines management', shareoutManagement: 'Share-out management',
     requestsManagement: 'Join request management',
@@ -195,6 +196,9 @@ const base = {
     contribution: 'Contribution', payout: 'Help given', empty: 'Nothing recorded yet.',
     entries: 'Entries', entry: 'entry', memberTitle: 'Member welfare contributions',
     byType: 'Welfare summary by kind',
+    myTitle: 'My welfare record',
+    mySubtitle: 'What you have put into the welfare fund, and what the group has given you.',
+    myBalance: 'My welfare position',
   },
 
   fines: {

@@ -113,6 +113,44 @@ const recordPayout = wrap(async (req, res) => {
 // GET /api/welfare/balance
 const getBalance = wrap(async (req, res) => res.json(await one(BALANCE_SQL)));
 
+// GET /api/welfare/mine
+// A member reads her own welfare record here, and only her own. The member is
+// taken from her token, never from the request, so she cannot ask to see
+// another member's movements. The offices read the whole book instead.
+const myWelfare = wrap(async (req, res) => {
+  const memberId = req.user.member_id;
+  if (!memberId) {
+    return res.json({ entries: [], contributions: 0, payouts: 0, balance: 0 });
+  }
+
+  const entries = await query(
+    `SELECT w.id, w.amount::float, w.type, w.category, w.date, w.notes, w.member_id,
+            u.full_name, m.membership_number, r.full_name AS recorded_by_name,
+            (m.avatar IS NOT NULL) AS has_avatar
+       FROM welfare_fund w
+       JOIN members m ON m.id = w.member_id
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN users r ON r.id = w.recorded_by
+      WHERE w.member_id = $1
+      ORDER BY w.date DESC, w.id DESC`,
+    [memberId]
+  );
+
+  const totals = await one(
+    `SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
+            COALESCE(SUM(CASE WHEN type='payout'       THEN amount ELSE 0 END),0)::float AS payouts
+       FROM welfare_fund WHERE member_id = $1`,
+    [memberId]
+  );
+
+  res.json({
+    entries,
+    contributions: totals.contributions,
+    payouts: totals.payouts,
+    balance: totals.contributions - totals.payouts,
+  });
+});
+
 // GET /api/welfare
 const listWelfare = wrap(async (req, res) => {
   const params = [];
@@ -168,4 +206,4 @@ const welfareSummary = wrap(async (req, res) => {
   res.json({ ...totals, per_member: perMember, by_type: byType });
 });
 
-module.exports = { recordContribution, recordPayout, getBalance, listWelfare, welfareSummary };
+module.exports = { recordContribution, recordPayout, getBalance, myWelfare, listWelfare, welfareSummary };

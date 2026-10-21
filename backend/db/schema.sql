@@ -587,7 +587,17 @@ ALTER TABLE savings ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
 
 -- Savings already in the book before this change were never verified; treat
 -- them as good so no old money disappears from the totals.
-UPDATE savings SET status = 'verified', verified_at = created_at WHERE status = 'pending_verification';
+-- This may only ever touch those old rows. A saving recorded after this
+-- upgrade is still waiting for the secretary to check it, so the backfill is
+-- stamped with the day it first ran and never touches anything newer.
+INSERT INTO settings (setting_key, setting_value)
+  VALUES ('savings_status_migrated_at', NOW()::text)
+  ON CONFLICT (setting_key) DO NOTHING;
+
+UPDATE savings SET status = 'verified', verified_at = created_at
+ WHERE status = 'pending_verification'
+   AND created_at <= (SELECT setting_value::timestamptz FROM settings
+                       WHERE setting_key = 'savings_status_migrated_at');
 
 CREATE INDEX IF NOT EXISTS idx_savings_status ON savings(status);
 
@@ -610,9 +620,17 @@ ALTER TABLE loans ADD COLUMN IF NOT EXISTS verified_at     TIMESTAMPTZ;
 ALTER TABLE loans ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
 
 -- A loan already 'approved' under the old rules was already handed out and is
--- taking repayments; treat it as verified so it keeps working.
+-- taking repayments; treat it as verified so it keeps working. Only the loans
+-- decided before this upgrade qualify: a loan approved after it must still be
+-- recorded by the treasurer and checked by the secretary.
+INSERT INTO settings (setting_key, setting_value)
+  VALUES ('loans_status_migrated_at', NOW()::text)
+  ON CONFLICT (setting_key) DO NOTHING;
+
 UPDATE loans SET status = 'verified', verified_at = COALESCE(decided_at, applied_at)
- WHERE status = 'approved';
+ WHERE status = 'approved'
+   AND COALESCE(decided_at, applied_at) <= (SELECT setting_value::timestamptz FROM settings
+                                              WHERE setting_key = 'loans_status_migrated_at');
 
 -- A member can have one loan moving through the flow at a time. Extend the
 -- guard so a request being recorded or checked also counts as open.
@@ -661,9 +679,16 @@ ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
 ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
 
 -- Repayments recorded before this rule already stood as money; treat them as
--- verified so balances and history do not move.
+-- verified so balances and history do not move. Only the repayments recorded
+-- before this upgrade qualify; a new one waits for the secretary to check it.
+INSERT INTO settings (setting_key, setting_value)
+  VALUES ('repayments_status_migrated_at', NOW()::text)
+  ON CONFLICT (setting_key) DO NOTHING;
+
 UPDATE loan_repayments SET status = 'verified', verified_at = COALESCE(created_at, NOW())
- WHERE status = 'pending_verification';
+ WHERE status = 'pending_verification'
+   AND created_at <= (SELECT setting_value::timestamptz FROM settings
+                       WHERE setting_key = 'repayments_status_migrated_at');
 
 DO $$ BEGIN
   ALTER TABLE loan_repayments ADD CONSTRAINT loan_repayments_status_check
