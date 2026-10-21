@@ -28,8 +28,8 @@ const analytics = wrap(async (req, res) => {
 
   const [savingsBy, repaidBy, interestBy, givenBy, finesBy, wrappersBy, welfareInBy, welfareOutBy] = await Promise.all([
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings WHERE status='verified' AND date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments WHERE date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(interest_part)::float AS v FROM loan_repayments WHERE date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments WHERE status='verified' AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(interest_part)::float AS v FROM loan_repayments WHERE status='verified' AND date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
               WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM fines WHERE paid = TRUE AND date >= $1::date GROUP BY 1`),
@@ -68,7 +68,7 @@ const analytics = wrap(async (req, res) => {
   const loanRows = await query(
     `SELECT l.id, l.member_id, l.amount::float, l.with_interest, l.interest_rate::float, l.status,
             to_char(l.due_date,'YYYY-MM-DD') AS due_date, u.full_name,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id`
   );
   const today = new Date().toISOString().slice(0, 10);
@@ -93,7 +93,7 @@ const analytics = wrap(async (req, res) => {
 
   const interest = await one(
     `SELECT COALESCE(SUM(r.interest_part),0)::float AS earned
-       FROM loan_repayments r JOIN loans l ON l.id = r.loan_id WHERE l.cycle_id = $1`, [cid]
+       FROM loan_repayments r JOIN loans l ON l.id = r.loan_id WHERE l.cycle_id = $1 AND r.status = 'verified'`, [cid]
   );
 
   // ---- Meetings ------------------------------------------------------------

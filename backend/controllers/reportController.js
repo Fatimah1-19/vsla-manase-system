@@ -127,7 +127,7 @@ const memberReport = wrap(async (req, res) => {
     query(
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status,
               l.due_date, l.purpose, l.applied_at,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id), 0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'), 0)::float AS total_repaid
          FROM loans l
         WHERE l.member_id = $1
           AND ($2::date IS NULL OR l.applied_at >= $2::date)
@@ -269,7 +269,7 @@ const groupReport = wrap(async (req, res) => {
     series('welfare_fund', 'date', "AND type = 'contribution'"),
     series('welfare_fund', 'date', "AND type = 'payout'"),
     series('savings', 'date'),
-    series('loan_repayments', 'date'),
+    series('loan_repayments', 'date', "AND status = 'verified'"),
     countBy(
       `SELECT to_char(date_trunc('${trunc}', meeting_date::timestamp), 'YYYY-MM-DD') AS b,
               COUNT(*)::int AS v
@@ -345,7 +345,7 @@ const groupReport = wrap(async (req, res) => {
     query(
       `SELECT l.id, u.full_name, l.amount::float, l.status, l.with_interest, l.interest_rate::float,
               l.applied_at, to_char(l.due_date,'YYYY-MM-DD') AS due_date,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
          FROM loans l
          JOIN members m ON m.id = l.member_id
          JOIN users u ON u.id = m.user_id

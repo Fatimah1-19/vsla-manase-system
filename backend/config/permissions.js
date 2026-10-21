@@ -45,10 +45,16 @@ const PERMISSIONS = {
   // settles. The treasurer records the loan that has been authorised; she never
   // approves it, and never approves her own request.
   'loans.decide': ['admin'],
+  // Checking the applicant's identification before a loan may be approved is
+  // the chairperson's own act; no other office may settle it.
+  'loans.verifyId': ['admin'],
   // Recording the money leaving the box is the treasurer's job; the secretary
   // then checks the two agree. The treasurer records repayments.
   'loans.record': ['treasurer'],
   'loans.verify': ['secretary'],
+  // A repayment the treasurer records is checked by the secretary before it
+  // reduces what the member owes.
+  'repayments.verify': ['secretary'],
 
   // ---- fines ----
   'fines.viewAll': ['admin', 'treasurer', 'secretary'],
@@ -133,7 +139,8 @@ const PERMISSIONS = {
  */
 const MONEY_PERMISSIONS = [
   'savings.view', 'savings.record', 'savings.verify', 'savings.delete',
-  'loans.viewAll', 'loans.decide', 'loans.record', 'loans.verify',
+  'loans.viewAll', 'loans.decide', 'loans.verifyId', 'loans.record', 'loans.verify',
+  'repayments.verify',
   'fines.viewAll', 'fines.record', 'fines.delete',
   'contributions.view', 'contributions.record', 'contributions.delete',
   'welfare.record',

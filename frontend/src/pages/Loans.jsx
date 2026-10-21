@@ -99,9 +99,11 @@ export default function Loans() {
   const [busy, setBusy] = useState(false);
 
   const [detail, setDetail] = useState(null);       // { loan, repayments }
+  const [eligibility, setEligibility] = useState(null); // the applicant's full eligibility
   const [decisionNote, setDecisionNote] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
   const [verifyReason, setVerifyReason] = useState('');
+  const [idRejectReason, setIdRejectReason] = useState('');
 
   // The repayment-history view: search a member, see their payments grouped.
   const [rpSearch, setRpSearch] = useState('');
@@ -117,6 +119,10 @@ export default function Loans() {
   const [recLoanId, setRecLoanId] = useState('');
   const [recAmount, setRecAmount] = useState('');
   const [recDate, setRecDate] = useState('');
+
+  // The secretary's queue of repayments waiting to be verified.
+  const [pendingRepayOpen, setPendingRepayOpen] = useState(false);
+  const [pendingRepays, setPendingRepays] = useState([]);
 
   // A search over the loan list, so one member's history can be found quickly.
   const [listSearch, setListSearch] = useState('');
@@ -141,7 +147,10 @@ export default function Loans() {
     if (isCommittee) {
       try { setMembers(await api.get('/members')); } catch { /* not fatal */ }
     }
-  }, [isCommittee]);
+    if (canVerify) {
+      try { setPendingRepays(await api.get('/loans/repayments/pending')); } catch { /* not fatal */ }
+    }
+  }, [isCommittee, canVerify]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
@@ -192,11 +201,88 @@ export default function Loans() {
 
   async function openDetail(row) {
     try {
-      setDetail(await api.get(`/loans/${row.id}`));
+      const data = await api.get(`/loans/${row.id}`);
+      setDetail(data);
       setDecisionNote('');
       setRepayAmount('');
+      setIdRejectReason('');
+      setEligibility(null);
+      // The chairperson approving a request sees the applicant's full picture.
+      if (data.loan.status === 'pending' && (isDecider || isCommittee)) {
+        api.get(`/loans/eligibility/${data.loan.member_id}`).then(setEligibility).catch(() => {});
+      }
     } catch (err) {
       toast.error(err.message);
+    }
+  }
+
+  async function refreshDetail() {
+    if (!detail) return;
+    setDetail(await api.get(`/loans/${detail.loan.id}`));
+  }
+
+  // Chairperson: accept or refuse the applicant's ID.
+  async function verifyId() {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/verify-id`, {});
+      toast.success(res.message);
+      await refreshDetail();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectId() {
+    if (!detail) return;
+    const reason = idRejectReason.trim();
+    if (!reason) { toast.error(t('loans.idRejectReason')); return; }
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/reject-id`, { reason });
+      toast.success(res.message);
+      setIdRejectReason('');
+      await refreshDetail();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Secretary: settle a recorded repayment.
+  async function verifyRepayment(r) {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/repayments/${r.id}/verify`, {});
+      toast.success(res.message);
+      await refreshDetail();
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectRepayment(r) {
+    if (!detail) return;
+    const reason = window.prompt(t('loans.repaymentRejectReason'));
+    if (!reason || !reason.trim()) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${detail.loan.id}/repayments/${r.id}/reject`, { reason: reason.trim() });
+      toast.success(res.message);
+      await refreshDetail();
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -413,6 +499,13 @@ export default function Loans() {
     .filter((l) => !listQuery || l.full_name.toLowerCase().includes(listQuery));
   const myOpenLoan = loans.some((l) => ['pending', 'approved', 'pending_verification', 'verified'].includes(l.status));
 
+  // §7-§9 The three queues, each owned by one office. The counts are the size
+  // of each office's desk right now.
+  const queuePending = loans.filter((l) => l.status === 'pending').length;
+  const queueApproved = loans.filter((l) => l.status === 'approved').length;
+  const queueVerification = loans.filter((l) => l.status === 'pending_verification').length;
+  const pendingRepayCount = pendingRepays.length;
+
   const rpGroups = rpData ? groupRepayments(rpData.repayments) : [];
   const rpQuery = rpSearch.trim().toLowerCase();
   const rpMatches = rpQuery
@@ -534,6 +627,49 @@ export default function Loans() {
           </button>
         ))}
       </div>
+
+      {/* Each office's queue: the chairperson's approvals, the treasurer's
+          loans awaiting recording, the secretary's financial verification. */}
+      {isCommittee && (
+        <div className="page-grid page-grid--stat">
+          {canDecide && (
+            <StatCard
+              label={t('loans.queueApprovals')}
+              value={`${queuePending}`}
+              tone={queuePending > 0 ? 'gold' : undefined}
+              big
+              onClick={() => setFilter('pending')}
+            />
+          )}
+          {canRecordMoney && (
+            <StatCard
+              label={t('loans.queueAwaitingRecording')}
+              value={`${queueApproved}`}
+              tone={queueApproved > 0 ? 'gold' : undefined}
+              big
+              onClick={() => setFilter('approved')}
+            />
+          )}
+          {canVerify && (
+            <>
+              <StatCard
+                label={t('loans.queueVerification')}
+                value={`${queueVerification}`}
+                tone={queueVerification > 0 ? 'gold' : undefined}
+                big
+                onClick={() => setFilter('pending_verification')}
+              />
+              <StatCard
+                label={t('loans.queueRepayments')}
+                value={`${pendingRepayCount}`}
+                tone={pendingRepayCount > 0 ? 'gold' : undefined}
+                big
+                onClick={openPendingRepayments}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {filter === 'repayments' ? (
         <section className="rp rp--inline">
@@ -814,12 +950,75 @@ export default function Loans() {
 
             {/* The ID filed with the request. Only the offices that sit on a
                 loan may open it; ordinary members never see another's ID. */}
-            {detail.loan.id_document_id && (isCommittee || user?.role === 'member') && (
-              <div className="loans__decide">
-                <button type="button" className="btn btn--ghost" onClick={openIdDocument}>
-                  {t('loans.viewIdDocument')}
-                </button>
-                <p className="muted">{t('loans.idConfidential')}</p>
+            <div className="loans__decide">
+              <p className="field-label">
+                {t('loans.idStatus')}: <StatusTag status={detail.loan.id_status || 'not_uploaded'} />
+              </p>
+              {detail.loan.id_document_id ? (
+                <>
+                  <button type="button" className="btn btn--ghost" onClick={openIdDocument}>
+                    {t('loans.viewIdDocument')}
+                  </button>
+                  <p className="muted">{t('loans.idConfidential')}</p>
+                  {detail.loan.id_rejected_reason && (
+                    <p className="notice notice--danger">{detail.loan.id_rejected_reason}</p>
+                  )}
+                  {/* Only the chairperson settles the identification. */}
+                  {canDecide && detail.loan.id_status !== 'verified' && (
+                    <div className="loans__decideBtns">
+                      <button type="button" className="btn" disabled={busy} onClick={verifyId}>
+                        {t('loans.verifyId')}
+                      </button>
+                      <button type="button" className="btn btn--danger" disabled={busy} onClick={rejectId}>
+                        {t('loans.rejectId')}
+                      </button>
+                    </div>
+                  )}
+                  {canDecide && detail.loan.id_status !== 'verified' && (
+                    <>
+                      <label className="field-label" htmlFor="l-idreason">{t('loans.idRejectReason')}</label>
+                      <textarea id="l-idreason" rows={2} value={idRejectReason}
+                        onChange={(e) => setIdRejectReason(e.target.value)} />
+                    </>
+                  )}
+                </>
+              ) : (
+                <p className="notice notice--warn">{t('loans.noIdDocument')}</p>
+              )}
+            </div>
+
+            {/* §6 Eligibility: the chairperson sees the applicant's whole
+                position, stated plainly, before approving. */}
+            {detail.loan.status === 'pending' && eligibility && (
+              <div className={`loans__elig loans__elig--${eligibility.eligible ? 'yes' : 'no'}`}>
+                <p className="loans__eligVerdict">
+                  {eligibility.eligible ? t('loans.eligible') : t('loans.notEligible')}
+                </p>
+                <dl className="loans__rows">
+                  <div><dt>{t('loans.member')}</dt>
+                    <dd>{eligibility.member.full_name} · {eligibility.member.membership_number}</dd></div>
+                  <div><dt>{t('loans.activeMembership')}</dt>
+                    <dd>{eligibility.active_membership ? t('common.yes') : t('common.no')}</dd></div>
+                  <div><dt>{t('savings.thisCycle')}</dt>
+                    <dd className="money">{money(eligibility.savings)}</dd></div>
+                  <div><dt>{t('loans.maximumLoan')}</dt>
+                    <dd className="money">{money(eligibility.max_loan)}</dd></div>
+                  <div><dt>{t('loans.existingLoanStatus')}</dt>
+                    <dd>{eligibility.open_loan ? <StatusTag status={eligibility.open_loan.status} /> : t('loans.none')}</dd></div>
+                  <div><dt>{t('loans.outstandingBalance')}</dt>
+                    <dd className="money">{money(eligibility.outstanding)}</dd></div>
+                  <div><dt>{t('loans.repaymentStatus')}</dt>
+                    <dd>{t(`loans.repay_${eligibility.repayment_status}`)}</dd></div>
+                  <div><dt>{t('loans.idStatus')}</dt>
+                    <dd><StatusTag status={eligibility.id_status} /></dd></div>
+                </dl>
+                {!eligibility.eligible && (
+                  <ul className="loans__eligReasons">
+                    {eligibility.checks.filter((c) => !c.ok).map((c) => (
+                      <li key={c.key}>{c.reason}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
@@ -827,8 +1026,12 @@ export default function Loans() {
               <div className="loans__decide">
                 <label className="field-label" htmlFor="l-note">{t('loans.decisionNote')}</label>
                 <textarea id="l-note" rows={2} value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
+                {detail.loan.id_status !== 'verified' && (
+                  <p className="notice notice--warn">{t('loans.idMustVerifyFirst')}</p>
+                )}
                 <div className="loans__decideBtns">
-                  <button type="button" className="btn" disabled={busy} onClick={() => decide('approved')}>
+                  <button type="button" className="btn" disabled={busy || detail.loan.id_status !== 'verified'}
+                    onClick={() => decide('approved')}>
                     {t('loans.approve')}
                   </button>
                   <button type="button" className="btn btn--danger" disabled={busy} onClick={() => decide('rejected')}>
@@ -885,10 +1088,21 @@ export default function Loans() {
                 {detail.repayments.map((r) => (
                   <li key={r.id}>
                     <span>{shortDate(r.date)}</span>
-                    <span className="muted">
-                      {r.interest_part > 0 ? `${money(r.principal_part)} + ${money(r.interest_part)} ${t('loans.interestWord')}` : ''}
-                    </span>
+                    <StatusTag status={r.status} />
                     <span className="money">{money(r.amount)}</span>
+                    {/* Only the secretary settles a recorded repayment, and she
+                        never checks her own hand. */}
+                    {r.status === 'pending_verification' && canVerify && r.recorded_by !== user?.id && (
+                      <span className="row-actions">
+                        <button type="button" className="btn btn--small" disabled={busy}
+                          onClick={() => verifyRepayment(r)}>{t('loans.verify')}</button>
+                        <button type="button" className="btn btn--small btn--danger" disabled={busy}
+                          onClick={() => rejectRepayment(r)}>{t('loans.reject')}</button>
+                      </span>
+                    )}
+                    {r.status === 'rejected' && r.rejected_reason && (
+                      <span className="muted">{r.rejected_reason}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -1013,6 +1227,38 @@ export default function Loans() {
               </>
             )}
           </form>
+        )}
+      </Modal>
+
+      {/* ---- pending repayment verifications (secretary) ---- */}
+      <Modal
+        open={pendingRepayOpen}
+        title={t('loans.pendingRepaymentsTitle')}
+        onClose={() => setPendingRepayOpen(false)}
+        footer={
+          <button type="button" className="btn btn--ghost" onClick={() => setPendingRepayOpen(false)}>
+            {t('common.close')}
+          </button>
+        }
+      >
+        {pendingRepays.filter((r) => r.recorded_by !== user?.id).length ? (
+          <ul className="loans__repayList">
+            {pendingRepays.filter((r) => r.recorded_by !== user?.id).map((r) => (
+              <li key={r.id}>
+                <span>{r.full_name}</span>
+                <span className="muted">{shortDate(r.date)}</span>
+                <span className="money">{money(r.amount)}</span>
+                <span className="row-actions">
+                  <button type="button" className="btn btn--small" disabled={busy}
+                    onClick={() => verifyRepayRow(r)}>{t('loans.verify')}</button>
+                  <button type="button" className="btn btn--small btn--danger" disabled={busy}
+                    onClick={() => rejectRepayRow(r)}>{t('loans.reject')}</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">{t('loans.noPendingRepayments')}</p>
         )}
       </Modal>
     </div>

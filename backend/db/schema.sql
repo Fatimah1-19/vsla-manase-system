@@ -636,6 +636,43 @@ END $$;
 ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_document_id INT REFERENCES member_documents(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_loans_id_document ON loans(id_document_id);
 
+-- The chairperson checks the ID before a loan may be approved. The status is
+-- not_uploaded -> uploaded -> verified | rejected. Only the chairperson may
+-- move it, and a reason is kept when she rejects it.
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_status VARCHAR(12) NOT NULL DEFAULT 'not_uploaded';
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_verified_by INT REFERENCES users(id);
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_verified_at TIMESTAMPTZ;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS id_rejected_reason TEXT;
+
+-- A loan with an ID on file but no decision yet is 'uploaded'; one already past
+-- the point where a decision matters keeps its place.
+UPDATE loans SET id_status = 'uploaded'
+ WHERE id_document_id IS NOT NULL AND id_status = 'not_uploaded';
+
+-- =====================================================================
+--  FINANCIAL CONTROL: LOAN REPAYMENT VERIFICATION
+--  A repayment the treasurer records is not money until the secretary checks
+--  it. Only verified repayments reduce what the member still owes.
+-- =====================================================================
+
+ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending_verification';
+ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS verified_by INT REFERENCES users(id);
+ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+ALTER TABLE loan_repayments ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
+
+-- Repayments recorded before this rule already stood as money; treat them as
+-- verified so balances and history do not move.
+UPDATE loan_repayments SET status = 'verified', verified_at = COALESCE(created_at, NOW())
+ WHERE status = 'pending_verification';
+
+DO $$ BEGIN
+  ALTER TABLE loan_repayments ADD CONSTRAINT loan_repayments_status_check
+    CHECK (status IN ('pending_verification','verified','rejected'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_repay_status ON loan_repayments(status);
+
 CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
 BEGIN
   RAISE EXCEPTION 'audit_logs is append-only';

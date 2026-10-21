@@ -41,7 +41,7 @@ const FEED_SQL = `
   SELECT 'loan_repayment', rp.id, rp.date, l.member_id, u.full_name,
          (m.avatar IS NOT NULL), rp.amount::float,
          ('RP-' || rp.id || ' / LN-' || l.id), rr.full_name,
-         NULL, NULL
+         rp.status, NULL
     FROM loan_repayments rp
     JOIN loans l ON l.id = rp.loan_id
     JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id

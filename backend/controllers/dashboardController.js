@@ -55,7 +55,7 @@ const getDashboard = wrap(async (req, res) => {
                   COUNT(*) FILTER (WHERE status='pending_verification')::int AS pending_entries
              FROM savings WHERE member_id = $1 AND ($2::int IS NULL OR cycle_id = $2)`,
           [memberId, cycle ? cycle.id : null]),
-      query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+      query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
                FROM loans l WHERE l.member_id = $1 AND l.status IN ('pending','approved','pending_verification','verified') ORDER BY l.id DESC`, [memberId]),
       one(`SELECT COALESCE(SUM(amount),0)::float AS unpaid FROM fines WHERE member_id = $1 AND paid = FALSE`, [memberId]),
       query(
@@ -77,10 +77,10 @@ const getDashboard = wrap(async (req, res) => {
 
       // The whole group's money, so the box is not a mystery to the women who fill it.
       one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
-                  COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
+                  COALESCE((SELECT SUM(interest_part) FROM loan_repayments WHERE status = 'verified'),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
       query(`SELECT l.amount::float, l.with_interest, l.interest_rate::float,
-                    COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+                    COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
                FROM loans l WHERE l.status = 'verified'`),
       cashInBox(cycle ? cycle.id : null),
       query(`SELECT s.id, s.amount::float, s.date, u.full_name
@@ -233,8 +233,8 @@ const getDashboard = wrap(async (req, res) => {
   ] = await Promise.all([
     one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
                 COALESCE((SELECT SUM(amount) FROM loans WHERE status IN ('verified','repaid','defaulted')),0)::float AS loans_out,
-                COALESCE((SELECT SUM(amount) FROM loan_repayments),0)::float AS repaid,
-                COALESCE((SELECT SUM(interest_part) FROM loan_repayments),0)::float AS interest_earned`,
+                COALESCE((SELECT SUM(amount) FROM loan_repayments WHERE status = 'verified'),0)::float AS repaid,
+                COALESCE((SELECT SUM(interest_part) FROM loan_repayments WHERE status = 'verified'),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
     one(`SELECT COUNT(*)::int AS total,
                 COUNT(*) FILTER (WHERE status='active')::int  AS active,
@@ -259,7 +259,7 @@ const getDashboard = wrap(async (req, res) => {
     cashInBox(cycle ? cycle.id : null),
     query(
       `SELECT l.amount::float, l.with_interest, l.interest_rate::float,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
          FROM loans l WHERE l.status = 'verified'`
     ),
 
@@ -336,7 +336,7 @@ const getDashboard = wrap(async (req, res) => {
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings
               WHERE status='verified' AND date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments
-              WHERE date >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status='verified' AND date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
               WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
     ]) : null,
@@ -344,7 +344,7 @@ const getDashboard = wrap(async (req, res) => {
     // What moved today, for the treasurer's opening line.
     wantsMoney ? one(
       `SELECT COALESCE((SELECT SUM(amount)::float FROM savings WHERE status='verified' AND date::date = CURRENT_DATE),0) AS saved,
-              COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE date::date = CURRENT_DATE),0) AS repaid,
+              COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE status='verified' AND date::date = CURRENT_DATE),0) AS repaid,
               COALESCE((SELECT SUM(amount)::float FROM fines WHERE paid = TRUE AND date::date = CURRENT_DATE),0) AS fines_paid`
     ) : null,
 

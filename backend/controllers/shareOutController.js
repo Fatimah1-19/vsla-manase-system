@@ -20,12 +20,12 @@ async function computeShareOut(cycleId) {
             -- interest this member actually paid on their own loans in this cycle
             COALESCE((SELECT SUM(r.interest_part) FROM loan_repayments r
                         JOIN loans l ON l.id = r.loan_id
-                       WHERE l.member_id = m.id AND l.cycle_id = $1),0)::float AS interest_paid,
+                       WHERE l.member_id = m.id AND l.cycle_id = $1 AND r.status = 'verified'),0)::float AS interest_paid,
             COALESCE((SELECT SUM(f.amount) FROM fines f
                        WHERE f.member_id = m.id AND f.paid = FALSE),0)::float AS unpaid_fines,
             COALESCE((SELECT SUM(x.due - x.paid) FROM (
                         SELECT l.amount + CASE WHEN l.with_interest THEN l.amount * l.interest_rate / 100 ELSE 0 END AS due,
-                               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id),0) AS paid
+                               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0) AS paid
                           FROM loans l WHERE l.member_id = m.id AND l.status = 'verified') x),0)::float AS unpaid_loan
        FROM members m JOIN users u ON u.id = m.user_id
       ORDER BY u.full_name`,

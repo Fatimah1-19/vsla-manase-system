@@ -39,7 +39,7 @@ const getMember = wrap(async (req, res) => {
     query(`SELECT id, amount::float, shares, date, note, status, rejected_reason FROM savings WHERE member_id = $1 ORDER BY date DESC, id DESC`, [id]),
     query(
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id), 0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'), 0)::float AS total_repaid
          FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [id]),
     query(
       `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
