@@ -209,6 +209,24 @@ async function check(n, title, fn) {
       || /no-store/i.test(loanCtrl), 'the document is not cached');
   });
 
+  await check(29, 'a loan status reads in the spec\u2019s own words (\u00a713)', () => {
+    const en = read(path.join('frontend', 'src', 'i18n', 'en.js'));
+    assert.ok(en.includes("status_pending: 'Pending approval'"), 'pending -> Pending approval');
+    assert.ok(/status_approved: 'Approved[^']*awaiting recording'/.test(en),
+      'approved -> Approved, awaiting recording');
+    assert.ok(/status_pending_verification: 'Pending verification'/.test(en),
+      'pending_verification -> Pending verification');
+    assert.ok(en.includes("status_verified: 'Active'"), 'verified -> Active');
+    assert.ok(en.includes("status_rejected: 'Rejected'"), 'rejected -> Rejected');
+    assert.ok(loansPage.includes('status_${status}') || /status_\$\{/.test(loansPage),
+      'the page must use the loan status labels');
+  });
+
+  await check(30, 'welfare and fines never take a loan status label', () => {
+    assert.ok(!/welfare[\s\S]{0,200}?status_verified/.test(loansPage),
+      'no loan labels leak onto welfare');
+  });
+
   console.log(`\nAll ${done} workflow checks passed.`);
 })().catch((err) => {
   console.error('\nFAILED:', err.message);

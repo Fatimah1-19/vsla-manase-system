@@ -132,6 +132,13 @@ const base = {
     empty: 'Palibe ngongole.', maxAllowed: 'Zochuluka zomwe angakongole',
     overdue: 'Zachedwa', pending: 'Zikudikira', approved: 'Ikuyenda', rejected: 'Yakanidwa',
     repaidStatus: 'Yatha', defaulted: 'Sinabwezedwe',
+    status_pending: 'Ikudikira kuvomerezedwa',
+    status_approved: 'Yavomerezedwa \u2014 ikudikira kulembedwa',
+    status_pending_verification: 'Ikudikira kutsimikiziridwa',
+    status_verified: 'Ikugwira',
+    status_rejected: 'Yakanidwa',
+    status_repaid: 'Yatha',
+    status_defaulted: 'Sinabwezedwe',
   },
 
     members: {

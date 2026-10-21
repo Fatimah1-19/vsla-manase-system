@@ -126,6 +126,13 @@ const base = {
     empty: 'No loans yet.', maxAllowed: 'The most they can borrow',
     overdue: 'Overdue', pending: 'Waiting', approved: 'Running', rejected: 'Turned down',
     repaidStatus: 'Cleared', defaulted: 'Not repaid',
+    status_pending: 'Pending approval',
+    status_approved: 'Approved \u2014 awaiting recording',
+    status_pending_verification: 'Pending verification',
+    status_verified: 'Active',
+    status_rejected: 'Rejected',
+    status_repaid: 'Repaid',
+    status_defaulted: 'Not repaid',
   },
 
     members: {

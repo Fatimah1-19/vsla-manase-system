@@ -38,6 +38,17 @@ function standing(loan) {
   return 'active';
 }
 
+/**
+ * A loan's status in the group's own words (§13):
+ * Pending approval -> Approved, awaiting recording -> Pending verification ->
+ * Active -> Rejected / Repaid / Not repaid.
+ */
+function loanStatusLabel(t, status) {
+  const key = `loans.status_${status}`;
+  const looked = t(key);
+  return looked === key ? t(`status.${status}`) : looked;
+}
+
 const blankApply = { member_id: '', amount: '', with_interest: true, purpose: '' };
 
 /** Read a chosen file into the base64 the API accepts (no data: prefix). */
@@ -701,7 +712,7 @@ export default function Loans() {
                     <option value="">{t('loans.allLoans')}</option>
                     {rpLoanOptions.map((l) => (
                       <option key={l.id} value={l.id}>
-                        {t('loans.loanRef', l.id)} · {money(l.amount)} · {t(`loans.${l.status === 'repaid' ? 'repaidStatus' : l.status}`)}
+                        {t('loans.loanRef', l.id)} · {money(l.amount)} · {loanStatusLabel(t, l.status)}
                       </option>
                     ))}
                   </select>
@@ -926,6 +937,8 @@ export default function Loans() {
           <div className="loans__detail print-area">
             <p className="print-only loans__printHead">{t('app.name')} — {t('loans.statementFor')} · {shortDate(new Date())}</p>
             <dl className="loans__rows">
+              <div><dt>{t('common.status')}</dt>
+                <dd><StatusTag status={detail.loan.status}>{loanStatusLabel(t, detail.loan.status)}</StatusTag></dd></div>
               <div><dt>{t('loans.principal')}</dt><dd className="money">{money(detail.loan.amount)}</dd></div>
               <div>
                 <dt>{t('loans.interest')}</dt>
@@ -1004,7 +1017,7 @@ export default function Loans() {
                   <div><dt>{t('loans.maximumLoan')}</dt>
                     <dd className="money">{money(eligibility.max_loan)}</dd></div>
                   <div><dt>{t('loans.existingLoanStatus')}</dt>
-                    <dd>{eligibility.open_loan ? <StatusTag status={eligibility.open_loan.status} /> : t('loans.none')}</dd></div>
+                    <dd>{eligibility.open_loan ? <StatusTag status={eligibility.open_loan.status}>{loanStatusLabel(t, eligibility.open_loan.status)}</StatusTag> : t('loans.none')}</dd></div>
                   <div><dt>{t('loans.outstandingBalance')}</dt>
                     <dd className="money">{money(eligibility.outstanding)}</dd></div>
                   <div><dt>{t('loans.repaymentStatus')}</dt>
