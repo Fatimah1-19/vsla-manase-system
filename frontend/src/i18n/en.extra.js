@@ -1,9 +1,9 @@
-// English text added for the VSLA rules, wrappers, analytics, profile and the public site.
+﻿// English text added for the VSLA rules, wrappers, analytics, profile and the public site.
 const fmt = (n) => Number(n).toLocaleString('en-US');
 
 export default {
   nav: {
-    analytics: 'Analytics', reports: 'Reports', wrappers: 'Monthly wrappers', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'System settings',
+    wrappers: 'Groceries', groceries: 'Groceries', cases: 'Member cases', approvals: 'Approvals', accounts: 'Accounts', systemSettings: 'System settings',
     users: 'Users', roles: 'Roles & permissions', vslaSettings: 'VSLA settings', auditTrail: 'Audit trail', systemActivity: 'System activity',
     myProfile: 'My profile', changePassword: 'Change password',
     gDashboard: 'Dashboard', gUserMgmt: 'User management', gVsla: 'VSLA settings', gSystem: 'System', gProfile: 'Profile',
@@ -33,7 +33,7 @@ export default {
 
   roles: { system_admin: 'Administrator' },
 
-  // The group's status badges (§24). One word each, shown on a coloured tag.
+  // The group's status badges (Â§24). One word each, shown on a coloured tag.
   status: {
     active: 'Active', paid: 'Paid', completed: 'Completed', pending: 'Pending',
     outstanding: 'Outstanding', overdue: 'Overdue', cancelled: 'Cancelled',
@@ -116,11 +116,11 @@ export default {
     yourVote: 'Your vote',
     voteYes: 'Agree', voteNo: 'Do not agree',
     cannotVote: 'You cannot vote on this case.',
-    answered: 'The member’s answer',
+    answered: 'The memberâ€™s answer',
     writeReply: 'Write your reply',
     finishHint: 'The vote closes by itself when the time is up or everyone has voted. The chairperson then carries out the result.',
     passed: 'Carried', rejected: 'Turned down', lapsed: 'No quorum', withdrawn: 'Withdrawn',
-    voteTally: (y, n) => `${y} yes · ${n} no`,
+    voteTally: (y, n) => `${y} yes Â· ${n} no`,
     decidedTitle: 'Decided cases',
     settlement: 'To settle back', unrecovered: 'Still owing',
     status: { active: 'Active', inactive: 'Suspended', suspended: 'Suspended', dismissed: 'Dismissed' },
@@ -150,9 +150,9 @@ export default {
   dashboard: {
     canBorrow: 'You can borrow up to',
     canBorrowHint: (m) => `${m} times what you have saved`,
-    wrappersMonth: (levy) => `Monthly wrappers (${levy})`,
-    wrappersCollected: 'Wrappers collected this month',
-    wrappersOf: (expected, behind) => `of ${expected} · ${behind} behind`,
+    groceriesMonth: (levy) => `Groceries (${levy})`,
+    groceriesCollected: 'Groceries collected this month',
+    groceriesOf: (expected, behind) => `of ${expected} Â· ${behind} behind`,
     nothingPending: 'Nothing is waiting for a decision.',
     system: 'System', accountsInUse: 'accounts in use', smsFailed: 'texts that failed',
     lockedNote: (n) => `${n} account(s) are locked after wrong passwords. You can unlock them.`,
@@ -210,7 +210,7 @@ export default {
   loans: {
     withInterestHelp:
       'Interest is paid back to you at the share-out. Only the interest you paid comes back to you; it is not shared with other members.',
-    limitLine: (m, saved, max) => `Savings ${saved} × ${m} = you can borrow up to ${max}.`,
+    limitLine: (m, saved, max) => `Savings ${saved} Ã— ${m} = you can borrow up to ${max}.`,
     rateLine: (r) => `Interest is ${r}% of the amount.`,
     dueHint: 'Must be on or before the day the cycle ends.',
     nothingRepaid: 'Nothing repaid yet.',
@@ -221,7 +221,7 @@ export default {
     noRunningLoan: 'This member has no running loan.', noMemberFound: 'No member found.',
     date: 'Date of payment', changeMember: 'Change member',
     interestFirstNote: 'Every repayment pays off the interest first; whatever is left goes to the principal.',
-    searchMember: 'Find a member', searchPlaceholder: 'Type a member name…',
+    searchMember: 'Find a member', searchPlaceholder: 'Type a member nameâ€¦',
     everyone: 'Everyone', showRepayments: 'Show',
     totalRepaid: 'Total repaid', principalPaid: 'Principal paid', interestPaid: 'Interest paid',
     paymentCount: 'Payments', noRepayments: 'No repayments found.',
@@ -348,7 +348,7 @@ export default {
     shareoutTitle: 'Share-out history', noShareouts: 'No share-out has been done for you yet.',
     handedOut: 'Handed out', notDistributed: 'Being worked out', dateHandedOut: 'Handed out on',
     payout: 'My payout',
-    welfareType: 'Paid in / given out', welfareTitle: 'Welfare fund', wrappersTitle: 'Monthly wrappers',
+    welfareType: 'Paid in / given out', welfareTitle: 'Welfare fund', groceriesTitle: 'Groceries',
     loanRule: (m) => `You may borrow up to ${m} times your savings. One loan at a time.`,
     docsNote: 'Keep a copy of your ID and membership form here. Only you and the committee can open them.',
     docType: 'What is it?', docFile: 'File', docLimit: 'PDF, JPG or PNG, up to 2 MB.', upload: 'Upload',
@@ -362,12 +362,12 @@ export default {
     rulesShort: 'Savings come back to the person who saved them. Interest goes back only to the member who paid it. Fines and welfare money stay with the group.',
     memberWait: 'Your share is worked out at the end of the cycle.',
     noCycle: 'No saving cycle is running.',
-    rulesBox: 'The group\'s rules: every member gets back their own savings. Each borrower gets back only the interest they paid themselves. Fines, the welfare fund and the monthly wrappers money are not shared. What a member still owes is taken from their payout.',
+    rulesBox: 'The group\'s rules: every member gets back their own savings. Each borrower gets back only the interest they paid themselves. Fines, the welfare fund and the monthly groceries money are not shared. What a member still owes is taken from their payout.',
     interestReturned: 'Interest returned to the borrowers who paid it',
     deductionsTotal: 'Taken off for what members still owe',
     totalPayout: 'Total to hand out',
     keptTitle: 'Stays with the group (not shared)',
-    finesKept: 'Fines collected', welfareKept: 'Welfare fund balance', wrappersKept: 'Monthly wrappers collected',
+    finesKept: 'Fines collected', welfareKept: 'Welfare fund balance', groceriesKept: 'Groceries collected',
     unrecoveredNote: (x) => `Some members owe ${x} more than their payout covers. This is not forgiven: it stays on record for the committee to follow up.`,
     awaitConfirm: 'Check the figures below. They must be confirmed by a committee member before the money is handed out.',
     confirmFigures: 'Confirm the figures',
@@ -381,7 +381,7 @@ export default {
     vslaSubtitle: 'The rules the group lives by. The administrator proposes a change; the chairperson confirms it.',
     readOnlyTitle: 'Financial settings',
     readOnlySubtitle: 'The rules your transactions follow. Only the administrator may change these; the chairperson confirms any change.',
-    readOnlyNote: 'These are the active rules. Record your transactions using them — you cannot change a rule here.',
+    readOnlyNote: 'These are the active rules. Record your transactions using them â€” you cannot change a rule here.',
     proposeToChair: 'Send to the chairperson',
     proposedToChair: 'Sent to the chairperson to confirm.',
     proposedToChairNote: 'When you save, the change is sent to the chairperson. It takes effect once the chairperson confirms it.',
@@ -460,7 +460,7 @@ export default {
       meetingsNoSettings: 'Meetings have no settings of their own; the dates and attendance are simply recorded on the Meetings page.',
       meetingsFineRef: 'The only rule that touches a meeting is the fine for an unexcused absence, changed under',
       meetingFrequency: 'Meeting frequency',
-      meetingFrequencyValue: 'No fixed schedule — the committee calls each meeting',
+      meetingFrequencyValue: 'No fixed schedule â€” the committee calls each meeting',
       meetingDay: 'Meeting day', meetingDayValue: 'Chosen when a meeting is called',
       meetingTime: 'Meeting time', meetingTimeValue: 'Set for each meeting',
       meetingLocation: 'Meeting location', meetingLocationValue: 'Set for each meeting',
@@ -495,7 +495,7 @@ export default {
     },
 
   wrappers: {
-    title: 'Monthly wrappers',
+    title: 'Groceries',
     explain: (levy) => `Every member pays ${levy} each month for the group's wrappers. It is not savings and it is not shared out.`,
     monthly: 'Each month', totalPaid: 'Paid so far this cycle', stillOwed: 'Still to pay', paidUp: 'Paid up',
     myMonths: 'My months', notShared: 'Wrappers money is spent on the group\'s own needs. It is never shared out at the end of the cycle.',
@@ -529,7 +529,7 @@ export default {
       totalIssued: 'Total loans issued', totalRepayments: 'Total repayments',
       totalFines: 'Total fines',
       borrowers: 'Who still owes', noOpenLoans: 'No loans are running.',
-    wrappersNote: (levy) => `${levy} per member each month.`,
+    groceriesNote: (levy) => `${levy} per member each month.`,
     thisMonth: 'Paid this month', cycleTotal: 'Collected this cycle', totalBehind: 'Total behind',
     meetings: 'Meeting attendance', needMeetings: 'Record attendance at two or more meetings to see the trend.',
     finesWelfare: 'Fines and welfare', keptNote: 'Neither is shared out at the end of the cycle.',
@@ -539,7 +539,7 @@ export default {
 
   reports: {
     title: 'Reports',
-    subtitle: 'Group and per-member reports — contributions, loans, fines, savings, attendance and membership, by week, month or year.',
+    subtitle: 'Group and per-member reports â€” contributions, loans, fines, savings, attendance and membership, by week, month or year.',
     tab_list: 'By meeting',
     tab_register: 'By member',
     from: 'From', to: 'To', clear: 'Clear dates',
@@ -584,7 +584,7 @@ export default {
     reportAllTime: 'All time on record',
     totalContribution: 'Total contributions', totalLoans: 'Total loans',
     totalFines: 'Total fines', totalWelfare: 'Total welfare fund',
-    finTitle: (label) => `Financial overview — ${label}`,
+    finTitle: (label) => `Financial overview â€” ${label}`,
     finNote: 'Money coming in and going out each month of the year.',
     serContributions: 'Contributions', serLoans: 'Loans', serFines: 'Fines',
     serWelfare: 'Welfare', serSavings: 'Savings', serRepayments: 'Repayments',
@@ -611,7 +611,7 @@ export default {
 
   home: {
     navAbout: 'About', navRules: 'Our rules', navFeatures: 'What you can do', navFaq: 'Questions', navJoin: 'Join',
-    eyebrow: 'Village savings and loan group · Manase, Blantyre',
+    eyebrow: 'Village savings and loan group Â· Manase, Blantyre',
     heroBody:
       'A secure digital platform for managing Manase VSLA\'s savings, loans, repayments, welfare contribution, fines, meetings and member records. The system keeps group transactions organized, provides clear financial records and sends SMS confirmation to members.',
     photoAlt: 'Members of the group sitting around the savings box at a meeting',
@@ -629,10 +629,10 @@ export default {
     rulesTitle: 'Our rules',
     rulesSub: 'These are the rules the group agreed. They are set in the system, so they are applied the same way every time.',
     rules: (m, r, levy) => [
-      { big: `${m}×`, title: 'Borrowing limit', body: `You can borrow up to ${m} times your savings, one loan at a time, repaid before the cycle ends.` },
+      { big: `${m}Ã—`, title: 'Borrowing limit', body: `You can borrow up to ${m} times your savings, one loan at a time, repaid before the cycle ends.` },
       { big: `${r}%`, title: 'Interest on loans', body: `Interest is ${r}% of the amount borrowed. You may choose to borrow without interest.` },
-      { big: '↩', title: 'Loan interest and share-out', body: 'At the end of the cycle the interest is not shared among everyone. It goes back only to the member who paid it.' },
-      { big: '✕', title: 'Fines and welfare fund', body: 'Fines and the welfare fund are not shared out. They stay with the group.' },
+      { big: 'â†©', title: 'Loan interest and share-out', body: 'At the end of the cycle the interest is not shared among everyone. It goes back only to the member who paid it.' },
+      { big: 'âœ•', title: 'Fines and welfare fund', body: 'Fines and the welfare fund are not shared out. They stay with the group.' },
       { big: levy, icon: 'welfare', title: 'Monthly welfare contribution', body: `Every member pays a monthly contribution for the group's wrappers. It is not savings and is not shared out.` },
       { big: '2', title: 'Committee manages the records', body: 'The secretary and the treasurer record everything. The chairperson leads the group, decides loans with the committee and manages members.' },
     ],
@@ -641,7 +641,7 @@ export default {
     meetingSteps: [
       { title: 'Opening and attendance', body: 'The secretary marks who is present, absent or excused.' },
       { title: 'Savings', body: 'Members buy their shares. The treasurer counts the money and the secretary writes it down. Each member gets a text.' },
-      { title: 'Monthly wrappers', body: 'Members pay their monthly contribution. Anyone behind is shown clearly.' },
+      { title: 'Groceries', body: 'Members pay their monthly contribution. Anyone behind is shown clearly.' },
       { title: 'Loan repayments', body: 'Borrowers repay. The balance falls and the interest is recorded separately.' },
       { title: 'New loan requests', body: 'The committee looks at each request against the borrower\'s savings and what is in the box.' },
       { title: 'Welfare', body: 'Members pay into the welfare fund. Help for sickness, funerals or emergencies is given and the group is told.' },
@@ -657,7 +657,7 @@ export default {
       { title: 'Fines', body: 'Recorded with a reason and tracked until paid.' },
       { title: 'Welfare', body: 'Contributions in, help given out, and the group told when someone is sick or bereaved.' },
       { title: 'Share-out', body: 'At the end of the cycle each member\'s payout is worked out by the group\'s rules and texted to them.' },
-      { title: 'Monthly wrappers', body: 'See who has paid for the month and who is behind.' },
+      { title: 'Groceries', body: 'See who has paid for the month and who is behind.' },
       { title: 'Meetings', body: 'Agenda, attendance and minutes for every meeting.' },
       { title: 'Membership/joining', body: 'People apply online, members vote, and a committee member records the decision.' },
       { title: 'My account', body: 'Your details, your savings, loans and fines, and your documents.' },
@@ -714,7 +714,7 @@ export default {
     qaAuditTrail: 'View audit trail', qaSystemActivity: 'View system activity',
     qaPendingChanges: 'View pending changes', qaSystemSettings: 'System settings',
     pendingConfigTitle: 'Pending configuration changes',
-    pendingConfigNote: 'VSLA settings you have proposed. The chairperson confirms them — you cannot confirm your own change.',
+    pendingConfigNote: 'VSLA settings you have proposed. The chairperson confirms them â€” you cannot confirm your own change.',
     noPendingConfig: 'No configuration changes are waiting.',
     proposedBy: 'Proposed by', proposedOn: 'Date', currentValue: 'Current', proposedValue: 'Proposed',
     cannotConfirmOwn: 'Only the chairperson can confirm this.',
@@ -725,7 +725,7 @@ export default {
     systemActivitySubtitle: 'Every recorded action on the system, with the time and whether it succeeded.',
     // Roles and permissions
     rolesTitle: 'Roles & permissions', rolesSubtitle: 'What each role in the group may do, and who administers the system.',
-    rolesNote: 'Committee offices are decided by a vote of the members. From here you may only add or remove a system administrator — never make one of them the chairperson.',
+    rolesNote: 'Committee offices are decided by a vote of the members. From here you may only add or remove a system administrator â€” never make one of them the chairperson.',
     permMatrix: 'Who may do what', permColumn: 'Task', roleColumn: 'Role',
     systemAdministrators: 'System administrators', makeAdmin: 'Make administrator',
     removeAdmin: 'Remove administrator', officeLocked: 'Decided by vote',

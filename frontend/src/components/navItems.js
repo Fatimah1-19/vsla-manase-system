@@ -66,7 +66,7 @@ export const NAV_ITEMS = [
 
   { to: '/app/fines',                  key: 'nav.recordFine',        group: 'nav.gContributions', icon: 'fines', roles: ['treasurer'] },
   { to: '/app/welfare',                key: 'nav.recordWelfare',   icon: 'welfare', roles: ['treasurer'], sub: true },
-  { to: '/app/wrappers',               key: 'nav.wrappers',        icon: 'wrappers', roles: ['treasurer'], sub: true },
+  { to: '/app/wrappers',               key: 'nav.groceries',      icon: 'wrappers', roles: ['treasurer'], sub: true },
 
   { to: '/app/shareout',               key: 'nav.currentCycle',    group: 'nav.gShareout', icon: 'shareout', roles: ['treasurer'] },
 
