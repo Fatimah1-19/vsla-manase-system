@@ -315,11 +315,16 @@ function run(middleware, user) {
   assert.ok(can('admin', 'welfare.record') === false, 'the chairperson does not move welfare money');
   const chairWelfareRecord = await run(requirePermission('welfare.record'), { role: 'admin' });
   assert.strictEqual(chairWelfareRecord.status, 403);
+  assert.ok(can('admin', 'welfare.view'), 'the chairperson may watch the welfare fund');
   const welfareRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'welfareRoutes.js'), 'utf8');
-  assert.ok(welfareRoutes.includes("router.get('/balance', c.getBalance)"),
+  assert.ok(welfareRoutes.includes("router.get('/balance', requirePermission('welfare.view'), c.getBalance)"),
     'the total fund is there for the chairperson to read');
-  assert.ok(welfareRoutes.includes("router.get('/', c.listWelfare)"),
-    'the transaction history reads openly within the group');
+  assert.ok(welfareRoutes.includes("router.get('/', requirePermission('welfare.view'), c.listWelfare)"),
+    'the welfare history is read by those who hold the view permission');
+  assert.ok(!can('member', 'welfare.record'),
+    'an ordinary member may never record welfare money');
+  const chairWelfareView = await run(requirePermission('welfare.view'), { role: 'admin' });
+  assert.strictEqual(chairWelfareView.passed, true);
   assert.ok(welfareRoutes.includes("router.post('/contribution', requirePermission('welfare.record')"),
     'recording a contribution needs the record permission');
   assert.ok(welfareRoutes.includes("router.post('/payout', requirePermission('welfare.record')"),
@@ -616,12 +621,18 @@ function run(middleware, user) {
   for (const badge of ['.tag--green', '.tag--gold', '.tag--red', '.tag--grey', '.tag--blue']) {
     assert.ok(css.includes(badge), `the app must offer the ${badge} badge`);
   }
-  // Green means well, amber means waiting, red means refused.
+  // Green means well, amber means waiting, red means refused. Section 24 gives
+  // the whole app one status vocabulary, so the tones live in StatusTag.jsx and
+  // each page reads a status through <StatusTag> rather than a local map.
+  const statusTag = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'StatusTag.jsx'), 'utf8');
+  assert.ok(/pending: 'gold'/.test(statusTag) && /approved: 'green'/.test(statusTag)
+    && /rejected: 'red'/.test(statusTag) && /defaulted: 'red'/.test(statusTag),
+    'StatusTag must colour each loan status: waiting amber, running green, refused red');
   for (const page of ['Loans.jsx', 'Profile.jsx']) {
     const src = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', page), 'utf8');
-    assert.ok(/pending: 'gold'/.test(src) && /approved: 'green'/.test(src)
-      && /rejected: 'red'/.test(src) && /defaulted: 'red'/.test(src),
-      `${page} must colour each loan status: waiting amber, running green, refused red`);
+    assert.ok(src.includes('<StatusTag'),
+      `${page} must show statuses through the shared StatusTag badge`);
   }
   assert.ok(joinPage.includes("'tag tag--red'"), 'a rejected join request wears the red badge');
   const analyticsPage = fs.readFileSync(

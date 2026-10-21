@@ -16,6 +16,13 @@ const MEMBER_SUMMARY = `
 
 // GET /api/members
 const listMembers = wrap(async (req, res) => {
+  // An ordinary member may never read another member's financial summary. She
+  // sees only her own record; the offices keep the full register.
+  if (req.user.role === 'member') {
+    if (!req.user.member_id) return res.json([]);
+    const mine = await query(`${MEMBER_SUMMARY} WHERE m.id = $1`, [req.user.member_id]);
+    return res.json(mine);
+  }
   const includeInactive = String(req.query.all) === 'true';
   const rows = await query(
     `${MEMBER_SUMMARY} ${includeInactive ? '' : "WHERE m.status = 'active'"} ORDER BY u.full_name`

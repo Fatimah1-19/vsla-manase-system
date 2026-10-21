@@ -283,17 +283,29 @@ const updateSaving = wrap(async (req, res) => {
   const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
+  // If the secretary had already verified this saving, changing what it says
+  // would void her check. The treasurer may still correct the figure, but the
+  // entry goes back to her desk to be verified again, never silently.
+  const invalidates = existing.status === 'verified';
+
   await query(
     `UPDATE savings SET amount = COALESCE($2, amount), date = COALESCE($3, date), note = COALESCE($4, note),
-            shares = COALESCE($5, shares)
+            shares = COALESCE($5, shares),
+            status = CASE WHEN $6 THEN 'pending_verification' ELSE status END,
+            verified_by = CASE WHEN $6 THEN NULL ELSE verified_by END,
+            verified_at = CASE WHEN $6 THEN NULL ELSE verified_at END
       WHERE id = $1`,
-    [id, amount ?? null, date ?? null, note ?? null, shares ?? null]
+    [id, amount ?? null, date ?? null, note ?? null, shares ?? null, invalidates]
   );
 
   await audit(req.user.id, 'UPDATE_SAVING', 'savings', id,
     `was ${existing.amount} (${existing.shares} shares), now ${amount ?? existing.amount} (${shares ?? existing.shares} shares)`,
     { previous: `${existing.amount} / ${existing.shares} shares`, next: `${amount ?? existing.amount} / ${shares ?? existing.shares} shares` });
-  res.json({ message: 'Entry corrected.' });
+  res.json({
+    message: invalidates
+      ? 'Entry corrected. It was verified before, so it is back to awaiting the secretary\u2019s verification.'
+      : 'Entry corrected.',
+  });
 });
 
 // DELETE /api/savings/:id

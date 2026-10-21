@@ -85,7 +85,8 @@ const getDashboard = wrap(async (req, res) => {
       cashInBox(cycle ? cycle.id : null),
       query(`SELECT s.id, s.amount::float, s.date, u.full_name
                FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
-              ORDER BY s.id DESC LIMIT 6`),
+              WHERE s.member_id = $1
+              ORDER BY s.id DESC LIMIT 6`, [memberId]),
     ]);
 
     const activeLoan = loans.map((l) => {

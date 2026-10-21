@@ -162,6 +162,7 @@ export default {
     moneyInBox: 'Ndalama zili m\u2019bokosi',
     amountInBank: 'Ndalama zili m\u2019bokosi',
     recentContributions: 'Zoperekedwa posachedwa',
+    myRecentSavings: 'Zosunga zanu zaposachedwa',
     noSavingsYet: 'Palibe zosunga panobe',
     todayCollected: 'Zolandiridwa lero',
     todayRepaid: 'Zobwezedwa lero',

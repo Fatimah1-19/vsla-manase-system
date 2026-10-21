@@ -187,8 +187,8 @@ async function check(n, title, fn) {
   });
 
   await check(17, 'the chairperson can view welfare', () => {
-    assert.ok(routes('welfareRoutes.js').includes("router.get('/', c.listWelfare)")
-      && routes('welfareRoutes.js').includes("router.get('/balance', c.getBalance)"));
+    assert.ok(routes('welfareRoutes.js').includes("router.get('/', requirePermission('welfare.view'), c.listWelfare)")
+      && routes('welfareRoutes.js').includes("router.get('/balance', requirePermission('welfare.view'), c.getBalance)"));
     assert.ok(page('Welfare.jsx').includes('Ledger'));
   });
 

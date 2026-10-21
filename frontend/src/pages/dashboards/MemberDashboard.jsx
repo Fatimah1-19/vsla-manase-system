@@ -193,7 +193,7 @@ export default function MemberDashboard({ data }) {
 
       {contrib.length > 0 && (
         <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('dashboard.recentContributions')}</h2>
+          <h2 className="dash__sectionTitle">{t('dashboard.myRecentSavings')}</h2>
           <GroupedList
             items={contrib}
             renderItem={(c) => (

@@ -296,7 +296,7 @@ async function check(n, title, fn) {
 
   await check(39, 'the welfare book is searchable, dated and summarised', () => {
     const ctrl = controllers('welfareController.js');
-    assert.ok(routes('welfareRoutes.js').includes("router.get('/summary', c.welfareSummary)"),
+    assert.ok(routes('welfareRoutes.js').includes("router.get('/summary', requirePermission('welfare.view'), c.welfareSummary)"),
       'the welfare summary must be offered');
     assert.ok(ctrl.includes('w.from') || ctrl.includes('w.date >='),
       'the welfare history must filter by date');

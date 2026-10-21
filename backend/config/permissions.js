@@ -67,6 +67,9 @@ const PERMISSIONS = {
   'contributions.delete': ['admin'],
 
   // ---- welfare ----
+  // The treasurer writes the welfare book; the offices read the whole fund. An
+  // ordinary member reads her own welfare through her own profile, never here.
+  'welfare.view': ['admin', 'treasurer', 'secretary'],
   'welfare.record': ['treasurer'],
 
   // ---- registration fees ----
@@ -143,7 +146,7 @@ const MONEY_PERMISSIONS = [
   'repayments.verify',
   'fines.viewAll', 'fines.record', 'fines.delete',
   'contributions.view', 'contributions.record', 'contributions.delete',
-  'welfare.record',
+  'welfare.view', 'welfare.record',
   'registration.view', 'registration.record', 'registration.delete',
   'shareout.view', 'shareout.record',
   'reports.view', 'analytics.view', 'cycles.manage',
