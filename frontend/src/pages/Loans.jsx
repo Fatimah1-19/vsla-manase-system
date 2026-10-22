@@ -297,6 +297,49 @@ export default function Loans() {
     }
   }
 
+  // Secretary: the whole-queue view of recorded repayments that still need a
+  // second pair of eyes, opened from the dashboard card.
+  async function loadPendingRepays() {
+    if (!canVerify) return;
+    try { setPendingRepays(await api.get('/loans/repayments/pending')); }
+    catch { /* not fatal */ }
+  }
+
+  function openPendingRepayments() {
+    setPendingRepayOpen(true);
+    loadPendingRepays();
+  }
+
+  // Settle one recorded repayment straight from the queue. The loan it belongs
+  // to travels on the row, so no detail sheet is needed here.
+  async function verifyRepayRow(r) {
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${r.loan_id}/repayments/${r.id}/verify`, {});
+      toast.success(res.message);
+      await Promise.all([load(), loadPendingRepays()]);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectRepayRow(r) {
+    const reason = window.prompt(t('loans.repaymentRejectReason'));
+    if (!reason || !reason.trim()) return;
+    setBusy(true);
+    try {
+      const res = await api.patch(`/loans/${r.loan_id}/repayments/${r.id}/reject`, { reason: reason.trim() });
+      toast.success(res.message);
+      await Promise.all([load(), loadPendingRepays()]);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Open the ID filed with a request. The file comes back through an
   // authenticated call, so it is never on a public web address.
   async function openIdDocument() {
