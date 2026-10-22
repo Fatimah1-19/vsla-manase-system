@@ -35,7 +35,7 @@ async function protect(req, res, next) {
     }
 
     if (!user) return res.status(401).json({ message: 'This account no longer exists.' });
-    if (!user.is_active) return res.status(403).json({ message: 'This account has been suspended.' });
+    if (!user.is_active) return res.status(403).json({ message: 'This account has been deactivated.' });
 
     req.user = user;
 

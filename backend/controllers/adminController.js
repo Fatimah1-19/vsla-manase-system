@@ -143,7 +143,7 @@ const proposeChange = wrap(async (req, res) => {
   }
 
   if (kind === 'deactivate_user') {
-    if (!target.is_active) return res.status(400).json({ message: 'That account is already suspended.' });
+    if (!target.is_active) return res.status(400).json({ message: 'That account is already deactivated.' });
     const removable = canRemoveAdministrator({
       targetIsAdmin: target.role === 'system_admin',
       activeAdministrators: await activeAdministrators(),

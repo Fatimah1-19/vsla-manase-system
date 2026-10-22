@@ -737,7 +737,8 @@ function run(middleware, user) {
     'her permitted personal information is her phone and her email');
   assert.ok(!/UPDATE users SET[^`]*\brole\b\s*=/i.test(profileCtrl),
     'the profile page can never change her own role');
-  assert.ok(profileCtrl.includes('account_status') && profileCtrl.includes("'suspended'")
+  assert.ok(profileCtrl.includes('account_status') && (profileCtrl.includes("'suspended'")
+    || profileCtrl.includes("'deactivated'"))
     && profileCtrl.includes("'locked'"),
     'her account status is worked out for the page');
   assert.ok(profilePage.includes('pd-email') && profilePage.includes("t('common.email')"),

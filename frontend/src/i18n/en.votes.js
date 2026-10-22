@@ -14,7 +14,7 @@ export default {
     noneOpen: 'No votes are open right now.',
 
     titles: {
-      suspend: (n) => `Suspend ${n}`,
+      suspend: (n) => `Deactivate ${n}`,
       dismiss: (n) => `Dismiss ${n}`,
       reinstate: (n) => `Bring back ${n}`,
     },
@@ -31,8 +31,8 @@ export default {
     ruleDismiss: (p) => `A dismissal needs at least ${p}% of the votes to be yes.`,
     hiddenNote: 'The yes and no totals stay hidden until voting ends.',
 
-    yes: { suspend: 'Yes, suspend', dismiss: 'Yes, dismiss', reinstate: 'Yes, bring back' },
-    no: { suspend: 'No, do not suspend', dismiss: 'No, do not dismiss', reinstate: 'No, do not bring back' },
+    yes: { suspend: 'Yes, deactivate', dismiss: 'Yes, dismiss', reinstate: 'Yes, bring back' },
+    no: { suspend: 'No, do not deactivate', dismiss: 'No, do not dismiss', reinstate: 'No, do not bring back' },
     once: 'You can vote once and cannot change it afterwards.',
     voted: 'You voted',
     thanks: 'Thank you for voting.',
@@ -53,14 +53,14 @@ export default {
     member: 'Member',
     chooseMember: 'Choose a member',
     decision: 'Decision',
-    decisions: { suspend: 'Suspend', dismiss: 'Dismiss', reinstate: 'Bring back' },
+    decisions: { suspend: 'Deactivate', dismiss: 'Dismiss', reinstate: 'Bring back' },
     reason: 'Reason (everyone will read this)',
     notify: 'Tell all members by text message',
     proposeNote: (days) => `Voting stays open for ${days} ${plural(days, 'day', 'days')}. The member will be told in private and can write a reply that voters will see.`,
     openVote: 'Open the vote',
     carryOut: 'Carry out the decision',
     carryNote: {
-      suspend: (n) => `Carrying this out suspends ${n}. They can still log in and see their own records, but cannot borrow or vote. Their savings stay safe.`,
+      suspend: (n) => `Carrying this out deactivates ${n}. They can still log in and see their own records, but cannot borrow or vote. Their savings stay safe.`,
       dismiss: (n) => `Carrying this out ends ${n}'s membership. They can no longer log in. What they are owed is worked out for the treasurer to pay.`,
       reinstate: (n) => `Carrying this out brings ${n} back as an active member.`,
     },
@@ -76,7 +76,7 @@ export default {
   },
 
   membership: {
-    active: 'Active', suspended: 'Suspended', dismissed: 'Dismissed', inactive: 'Inactive',
+    active: 'Active', suspended: 'Deactivated', dismissed: 'Dismissed', inactive: 'Inactive',
     voteOpen: 'Vote open', votePassed: 'Vote passed',
     seeVote: 'See the vote',
     proposeVote: 'Propose a vote',

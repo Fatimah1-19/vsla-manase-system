@@ -36,7 +36,7 @@ Object.assign(templates, {
   },
   caseExecuted: {
     en: (p) => ({
-      suspend: `Hello ${p.name}, the group has decided to suspend your membership. You cannot borrow or vote until you are brought back. Your savings are safe. Please speak to the chairperson. — ${GROUP}`,
+      suspend: `Hello ${p.name}, the group has decided to deactivate your membership. You cannot borrow or vote until you are brought back. Your savings are safe. Please speak to the chairperson. — ${GROUP}`,
       dismiss: `Hello ${p.name}, the group has decided to end your membership. The treasurer will arrange what you are owed${p.owed > 0 ? ` (${money(p.owed)})` : ''}. — ${GROUP}`,
       reinstate: `Hello ${p.name}, you are a member again. You can log in. — ${GROUP}`,
     })[p.action],
@@ -428,7 +428,7 @@ const execute = wrap(async (req, res) => {
   await audit(req.user.id, 'EXECUTE_MEMBER_VOTE', 'member_cases', id, `${c.action} ${c.full_name}`);
   await text(c, 'caseExecuted', { action: c.action, name: c.full_name, owed: settlement ? settlement.amount : 0 }, req.user.id);
 
-  const word = { suspend: 'suspended', dismiss: 'dismissed', reinstate: 'brought back' }[c.action];
+  const word = { suspend: 'deactivated', dismiss: 'dismissed', reinstate: 'brought back' }[c.action];
   res.json({
     message: `${c.full_name} has been ${word}.`,
     settlement,

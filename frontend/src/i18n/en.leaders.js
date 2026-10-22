@@ -23,7 +23,7 @@ export default {
     office: 'Office',
     offices: { admin: 'chairperson', treasurer: 'treasurer', secretary: 'secretary' },
     reason: 'Why the office is empty',
-    reasonPlaceholder: 'For example: the secretary has been suspended. Everyone will read this.',
+    reasonPlaceholder: 'For example: the secretary has been deactivated. Everyone will read this.',
     candidates: 'Who is standing',
     candidatePool: 'Active members who hold no office',
     needTwo: 'Choose at least two candidates.',

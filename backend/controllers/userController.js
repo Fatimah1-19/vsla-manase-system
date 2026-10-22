@@ -240,16 +240,16 @@ const unlockUser = wrap(async (req, res) => {
   res.json({ message: 'Account unlocked.' });
 });
 
-// DELETE /api/users/:id — suspend rather than delete, so the books stay intact
+// DELETE /api/users/:id — deactivate rather than delete, so the books stay intact
 const deactivateUser = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  if (id === req.user.id) return res.status(400).json({ message: 'You cannot suspend your own account.' });
+  if (id === req.user.id) return res.status(400).json({ message: 'You cannot deactivate your own account.' });
 
   const user = await one(`SELECT * FROM users WHERE id = $1`, [id]);
   if (!user) return res.status(404).json({ message: 'That person is not on the list.' });
   if (refuseAccount(req, res, id, user.role)) return;
 
-  // An ordinary member is suspended or dismissed by a vote of the members, not from here.
+  // An ordinary member is deactivated or dismissed by a vote of the members, not from here.
   if (user.role === 'member') return res.status(400).json({ message: VOTE_MESSAGE });
 
   const openLoan = await one(
@@ -263,7 +263,7 @@ const deactivateUser = wrap(async (req, res) => {
   await query(`UPDATE members SET status = 'inactive' WHERE user_id = $1`, [id]);
   await audit(req.user.id, 'DEACTIVATE_USER', 'users', id, user.full_name);
 
-  res.json({ message: `${user.full_name} has been suspended.` });
+  res.json({ message: `${user.full_name} has been deactivated.` });
 });
 
 // POST /api/users/:id/reactivate — the chairperson brings a suspended account back

@@ -73,7 +73,7 @@ const login = wrap(async (req, res) => {
   }
 
   if (!user.is_active) {
-    return res.status(403).json({ message: 'This account has been suspended. Talk to the chairperson.' });
+    return res.status(403).json({ message: 'This account has been deactivated. Talk to the chairperson.' });
   }
 
   const match = await bcrypt.compare(password, user.password);

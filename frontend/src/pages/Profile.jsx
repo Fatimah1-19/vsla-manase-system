@@ -20,9 +20,9 @@ import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
 const MAX_BYTES = 2 * 1024 * 1024;
-const ACCOUNT_TAG = { active: 'green', suspended: 'grey', locked: 'gold' };
-const ACCOUNT_LABEL = { active: 'statusActive', suspended: 'statusSuspended', locked: 'statusLocked' };
+const ACCOUNT_TAG = { active: 'green', deactivated: 'grey', suspended: 'grey', locked: 'gold' };
 
+const ACCOUNT_LABEL = { active: 'statusActive', deactivated: 'statusSuspended', suspended: 'statusSuspended', locked: 'statusLocked' };
 // The empty shape a person without a member record still sees, so every
 // "My account" page keeps the same tabs and layout.
 const EMPTY_PROFILE = {
