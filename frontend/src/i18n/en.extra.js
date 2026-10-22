@@ -282,6 +282,7 @@ export default {
     meeting: 'Meeting', meetingRef: (id) => `Meeting #${id}`, noMeeting: 'No meeting',
     cycle: 'Cycle', month: 'Month',
     collected: 'Collected', toPay: 'To pay', count: 'Fines',
+    notCollected: 'Fines not collected',
     outstanding: 'Still owing',
     byType: 'Fines by type',
     entry: 'fine',

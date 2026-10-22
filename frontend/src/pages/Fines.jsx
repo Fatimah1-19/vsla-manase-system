@@ -220,7 +220,7 @@ export default function Fines() {
       </div>
 
       <div className="page-grid page-grid--stat">
-        <StatCard label={isCommittee ? t('dashboard.finesOutstanding') : t('fines.toPay')}
+        <StatCard label={isCommittee ? t('fines.notCollected') : t('fines.toPay')}
           value={money(outstanding)} tone={outstanding > 0 ? 'red' : 'plain'} icon="fines" />
         <StatCard label={t('fines.collected')} value={money(collected)} tone="green" icon="fines" />
         <StatCard label={t('fines.count')} value={plainNumber(rows.length)} icon="fines" />

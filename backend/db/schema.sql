@@ -334,7 +334,8 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('monthly_levy', '3000'),
   ('absence_fine', '0'),
   ('late_fine', '0'),
-  ('misconduct_fine', '0')
+  ('misconduct_fine', '0'),
+  ('loan_late_fine', '0')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- The group agreed: a member may borrow 2 times her savings (it used to be 3).

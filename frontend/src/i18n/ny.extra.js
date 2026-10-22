@@ -281,6 +281,7 @@ export default {
     meeting: 'Msonkhano', meetingRef: (id) => `Msonkhano #${id}`, noMeeting: 'Palibe msonkhano',
     cycle: 'Nyengo', month: 'Mwezi',
     collected: 'Zalipidwa', toPay: 'Zolipira', count: 'Zindapusa',
+    notCollected: 'Zindapusa zosalandiridwa',
     outstanding: 'Zotsala kulipira',
     byType: 'Zindapusa mwa mtundu',
     entry: 'chindapusa',

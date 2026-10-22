@@ -12,7 +12,9 @@ const { getActiveCycle, getSetting } = require('../utils/helpers');
 const FINE_TYPES = {
   absence: { setting: 'absence_fine', reason: 'Unexcused absence' },
   late: { setting: 'late_fine', reason: 'Late to a meeting' },
+  late_arrival: { setting: 'late_fine', reason: 'Late arrival' },
   misconduct: { setting: 'misconduct_fine', reason: 'Misconduct at a meeting' },
+  loan_late: { setting: 'loan_late_fine', reason: 'Late loan repayment' },
   other: { setting: null, reason: null },
 };
 
@@ -39,8 +41,9 @@ async function configuredAmount(type) {
  * The amount lives in Settings (`absence_fine`); 0 means the group does not
  * fine for absences. Never throws — attendance is saved either way.
  */
-const createAbsenceFine = async ({ member_id, reason = null, date = null, recorded_by = null, meeting_id = null, cycle_id = null }) => {
-  const amount = Number(await getSetting('absence_fine', '0'));
+const createAbsenceFine = async ({ member_id, reason = null, date = null, recorded_by = null, meeting_id = null, cycle_id = null, fine_type = 'absence' } = {}) => {
+  const settingKey = fine_type === 'late' || fine_type === 'late_arrival' ? 'late_fine' : 'absence_fine';
+  const amount = Number(await getSetting(settingKey, '0'));
   if (!(amount > 0)) return null;
   const cycle = cycle_id ? { id: cycle_id } : await getActiveCycle();
   const member = await one(
@@ -51,26 +54,34 @@ const createAbsenceFine = async ({ member_id, reason = null, date = null, record
   );
   if (!member) return null;
   const fineDate = date || new Date().toISOString().slice(0, 10);
-  const fineReason = reason || 'Unexcused absence';
+  const fineReason = reason || (fine_type === 'late' || fine_type === 'late_arrival' ? 'Late to a meeting' : 'Unexcused absence');
 
   // One fine per member per meeting, so re-saving attendance never stacks them up.
   const existing = meeting_id
-    ? await one(`SELECT id FROM fines WHERE member_id=$1 AND meeting_id=$2 LIMIT 1`, [member_id, meeting_id])
+    ? await one(`SELECT id FROM fines WHERE member_id=$1 AND meeting_id=$2 AND fine_type=$3 LIMIT 1`, [member_id, meeting_id, fine_type])
     : await one(
-        `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND paid=FALSE LIMIT 1`,
-        [member_id, fineDate, fineReason]
+        `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND fine_type=$4 AND paid=FALSE LIMIT 1`,
+        [member_id, fineDate, fineReason, fine_type]
       );
   if (existing) return existing;
 
   const fine = await one(
     `INSERT INTO fines (member_id, cycle_id, meeting_id, amount, reason, fine_type, paid, date, recorded_by)
-     VALUES ($1,$2,$3,$4,$5,'absence',FALSE,$6,$7) RETURNING id, amount::float, date`,
-    [member_id, cycle ? cycle.id : null, meeting_id, amount, fineReason, fineDate, recorded_by || null]
+     VALUES ($1,$2,$3,$4,$5,$6,FALSE,$7,$8) RETURNING id, amount::float, date`,
+    [member_id, cycle ? cycle.id : null, meeting_id, amount, fineReason, fine_type, fineDate, recorded_by || null]
   );
 
-  await emit(EVENTS.FINE_RECORDED, { recordedBy: recorded_by, member, fine, reason: fineReason });
+  try {
+    await emit(EVENTS.FINE_RECORDED, { recordedBy: recorded_by, member, fine, reason: fineReason });
+  } catch (e) {
+    // SMS failure must not roll back
+  }
 
   return fine;
+};
+
+const createLateFine = async (opts) => {
+  return createAbsenceFine({ ...(opts || {}), fine_type: 'late' });
 };
 
 /**
@@ -224,7 +235,14 @@ const listFines = wrap(async (req, res) => {
 // PATCH /api/fines/:id/pay
 const markPaid = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
+  let updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
+  if (!updated) {
+    try {
+      updated = await one(`UPDATE fines SET paid = TRUE, amount_paid = amount WHERE id = $1 RETURNING id, amount::float`, [id]);
+    } catch (e) {
+      // ignore
+    }
+  }
   if (!updated) return res.status(404).json({ message: 'That fine is not in the book.' });
   await audit(req.user.id, 'FINE_PAID', 'fines', id,
     `paid unpaid -> paid, amount ${updated.amount}, reason: payment received`,
@@ -262,10 +280,23 @@ const finesSummary = wrap(async (req, res) => {
             COUNT(*)::int AS count
        FROM fines GROUP BY fine_type ORDER BY total DESC`
   );
-  res.json({ ...row, by_type: byType });
+  // Members with outstanding fines (for UI)
+  const membersWithFines = await query(
+    `SELECT f.member_id, u.full_name, m.membership_number,
+            COALESCE(SUM(CASE WHEN NOT f.paid THEN f.amount ELSE 0 END),0)::float AS outstanding,
+            COUNT(CASE WHEN NOT f.paid THEN 1 END)::int AS outstanding_count
+       FROM fines f
+       JOIN members m ON m.id = f.member_id
+       JOIN users u ON u.id = m.user_id
+      WHERE NOT f.paid
+      GROUP BY f.member_id, u.full_name, m.membership_number
+      HAVING COALESCE(SUM(CASE WHEN NOT f.paid THEN f.amount ELSE 0 END),0) > 0
+      ORDER BY outstanding DESC`
+  );
+  res.json({ ...row, by_type: byType, members_with_fines: membersWithFines });
 });
 
 module.exports = {
   recordFine, listFines, listFineTypes, markPaid, deleteFine, finesSummary,
-  createAbsenceFine, backfillAbsenceFines, FINE_TYPES,
+  createAbsenceFine, createLateFine, backfillAbsenceFines, FINE_TYPES,
 };
