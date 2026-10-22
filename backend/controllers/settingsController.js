@@ -17,7 +17,7 @@ const GROUP_RULES = {
   weekly_share_value: 'Value of one share',
   welfare_contribution: 'Welfare contribution per meeting',
   registration_fee: 'One-off registration fee paid when a new member joins (MWK)',
-  monthly_levy: 'Monthly contribution every member pays for the group wrappers (MWK)',
+  monthly_levy: 'Monthly contribution every member pays for the group groceries (MWK)',
   absence_fine: 'Fine for missing a meeting without a reason (MWK)',
   late_fine: 'Fine for coming late to a meeting (MWK)',
   misconduct_fine: 'Fine for misconduct at a meeting (MWK)',
