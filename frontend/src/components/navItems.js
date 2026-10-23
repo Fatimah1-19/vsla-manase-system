@@ -6,18 +6,23 @@
  * `phone` marks the four that appear in the bottom bar on a small screen.
  */
 export const NAV_ITEMS = [
-  // ---- system administrator: her own grouped menu -----------------------
+  // ---- system administrator: mirror secretary/treasurer structure -------
   { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['system_admin'], phone: true, end: true },
-  { to: '/app/admin/users',   key: 'nav.users',    group: 'nav.gUserMgmt', icon: 'members', roles: ['system_admin'], phone: true },
-  { to: '/app/admin/roles',   key: 'nav.roles',    group: 'nav.gUserMgmt', icon: 'lock',    roles: ['system_admin'], sub: true },
-  { to: '/app/admin/settings', key: 'nav.vslaSettings',   group: 'nav.gVsla',   icon: 'settings', roles: ['system_admin'] },
-  { to: '/app/admin/system',  key: 'nav.systemSettings', group: 'nav.gSystem', icon: 'settings', roles: ['system_admin'] },
-  { to: '/app/activity',      key: 'nav.auditTrail',     group: 'nav.gSystem', icon: 'audit',    roles: ['system_admin'] },
-  { to: '/app/admin/activity', key: 'nav.systemActivity', group: 'nav.gSystem', icon: 'activity', roles: ['system_admin'], sub: true },
-  { to: '/app/cases',      key: 'nav.cases',     group: 'nav.gParticipation', icon: 'cases',     roles: ['system_admin'] },
-  { to: '/app/leadership', key: 'nav.leadership', group: 'nav.gParticipation', icon: 'leadership', roles: ['system_admin'] },
-  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['system_admin'] },
-  { to: '/app/profile?tab=account', key: 'nav.changePassword', group: 'nav.gProfile', icon: 'lock',    roles: ['system_admin'] },
+
+  { to: '/app/admin/users', key: 'nav.users',      group: 'nav.gUserMgmt', icon: 'members', roles: ['system_admin'], phone: true },
+  { to: '/app/admin/roles', key: 'nav.roles',      icon: 'lock',    roles: ['system_admin'], sub: true },
+
+  { to: '/app/admin/settings', key: 'nav.vslaSettings', group: 'nav.gSettings', icon: 'settings', roles: ['system_admin'] },
+  { to: '/app/admin/system',   key: 'nav.systemSettings', icon: 'settings', roles: ['system_admin'], sub: true },
+
+  { to: '/app/cases',      key: 'nav.cases',     group: 'nav.gParticipation', icon: 'cases',     roles: ['system_admin'], phone: true },
+  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['system_admin'], sub: true },
+
+  { to: '/app/activity',      key: 'nav.auditTrail',     group: 'nav.gReports', icon: 'audit',    roles: ['system_admin'] },
+  { to: '/app/admin/activity', key: 'nav.systemActivity', icon: 'activity', roles: ['system_admin'], sub: true },
+
+  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['system_admin'], phone: true },
+  { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock',    roles: ['system_admin'], sub: true },
 
     // ---- chairperson: leadership menu, never the administrator's pages -----
   { to: '/app', key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['admin'], phone: true, end: true },

@@ -31,7 +31,7 @@ export default function AdminUsers() {
   const { t } = useLang();
   const toast = useToast();
   const confirm = useConfirm();
-  const { user } = useAuth();
+  const { user, isSystemAdmin } = useAuth();
 
   const [accounts, setAccounts] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -105,12 +105,43 @@ export default function AdminUsers() {
   }
 
   async function askStatusChange(account) {
-    const kind = account.is_active ? 'deactivate_user' : 'reactivate_user';
-    const msg = account.is_active ? t('admin.suspend') : t('admin.reactivate');
+    if (account.is_active) {
+      const reasons = [
+        { key: 'misconduct', label: t('members.deactivateReasons.misconduct') },
+        { key: 'nonCompliance', label: t('members.deactivateReasons.nonCompliance') },
+        { key: 'failureToContribute', label: t('members.deactivateReasons.failureToContribute') },
+        { key: 'other', label: t('members.deactivateReasons.other') },
+      ];
+      const reasonChoice = window.prompt(
+        `${t('members.deactivateReasonLabel')}:\n1) ${reasons[0].label}\n2) ${reasons[1].label}\n3) ${reasons[2].label}\n4) ${reasons[3].label}\n\nEnter 1-4`
+      );
+      if (!reasonChoice) return;
+      const idx = Number(reasonChoice.trim());
+      if (![1,2,3,4].includes(idx)) return;
+      let reasonDetail = reasons[idx-1].label;
+      if (idx === 4) {
+        const other = window.prompt(t('members.deactivateReasonOther'));
+        if (!other || !other.trim()) return;
+        reasonDetail = other.trim();
+      }
+      if (!(await confirm({ message: `${t('members.confirmSuspendWithReason').replace('{name}', account.full_name)} ${t('members.deactivateReasonLabel')}: ${reasonDetail}` }))) return;
+      setBusy(account.id);
+      try {
+        await api.post('/admin/change-requests', { kind: 'deactivate_user', target_user_id: account.id, reason: reasonDetail });
+        toast.success(t('admin.requestSent'));
+        await load();
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setBusy(0);
+      }
+      return;
+    }
+    const msg = t('admin.reactivate');
     if (!(await confirm({ message: `${msg} — ${account.full_name}?` }))) return;
     setBusy(account.id);
     try {
-      await api.post('/admin/change-requests', { kind, target_user_id: account.id });
+      await api.post('/admin/change-requests', { kind: 'reactivate_user', target_user_id: account.id });
       toast.success(t('admin.requestSent'));
       await load();
     } catch (err) {
@@ -177,7 +208,6 @@ export default function AdminUsers() {
       <PageHeader
         title={t('admin.title')}
         subtitle={t('admin.subtitle')}
-        action={<button type="button" className="btn" onClick={() => setAdd({ full_name: '', phone: '', language: 'ny', village: '' })}>{t('admin.addMember')}</button>}
       />
 
       {/* Search and filters */}
@@ -249,22 +279,22 @@ export default function AdminUsers() {
                       <td>{a.last_login ? dateTime(a.last_login) : t('admin.never')}</td>
                       <td>
                         <div className="adminusers__rowActions">
-                          <button type="button" className="btn btn--ghost btn--small" onClick={() => openView(a)}>
+                          <button type="button" className="btn btn--small" onClick={() => openView(a)}>
                             {t('common.view')}
                           </button>
-                          <button type="button" className="btn btn--ghost btn--small" onClick={() => setEdit({
+                          <button type="button" className="btn btn--small btn--gold" onClick={() => setEdit({
                             id: a.id, full_name: a.full_name, phone: a.phone || '',
                             language: a.language || 'ny', village: a.village || '', reason: '',
                           })}>
                             {t('admin.edit')}
                           </button>
-                          <button type="button" className="btn btn--ghost btn--small" disabled={busy === a.id} onClick={() => askStatusChange(a)}>
+                          <button type="button" className={a.is_active ? "btn btn--small btn--danger" : "btn btn--small btn--sky"} disabled={busy === a.id} onClick={() => askStatusChange(a)}>
                             {a.is_active ? t('admin.suspend') : t('admin.reactivate')}
                           </button>
-                          <button type="button" className="btn btn--ghost btn--small" disabled={busy === a.id} onClick={() => resetPassword(a)}>
+                          <button type="button" className="btn btn--small btn--sky" disabled={busy === a.id} onClick={() => resetPassword(a)}>
                             {t('admin.resetPassword')}
                           </button>
-                          <button type="button" className="btn btn--ghost btn--small" onClick={() => setRoleFor(a)}>
+                          <button type="button" className="btn btn--small" onClick={() => setRoleFor(a)}>
                             {t('admin.manageRole')}
                           </button>
                         </div>

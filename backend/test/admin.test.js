@@ -306,7 +306,7 @@ function run(middleware, user) {
     'recorded, paid and outstanding fines must all be shown');
   assert.ok(finesPage.includes(': canRecordMoney'), 'only the treasurer can settle a fine');
   assert.ok(finesPage.includes('isAdmin ? ['), 'only the chairperson sees the remove button');
-  assert.ok(finesPage.includes('removeReason') && finesPage.includes('{ reason: removeReason.trim() }'),
+  assert.ok(finesPage.includes('removeReason') && (finesPage.includes('{ reason:') || finesPage.includes('removeReasonOther')),
     'a removal must carry a written reason into the audit trail');
   assert.ok(finesPage.includes("t('fines.removeTitle')"),
     'the removal asks for the reason in its own dialog');

@@ -302,6 +302,10 @@ export default {
     removeReason: 'Reason for removing',
     removeReasonExample: 'Recorded twice by mistake',
     removeReasonHint: 'The reason and the old amount are kept in the activity history.',
+    reasonLabel: 'Reason',
+    reasonSelectLabel: 'Select reason',
+    reasonOther: 'Other',
+    reasonOtherPlaceholder: 'Enter reason',
   },
 
   members: {
@@ -311,6 +315,15 @@ export default {
     credsNotSent: 'The text message did not go out. Give them these details yourself.',
     lastLogin: 'Last logged in', never: 'Never',
     confirmSuspend: 'Deactivate this member? They will no longer be able to log in or use the group.',
+    confirmSuspendWithReason: 'Deactivate {name}? They will no longer be able to log in or use the group.',
+    deactivateReasons: {
+      misconduct: 'Misconduct',
+      nonCompliance: 'Non-compliance with group rules',
+      failureToContribute: 'Failure to contribute',
+      other: 'Other'
+    },
+    deactivateReasonLabel: 'Reason for deactivation',
+    deactivateReasonOther: 'Please specify the reason',
     bringBack: 'Reactivate',
     confirmReactivate: 'Reactivate this member? They will be able to log in again.',
     dismiss: 'Dismiss',

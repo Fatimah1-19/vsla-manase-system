@@ -40,6 +40,7 @@ export default function Fines() {
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [removeReason, setRemoveReason] = useState('');
+  const [removeReasonOther, setRemoveReasonOther] = useState('');
 
   // The treasurer filters the book: by member, kind, and date window, or a
   // plain search of the name and the reason.
@@ -99,9 +100,14 @@ export default function Fines() {
     e.preventDefault();
     setBusy(true);
     try {
-      toast.success((await api.del(`/fines/${removing.id}`, { reason: removeReason.trim() })).message);
+      let reason = removeReason;
+      if (reason === 'other') {
+        reason = removeReasonOther.trim();
+      }
+      toast.success((await api.del(`/fines/${removing.id}`, { reason: reason.trim() })).message);
       setRemoving(null);
       setRemoveReason('');
+      setRemoveReasonOther('');
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -364,11 +370,15 @@ export default function Fines() {
 
           <div className="form-row">
             <div>
-              <label className="field-label" htmlFor="f-reason">{t('common.reason')}</label>
-              <input id="f-reason" value={form.reason}
-                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                placeholder={t('fines.reasonExample')} />
-              <span className="field-hint">{t('fines.reasonHint')}</span>
+              <label className="field-label" htmlFor="f-reason">{t('fines.reasonLabel')}</label>
+              <select id="f-reason" value={form.reason}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}>
+                <option value="">—</option>
+                <option value="absence">{t('fines.typeAbsence')}</option>
+                <option value="late arrival">{t('fines.typeLate')}</option>
+                <option value="misconduct">{t('fines.typeMisconduct')}</option>
+                <option value="other">{t('fines.reasonOther')}</option>
+              </select>
             </div>
           </div>
 
@@ -388,7 +398,7 @@ export default function Fines() {
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setRemoving(null)}>{t('common.cancel')}</button>
             <button type="submit" form="fine-remove-form" className="btn btn--danger"
-              disabled={busy || !removeReason.trim()}>
+              disabled={busy || !removeReason || (removeReason === 'other' && !removeReasonOther.trim())}>
               {busy ? t('common.saving') : t('common.del')}
             </button>
           </>
@@ -400,13 +410,25 @@ export default function Fines() {
           </p>
           <div className="form-row">
             <div>
-              <label className="field-label" htmlFor="f-del-reason">{t('fines.removeReason')}</label>
-              <input id="f-del-reason" value={removeReason}
-                onChange={(e) => setRemoveReason(e.target.value)}
-                placeholder={t('fines.removeReasonExample')} required />
-              <span className="field-hint">{t('fines.removeReasonHint')}</span>
+              <label className="field-label" htmlFor="f-del-reason">{t('fines.reasonSelectLabel')}</label>
+              <select id="f-del-reason" value={removeReason} onChange={(e) => setRemoveReason(e.target.value)} required>
+                <option value="">—</option>
+                <option value="recorded twice">{t('fines.removeReasonExample')}</option>
+                <option value="wrong amount">{t('fines.wrongAmount') || 'Wrong amount'}</option>
+                <option value="not applicable">{t('fines.notApplicable') || 'Not applicable'}</option>
+                <option value="other">{t('fines.reasonOther')}</option>
+              </select>
             </div>
           </div>
+          {removeReason === 'other' && (
+            <div className="form-row">
+              <div>
+                <label className="field-label" htmlFor="f-del-reason-other">{t('fines.reasonOtherPlaceholder')}</label>
+                <input id="f-del-reason-other" value={removeReasonOther}
+                  onChange={(e) => setRemoveReasonOther(e.target.value)} required />
+              </div>
+            </div>
+          )}
         </form>
       </Modal>
     </div>

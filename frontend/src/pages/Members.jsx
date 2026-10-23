@@ -97,7 +97,7 @@ export default function Members() {
   const navigate = useNavigate();
   // Adding a member record is the chairperson's and the secretary's work;
   // every other button here needs users.manage, which is the chairperson's alone.
-  const canAddMember = !!user && ['admin', 'secretary'].includes(user.role);
+  const canAddMember = !!user && ['admin'].includes(user.role);
   // The secretary keeps the register; only the permitted member details are
   // edited from here, never standing in the group.
   const canEditMember = !!user && ['admin', 'secretary'].includes(user.role);
