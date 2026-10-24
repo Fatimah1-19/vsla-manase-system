@@ -41,6 +41,13 @@ export default function Dashboard() {
 
   if (!data) return <Spinner />;
 
+  const hour = new Date().getHours();
+  const greetingKey = hour >= 5 && hour < 12
+    ? 'dashboard.greetingMorning'
+    : hour >= 12 && hour < 17
+      ? 'dashboard.greetingAfternoon'
+      : 'dashboard.greetingEvening';
+
   const boards = {
     member: MemberDashboard,
     treasurer: TreasurerDashboard,
@@ -54,7 +61,7 @@ export default function Dashboard() {
     <div className="dash">
       <header className="dash__head">
         <div className="dash__headLine">
-          <h1 className="dash__greeting">{t('dashboard.greeting', user.full_name.split(' ')[0])}</h1>
+          <h1 className="dash__greeting">{t(greetingKey, user.full_name.split(' ')[0])}</h1>
           <span className="dash__roleChip">{t(`roles.${user.role}`)}</span>
           <QuickSearch />
           <div className="dash__meta">

@@ -70,6 +70,9 @@ const base = {
 
   dashboard: {
     greeting: (name) => `Hello, ${name}`,
+    greetingMorning: (name) => `Good morning, ${name}`,
+    greetingAfternoon: (name) => `Good afternoon, ${name}`,
+    greetingEvening: (name) => `Good evening, ${name}`,
     cycleProgress: 'Saving cycle', weeksLeft: (n) => `${n} days until share-out`,
     mySavings: 'What I have saved', myShares: 'Shares', myLoan: 'My loan',
     outstanding: 'Still to repay', dueBy: 'Repay by', noLoan: 'You have no loan right now',
