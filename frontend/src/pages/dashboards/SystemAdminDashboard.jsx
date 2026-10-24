@@ -58,15 +58,17 @@ export default function SystemAdminDashboard({ data }) {
 
       {/* Quick actions */}
       <section className="sysadmin__quick">
-        <h2 className="dash__sectionTitle">{t('admin.qaTitle')}</h2>
-        <div className="sysadmin__links">
-          <Link to="/app/admin/users" className="btn">{t('admin.qaManageUsers')}</Link>
-          <Link to="/app/admin/roles" className="btn btn--sky">{t('admin.qaManageRoles')}</Link>
-          <Link to="/app/activity" className="btn btn--gold">{t('admin.qaAuditTrail')}</Link>
-          <Link to="/app/admin/activity" className="btn btn--ghost">{t('admin.qaSystemActivity')}</Link>
-          <Link to="/app/admin/settings" className="btn btn--ghost">{t('admin.qaPendingChanges')}</Link>
-          <Link to="/app/admin/system" className="btn btn--ghost">{t('admin.qaSystemSettings')}</Link>
-        </div>
+        <section className="dash__card">
+          <h2 className="dash__sectionTitle">{t('admin.quickActions') || t('nav.settings') || 'Quick actions'}</h2>
+          <div className="sysadmin__links">
+            <Link to="/app/admin/users" className="btn">{t('admin.qaManageUsers')}</Link>
+            <Link to="/app/admin/roles" className="btn btn--sky">{t('admin.qaManageRoles')}</Link>
+            <Link to="/app/activity" className="btn btn--gold">{t('admin.qaAuditTrail')}</Link>
+            <Link to="/app/admin/activity" className="btn btn--ghost">{t('admin.qaSystemActivity')}</Link>
+            <Link to="/app/admin/settings" className="btn btn--ghost">{t('admin.qaPendingChanges')}</Link>
+            <Link to="/app/admin/system" className="btn btn--ghost">{t('admin.qaSystemSettings')}</Link>
+          </div>
+        </section>
       </section>
 
       <div className="sysadmin__grid">
@@ -130,7 +132,7 @@ export default function SystemAdminDashboard({ data }) {
 
         {/* Audit Trail */}
         <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('admin.auditTrailTitle')}</h2>
+          <h2 className="dash__sectionTitle">{t('nav.auditTrail')}</h2>
           <table className="sysadmin__table">
             <thead>
               <tr>
@@ -160,7 +162,7 @@ export default function SystemAdminDashboard({ data }) {
 
         {/* System Activity */}
         <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('admin.systemActivityTitle')}</h2>
+          <h2 className="dash__sectionTitle">{t('nav.systemActivity')}</h2>
           <table className="sysadmin__table">
             <thead>
               <tr>
@@ -190,7 +192,7 @@ export default function SystemAdminDashboard({ data }) {
 
         {/* Pending Configuration Changes */}
         <section className="dash__card">
-        <h2 className="dash__sectionTitle">{t('admin.pendingConfigTitle')}</h2>
+          <h2 className="dash__sectionTitle">{t('admin.pendingConfigTitle')}</h2>
         <p className="sysadmin__note">{t('admin.pendingConfigNote')}</p>
         {pending.length === 0 ? (
           <p className="muted">{t('admin.noPendingConfig')}</p>
@@ -286,11 +288,12 @@ export default function SystemAdminDashboard({ data }) {
           <Link to="/app/activity" className="btn btn--ghost btn--small">{t('admin.viewFullAudit')}</Link>
         </section>
       </div>
-        <section className="dash__card sysadmin__systemCard">
+
+      <section className="dash__card sysadmin__systemCard">
           <h2 className="dash__sectionTitle">{t('admin.systemTitle')}</h2>
           <p className="sysadmin__note">{t('admin.settingsNote')}</p>
           <ul className="sysadmin__settings">
-            <li><span>{t('admin.sessionTimeoutLabel')}</span><strong>{plainNumber(s.session_timeout_minutes)}</strong></li>
+          <li><span>{t('admin.sessionTimeoutLabel')}</span><strong>{plainNumber(s.session_timeout_minutes)}</strong></li>
           <li><span>{t('admin.maxLoginLabel')}</span><strong>{plainNumber(s.max_login_attempts)}</strong></li>
           <li><span>{t('admin.lockLabel')}</span><strong>{plainNumber(s.lock_minutes)}</strong></li>
           <li><span>{t('admin.resetTriesLabel')}</span><strong>{plainNumber(s.reset_max_tries)}</strong></li>
