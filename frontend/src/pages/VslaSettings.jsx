@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -58,7 +58,9 @@ export default function VslaSettings({ readOnly = false }) {
   const { t } = useLang();
   const toast = useToast();
   const { section: routeSection } = useParams();
+  const [searchParams] = useSearchParams();
   const section = SECTIONS.find((s) => s.id === routeSection);
+  const requestId = searchParams.get('requestId');
 
   const [group, setGroup] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -67,6 +69,8 @@ export default function VslaSettings({ readOnly = false }) {
   const [changes, setChanges] = useState([]);
   const [pendingKeys, setPendingKeys] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [settingsRequests, setSettingsRequests] = useState([]);
+  const [requestCounts, setRequestCounts] = useState({});
 
   const load = useCallback(async () => {
     const [rows, sys, changes, smsInfo] = await Promise.all([
@@ -92,7 +96,18 @@ export default function VslaSettings({ readOnly = false }) {
       if (c.status === 'pending' && c.payload) Object.keys(c.payload).forEach((k) => keys.add(k));
     }
     setPendingKeys(keys);
-  }, [readOnly]);
+
+    if (!readOnly) {
+      try {
+        const [allReqs, counts] = await Promise.all([
+          api.get('/settings-requests').catch(() => []),
+          api.get('/settings-requests/counts').catch(() => ({})),
+        ]);
+        setSettingsRequests(Array.isArray(allReqs) ? allReqs.filter((r) => r.category === routeSection) : []);
+        setRequestCounts(counts || {});
+      } catch {}
+    }
+  }, [readOnly, routeSection]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
@@ -120,6 +135,40 @@ export default function VslaSettings({ readOnly = false }) {
     try {
       await api.put('/settings/system', { sms_enabled: system.sms_enabled });
       toast.success(t('admin.saved'));
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function markRequestRead(id) {
+    try {
+      await api.post(`/settings-requests/${id}/read`);
+    } catch {}
+  }
+
+  async function completeRequest(id) {
+    setBusy(true);
+    try {
+      await api.post(`/settings-requests/${id}/complete`, {});
+      toast.success(t('settingsRequests.completed') || 'Request completed');
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function rejectRequest(id) {
+    const reason = window.prompt(t('settingsRequests.rejectionReason') || 'Rejection reason');
+    if (!reason || !reason.trim()) return;
+    setBusy(true);
+    try {
+      await api.post(`/settings-requests/${id}/reject`, { rejection_reason: reason.trim() });
+      toast.success(t('admin.rejectedNote') || 'Rejected');
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -192,6 +241,15 @@ export default function VslaSettings({ readOnly = false }) {
   const numFields = NUM_FIELDS[section.id] || [];
   const swFields = SWITCH_FIELDS[section.id] || [];
   const editable = numFields.length > 0 || swFields.length > 0 || section.id === 'membership';
+  useEffect(() => {
+    if (!readOnly && requestId && settingsRequests.length) {
+      const req = settingsRequests.find((r) => String(r.id) === String(requestId));
+      if (req && !req.read_by_admin) {
+        markRequestRead(req.id);
+      }
+    }
+  }, [readOnly, requestId, settingsRequests]);
+
   const changeLink = (key) => (
     readOnly ? <span className="muted">—</span>
       : <a className="btn btn--ghost btn--small" href={`#edit-${key}`}>{t('settings.change')}</a>
@@ -209,6 +267,7 @@ export default function VslaSettings({ readOnly = false }) {
             className={section.id === s.id ? 'settings__cat is-on' : 'settings__cat'}
           >
             {t(s.label)}
+            {!readOnly && requestCounts[s.id] ? <span className="tag tag--gold" style={{ marginLeft: '6px' }}>{requestCounts[s.id]}</span> : null}
           </Link>
         ))}
       </nav>
@@ -216,6 +275,34 @@ export default function VslaSettings({ readOnly = false }) {
       <div className="settings__group">
         <h2 className="settings__h2">{t(section.label)}</h2>
         <p className="settings__note">{t(section.note)}</p>
+
+        {!readOnly && settingsRequests.length > 0 && (
+          <div className="settings__groupCard">
+            <h3 className="settings__h2">{t('settingsRequests.title') || 'Settings Requests'}</h3>
+            <ul className="settings__questions">
+              {settingsRequests.map((r) => (
+                <li key={r.id} className="settings__question">
+                  <div>
+                    <strong>{r.title || r.description}</strong>
+                    {r.description && r.title ? <p className="settings__note">{r.description}</p> : null}
+                    {r.details ? <p className="settings__note">{r.details}</p> : null}
+                    <p className="settings__note">
+                      {t('settings.proposedBy') || 'Requested by'}: {r.requested_by_name || '—'} · {dateTime(r.created_at)}
+                    </p>
+                    <span className={`tag ${r.status === 'pending' ? 'tag--gold' : r.status === 'completed' ? 'tag--green' : 'tag--grey'}`}>{r.status}</span>
+                    {r.status === 'rejected' && r.rejection_reason ? <p className="settings__note">{t('settingsRequests.reason') || 'Reason'}: {r.rejection_reason}</p> : null}
+                  </div>
+                  {r.status === 'pending' && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <button type="button" className="btn btn--small" disabled={busy} onClick={() => completeRequest(r.id)}>{t('settingsRequests.markComplete') || 'Mark completed'}</button>
+                      <button type="button" className="btn btn--danger btn--small" disabled={busy} onClick={() => rejectRequest(r.id)}>{t('admin.reject') || 'Reject'}</button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* ---- what the rules say right now ---- */}
         {section.id === 'general' && (

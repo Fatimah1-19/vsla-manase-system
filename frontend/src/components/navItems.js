@@ -28,6 +28,7 @@ export const NAV_ITEMS = [
   { to: '/app', key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['admin'], phone: true, end: true },
 
   { to: '/app/approvals', key: 'nav.approvals', label: 'nav.settingsApproval', icon: 'requests', roles: ['admin'] },
+  { to: '/app/settings-requests', key: 'nav.settingsRequests', label: 'nav.settingsRequests', icon: 'requests', roles: ['admin'], sub: true },
 
   { to: '/app/members', key: 'nav.members', group: 'nav.gMembers', icon: 'members', roles: ['admin'] },
   { to: '/app/requests', key: 'nav.joinRequests', icon: 'requests', roles: ['admin'], sub: true },

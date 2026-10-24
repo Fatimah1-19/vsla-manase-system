@@ -126,6 +126,12 @@ const PERMISSIONS = {
   'cases.settlement': ['treasurer'],
   'officeVotes.manage': ['admin', 'treasurer', 'secretary'],
 
+  // ---- settings requests (chairperson requests, system admin implements) ----
+  'settingsRequests.create': ['admin'],
+  'settingsRequests.viewOwn': ['admin'],
+  'settingsRequests.viewAll': ['system_admin'],
+  'settingsRequests.manage': ['system_admin'],
+
   // ---- the system administrator (accounts and the system itself) ----
   'accounts.view': ['system_admin'],
   'accounts.manage': ['system_admin'],
