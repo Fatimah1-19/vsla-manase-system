@@ -167,8 +167,19 @@ CREATE TABLE IF NOT EXISTS join_requests (
   status        VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
   decided_by    INT REFERENCES users(id),
   decided_at    TIMESTAMPTZ,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  date_of_birth DATE,
+  national_id   VARCHAR(80),
+  id_provided   BOOLEAN DEFAULT FALSE,
+  eligibility   JSONB DEFAULT '{}'::jsonb,
+  eligibility_checked_at TIMESTAMPTZ
 );
+
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS national_id VARCHAR(80);
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS id_provided BOOLEAN DEFAULT FALSE;
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS eligibility JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS eligibility_checked_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS join_request_votes (
   id          SERIAL PRIMARY KEY,

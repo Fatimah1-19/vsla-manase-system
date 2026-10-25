@@ -9,21 +9,97 @@ const { generateUsername, nextMembershipNumber, tempPassword } = require('../uti
 const rules = require('../utils/cases');
 const { getScreeningQuestions } = require('../utils/screening');
 
+function ageFromDob(dob) {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  return age;
+}
+
+function runEligibility({ full_name, phone, village, date_of_birth, national_id, id_provided, agreed_rules, existingActive, hasPending }) {
+  const checks = {
+    age: false,
+    identification: false,
+    required_info: false,
+    valid_phone: false,
+    agrees_rules: false,
+    no_existing_member: false,
+    no_pending_request: false,
+  };
+
+  const age = ageFromDob(date_of_birth);
+  if (age !== null && age >= 18) checks.age = true;
+  if ((id_provided || (national_id && String(national_id).trim())) && national_id && String(national_id).trim()) checks.identification = true;
+  if (String(full_name || '').trim() && phone && village) checks.required_info = true;
+  if (normalisePhone(phone)) checks.valid_phone = true;
+  if (agreed_rules === true || agreed_rules === 'true' || agreed_rules === 1) checks.agrees_rules = true;
+  if (!existingActive) checks.no_existing_member = true;
+  if (!hasPending) checks.no_pending_request = true;
+
+  const allPassed = Object.values(checks).every(Boolean);
+  return { checks, allPassed, age };
+}
+
 // POST /api/join-requests — public, no login
 const submitRequest = wrap(async (req, res) => {
-  const { full_name, phone, village, occupation, reason, screening } = req.body;
+  const { full_name, phone, village, occupation, reason, screening, date_of_birth, national_id, id_number, agreed_rules } = req.body;
   if (!full_name || !phone) {
     return res.status(400).json({ message: 'Enter your name and phone number.' });
   }
   if (!normalisePhone(phone)) {
     return res.status(400).json({ message: 'Enter a phone number like 0995727978.' });
   }
+  if (!village) {
+    return res.status(400).json({ message: 'Enter your village.' });
+  }
+  if (!date_of_birth) {
+    return res.status(400).json({ message: 'Enter your date of birth.' });
+  }
+  const nid = national_id || id_number;
+  if (!nid || !String(nid).trim()) {
+    return res.status(400).json({ message: 'Provide your National ID/identification information.' });
+  }
+  if (agreed_rules !== true && agreed_rules !== 'true' && agreed_rules !== 1 && agreed_rules !== '1') {
+    return res.status(400).json({ message: 'You must agree to follow the VSLA rules and membership terms.' });
+  }
 
-  const duplicate = await one(
+  const duplicatePending = await one(
     `SELECT id FROM join_requests WHERE phone = $1 AND status = 'pending'`, [phone]
   );
-  if (duplicate) {
+  if (duplicatePending) {
     return res.status(409).json({ message: 'A request from this number is already waiting for the group.' });
+  }
+
+  const existingActive = await one(
+    `SELECT u.id FROM users u WHERE u.phone = $1 AND u.is_active = TRUE AND u.role = 'member' LIMIT 1`,
+    [phone]
+  );
+  if (existingActive) {
+    return res.status(409).json({ message: 'You are already an active member of the same VSLA.' });
+  }
+
+  const eligibility = runEligibility({
+    full_name,
+    phone,
+    village,
+    date_of_birth,
+    national_id: nid,
+    id_provided: true,
+    agreed_rules: true,
+    existingActive: !!existingActive,
+    hasPending: !!duplicatePending,
+  });
+
+  if (!eligibility.allPassed) {
+    await audit(null, 'JOIN_REQUEST_ELIGIBILITY_FAILED', 'join_requests', null, `${full_name} failed eligibility`);
+    return res.status(400).json({
+      message: 'Not eligible to apply',
+      eligibility,
+    });
   }
 
   // The applicant answers the background questions in the join form. Keep only
@@ -32,17 +108,30 @@ const submitRequest = wrap(async (req, res) => {
   const answers = cleanScreening(screening, questions.map((q) => q.id));
 
   const row = await one(
-    `INSERT INTO join_requests (full_name, phone, village, occupation, reason, screening) VALUES ($1,$2,$3,$4,$5,$6::jsonb) RETURNING id`,
+    `INSERT INTO join_requests (full_name, phone, village, occupation, reason, screening, date_of_birth, national_id, id_provided, eligibility, eligibility_checked_at)
+     VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,TRUE,$9::jsonb,NOW())
+     RETURNING id`,
     [String(full_name).trim(), phone, village || null,
      occupation ? String(occupation).trim().slice(0, 120) : null,
-     reason || null, JSON.stringify(answers)]
+     reason || null, JSON.stringify(answers), date_of_birth, String(nid).trim(), JSON.stringify(eligibility)]
   );
 
   await audit(null, 'SUBMIT_JOIN_REQUEST', 'join_requests', row.id, full_name);
 
+  // Notify group members that a new eligible request is available for voting (best effort)
+  try {
+    const members = await query(`SELECT u.phone, u.language, u.full_name FROM users u WHERE u.is_active = TRUE AND u.role IN ('admin','treasurer','secretary','member') AND u.phone IS NOT NULL`);
+    for (const m of members.rows || []) {
+      try {
+        await sendSMS(m.phone, build('joinRequestNew', m.language || 'ny', { name: full_name }), { name: full_name, category: 'join_request' });
+      } catch (e) {}
+    }
+  } catch (e) {}
+
   res.status(201).json({
     message: 'Your request has been sent. The group will talk about it at the next meeting.',
     request_id: row.id,
+    eligibility,
   });
 });
 
@@ -74,7 +163,7 @@ const listRequests = wrap(async (req, res) => {
             (SELECT v.vote FROM join_request_votes v WHERE v.request_id = jr.id AND v.user_id = $1) AS my_vote
        FROM join_requests jr
        LEFT JOIN users u ON u.id = jr.decided_by
-      ORDER BY CASE jr.status WHEN 'pending' THEN 0 ELSE 1 END, jr.created_at DESC`,
+       ORDER BY CASE jr.status WHEN 'pending' THEN 0 ELSE 1 END, jr.created_at DESC`,
     [req.user.id]
   );
 
@@ -89,6 +178,40 @@ const listRequests = wrap(async (req, res) => {
     q: req.user.language === 'en' ? q.en : q.ny,
   }));
   res.json({ requests: rows, eligible_voters: voters.c, screening_questions: localised });
+});
+
+// POST /api/join-requests/check-eligibility — public eligibility check
+const checkEligibility = wrap(async (req, res) => {
+  const { full_name, phone, village, date_of_birth, national_id, id_number, agreed_rules } = req.body;
+  if (!full_name || !phone || !village || !date_of_birth || !(national_id || id_number)) {
+    return res.status(400).json({ message: 'Provide full name, phone, village, date of birth and National ID.' });
+  }
+  if (!normalisePhone(phone)) {
+    return res.status(400).json({ message: 'Enter a phone number like 0995727978.' });
+  }
+
+  const nid = national_id || id_number;
+  const duplicatePending = await one(
+    `SELECT id FROM join_requests WHERE phone = $1 AND status = 'pending'`, [phone]
+  );
+  const existingActive = await one(
+    `SELECT u.id FROM users u WHERE u.phone = $1 AND u.is_active = TRUE AND u.role = 'member' LIMIT 1`,
+    [phone]
+  );
+
+  const eligibility = runEligibility({
+    full_name,
+    phone,
+    village,
+    date_of_birth,
+    national_id: nid,
+    id_provided: true,
+    agreed_rules,
+    existingActive: !!existingActive,
+    hasPending: !!duplicatePending,
+  });
+
+  res.json({ eligibility });
 });
 
 // POST /api/join-requests/:id/vote — the group decides, not one person
@@ -173,11 +296,13 @@ const decideRequest = wrap(async (req, res) => {
   }
 
   if (status === 'rejected') {
+    const { rejection_reason } = req.body || {};
     await query(
       `UPDATE join_requests SET status = 'rejected', decided_by = $2, decided_at = NOW() WHERE id = $1`,
       [id, req.user.id]
     );
-    await audit(req.user.id, 'REJECT_JOIN_REQUEST', 'join_requests', id, request.full_name);
+    await audit(req.user.id, 'REJECT_JOIN_REQUEST', 'join_requests', id,
+      rejection_reason ? `${request.full_name} (rejected: ${rejection_reason})` : request.full_name);
     await sendSMS(request.phone, build('memberRejected', language, { name: request.full_name }),
       { name: request.full_name, category: 'join_request', sentBy: req.user.id });
     return res.json({ message: `${request.full_name} has been told the group could not take them this cycle.` });
@@ -229,4 +354,4 @@ const decideRequest = wrap(async (req, res) => {
   });
 });
 
-module.exports = { submitRequest, publicQuestions, listRequests, vote, decideRequest };
+module.exports = { submitRequest, publicQuestions, listRequests, vote, decideRequest, checkEligibility };

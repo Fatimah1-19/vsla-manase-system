@@ -14,16 +14,47 @@ const asList = (v) => (Array.isArray(v) ? v : []);
 const FEATURE_ICONS = ['savings', 'loans', 'cycles', 'cases', 'welfare', 'members', 'wrappers', 'meetings', 'requests', 'profile', 'analytics', 'audit', 'messages'];
 const ROLE_ICONS = ['leadership', 'savings', 'reports', 'members'];
 
+function checkEligibilityClient(form) {
+  const checks = {
+    age: false,
+    identification: false,
+    required_info: false,
+    valid_phone: false,
+    agrees_rules: false,
+    no_existing_member: false,
+    no_pending_request: false,
+  };
+  if (form.date_of_birth) {
+    const d = new Date(form.date_of_birth);
+    if (!Number.isNaN(d.getTime())) {
+      const now = new Date();
+      let age = now.getFullYear() - d.getFullYear();
+      const m = now.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+      if (age >= 18) checks.age = true;
+    }
+  }
+  if (form.national_id && String(form.national_id).trim()) checks.identification = true;
+  if (String(form.full_name || '').trim() && form.phone && form.village) checks.required_info = true;
+  if (/^\+?\d{8,15}$/.test(String(form.phone || '').replace(/\s+/g, ''))) checks.valid_phone = true;
+  if (form.agreed_rules) checks.agrees_rules = true;
+  checks.no_existing_member = true;
+  checks.no_pending_request = true;
+  const allPassed = Object.values(checks).every(Boolean);
+  return { checks, allPassed };
+}
+
 export default function Home() {
   const { t, lang } = useLang();
   const [stats, setStats] = useState(null);
-  const [form, setForm] = useState({ full_name: '', phone: '', village: '', occupation: '', reason: '' });
+  const [form, setForm] = useState({ full_name: '', phone: '', village: '', occupation: '', reason: '', date_of_birth: '', national_id: '', agreed_rules: false });
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [qOpen, setQOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [elig, setElig] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -59,18 +90,31 @@ export default function Home() {
   const answered = questions.filter((q) => answers[q.key]).length;
   const allAnswered = questions.length === 0 || answered === questions.length;
 
+  function runElig() {
+    const e = checkEligibilityClient(form);
+    setElig(e);
+    return e;
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (questions.length && questions.some((q) => !answers[q.key])) {
       setError(t('home.joinBackgroundRequired'));
       return;
     }
+    const e2 = runElig();
+    if (!e2.allPassed) {
+      setError('Not eligible to apply');
+      return;
+    }
     setError(''); setBusy(true);
     try {
-      await api.post('/join-requests', { ...form, screening: answers }, { auth: false });
+      const res = await api.post('/join-requests', { ...form, screening: answers }, { auth: false });
+      if (res.eligibility) setElig(res.eligibility);
       setSent(true);
     } catch (err) {
       setError(err.message);
+      if (err?.response?.data?.eligibility) setElig(err.response.data.eligibility);
     } finally {
       setBusy(false);
     }
@@ -269,18 +313,31 @@ export default function Home() {
                     value={form.phone} onChange={change('phone')} required disabled={busy} />
                   <span className="field-hint">{t('home.joinPhoneHint')}</span>
                 </div>
-                  <div className="home__field">
-                    <label className="field-label" htmlFor="jvillage">{t('home.joinVillage')}</label>
-                    <input id="jvillage" value={form.village} onChange={change('village')} disabled={busy} />
-                  </div>
-                  <div className="home__field">
-                    <label className="field-label" htmlFor="joccupation">{t('home.joinOccupation')}</label>
-                    <input id="joccupation" value={form.occupation} onChange={change('occupation')} disabled={busy} />
-                  </div>
-                  <div className="home__field">
-                    <label className="field-label" htmlFor="jreason">{t('home.joinReason')}</label>
-                    <textarea id="jreason" rows={3} value={form.reason} onChange={change('reason')} disabled={busy} />
-                  </div>
+                <div className="home__field">
+                  <label className="field-label" htmlFor="jvillage">{t('home.joinVillage')}</label>
+                  <input id="jvillage" value={form.village} onChange={change('village')} disabled={busy} />
+                </div>
+                <div className="home__field">
+                  <label className="field-label" htmlFor="jdob">Date of birth</label>
+                  <input id="jdob" type="date" value={form.date_of_birth} onChange={change('date_of_birth')} disabled={busy} />
+                </div>
+                <div className="home__field">
+                  <label className="field-label" htmlFor="jnid">National ID / Identification</label>
+                  <input id="jnid" value={form.national_id} onChange={change('national_id')} disabled={busy} />
+                </div>
+                <div className="home__field">
+                  <label className="field-label" htmlFor="joccupation">{t('home.joinOccupation')}</label>
+                  <input id="joccupation" value={form.occupation} onChange={change('occupation')} disabled={busy} />
+                </div>
+                <div className="home__field">
+                  <label className="field-label" htmlFor="jreason">{t('home.joinReason')}</label>
+                  <textarea id="jreason" rows={3} value={form.reason} onChange={change('reason')} disabled={busy} />
+                </div>
+                <div className="home__field">
+                  <label>
+                    <input type="checkbox" checked={!!form.agreed_rules} onChange={(e) => setForm((f) => ({ ...f, agreed_rules: e.target.checked }))} disabled={busy} /> I agree to follow the VSLA rules and membership terms
+                  </label>
+                </div>
 
                 {questions.length > 0 && (
                   <div className="home__field home__bg">
@@ -298,7 +355,24 @@ export default function Home() {
                   </div>
                 )}
 
-                <button type="submit" className="btn btn--full" disabled={busy || !allAnswered}>
+                <div className="home__field">
+                  <span className="field-label">Eligibility screening</span>
+                  <button type="button" className="btn btn--ghost" onClick={runElig} disabled={busy}>Check eligibility</button>
+                  {elig && (
+                    <ul>
+                      <li>Age requirement (>=18): {elig.checks?.age ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Identification provided: {elig.checks?.identification ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Required information: {elig.checks?.required_info ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Valid phone number: {elig.checks?.valid_phone ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Agrees to VSLA rules: {elig.checks?.agrees_rules ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Existing membership: {elig.checks?.no_existing_member ? '✓ Passed' : '✗ Failed'}</li>
+                      <li>Existing pending request: {elig.checks?.no_pending_request ? '✓ Passed' : '✗ Failed'}</li>
+                    </ul>
+                  )}
+                  {elig && (elig.allPassed ? <p className="notice notice--good">Eligible to apply</p> : <p className="notice notice--danger">Not eligible to apply</p>)}
+                </div>
+
+                <button type="submit" className="btn btn--full" disabled={busy || !allAnswered || !elig?.allPassed}>
                   {busy ? t('common.sending') : t('home.joinSubmit')}
                 </button>
               </form>
