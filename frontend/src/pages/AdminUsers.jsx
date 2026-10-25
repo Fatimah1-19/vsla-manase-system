@@ -494,12 +494,12 @@ export default function AdminUsers() {
         title={t('admin.deactivateAccount')}
         onClose={() => setDeactivateFor(null)}
         footer={
-          <>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', alignItems: 'center', flexWrap: 'nowrap' }}>
             <button type="button" className="btn btn--ghost" onClick={() => setDeactivateFor(null)}>{t('common.cancel')}</button>
             <button type="button" className="btn btn--danger" onClick={doDeactivate} disabled={busy === deactivateFor?.id}>
               {busy === deactivateFor?.id ? t('common.saving') : t('admin.deactivate')}
             </button>
-          </>
+          </div>
         }
       >
         {deactivateFor && (
@@ -530,8 +530,7 @@ export default function AdminUsers() {
                 <input id="deact-other" value={deactivateOther} onChange={(e) => setDeactivateOther(e.target.value)} required />
               </div>
             )}
-            <p className="notice notice--warn">{t('admin.deactivateWarning')}</p>
-            <p className="settings__note">{t('admin.deactivateNote')}</p>
+            <p className="notice notice--warn">⚠ This task cannot be undone.</p>
           </form>
         )}
       </Modal>

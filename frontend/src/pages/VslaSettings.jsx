@@ -74,13 +74,13 @@ export default function VslaSettings({ readOnly = false }) {
 
   const load = useCallback(async () => {
     const [rows, sys, changes, smsInfo] = await Promise.all([
-      api.get('/settings/group-rules'),
-      readOnly ? Promise.resolve([]) : api.get('/settings/system'),
+      api.get('/settings/group-rules').catch(() => []),
+      readOnly ? Promise.resolve([]) : api.get('/settings/system').catch(() => []),
       readOnly ? Promise.resolve([]) : api.get('/admin/config-changes').catch(() => []),
       readOnly ? Promise.resolve(null) : api.get('/admin/sms').catch(() => null),
     ]);
     setSms(smsInfo);
-    const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
+    const map = Object.fromEntries((rows || []).map((r) => [r.setting_key, r.setting_value]));
     setGroup(map);
     let parsed = [];
     try {
@@ -88,7 +88,7 @@ export default function VslaSettings({ readOnly = false }) {
       if (Array.isArray(p)) parsed = p;
     } catch { parsed = []; }
     setQuestions(parsed.map((q) => ({ id: q.id || '', good: q.good === 'no' ? 'no' : 'yes', en: q.en || '', ny: q.ny || '' })));
-    setSystem(Object.fromEntries(sys.map((r) => [r.setting_key, r.setting_value])));
+    setSystem(Object.fromEntries((sys || []).map((r) => [r.setting_key, r.setting_value])));
     const list = changes || [];
     setChanges(list);
     const keys = new Set();
