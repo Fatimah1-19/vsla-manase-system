@@ -213,10 +213,7 @@ export default function AdminUsers() {
 
   return (
     <div className="adminusers">
-      <PageHeader
-        title={t('admin.title')}
-        subtitle={t('admin.subtitle')}
-      />
+      <PageHeader title={t('admin.title')} />
 
       {/* Search and filters */}
       <div className="adminusers__filters">
@@ -287,7 +284,7 @@ export default function AdminUsers() {
                       <td>{shortDate(a.created_at)}</td>
                       <td>{a.last_login ? dateTime(a.last_login) : t('admin.never')}</td>
                       <td>
-                        <div className="adminusers__rowActions">
+                        <div className="adminusers__rowActions" style={{ display: 'flex', flexWrap: 'nowrap', gap: '6px', alignItems: 'center', whiteSpace: 'nowrap' }}>
                           <button type="button" className="btn btn--small" onClick={() => openView(a)}>
                             {t('common.view')}
                           </button>
