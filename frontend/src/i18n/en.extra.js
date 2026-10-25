@@ -757,7 +757,7 @@ export default {
     addMember: 'Add a member', addAccount: 'Open an account',
     accounts: 'All accounts', role: 'Role', status: 'Status', lastLogin: 'Last signed in',
     active: 'Active', suspended: 'Deactivated', never: 'Never',
-    edit: 'Change details', suspend: 'Ask to deactivate', reactivate: 'Ask to reactivate',
+    edit: 'Change details', suspend: 'Ask to deactivate', reactivate: 'Reactivate', deactivate: 'Deactivate', deactivated: 'Deactivated',
     proposeChange: 'Ask the chairperson to confirm',
     myRequests: 'My requests', withdraw: 'Withdraw', noRequests: 'You have not asked for any change yet.',
     requestSent: 'Sent to the chairperson to confirm.', requestSentNote: 'It takes effect once the chairperson confirms it.',
@@ -801,7 +801,7 @@ export default {
     searchUsers: 'Search by name, username or phone',
     allRoles: 'All roles', allStatus: 'All statuses',
     noUsers: 'No account matches your search.',
-    resetPassword: 'Reset password', manageRole: 'Manage role',
+    resetPassword: 'Reset password', manageRole: 'Manage role', deactivateAccount: 'Deactivate Account', reasonForDeactivation: 'Reason for deactivation', selectReason: 'Select reason', specifyReason: 'Specify reason', reasonResigned: 'Resigned', reasonRemoved: 'Removed by group decision', reasonMisappropriation: 'Misappropriation of funds', reasonFraud: 'Fraudulent activity', reasonViolations: 'Repeated rule violations', reasonInactivity: 'Long-term inactivity', reasonLoanDefault: 'Serious loan default', reasonFalse: 'False or duplicate information/account', reasonDeceased: 'Deceased', reasonOther: 'Other', deactivateWarning: 'This action prevents the account from signing in. The account status will become Deactivated. Historical records (savings, loans, repayments, fines, welfare, share-out, meetings, audit history, etc.) will remain intact. This action cannot be undone easily.', deactivateNote: 'Only the System Administrator can perform this action. This action creates a mandatory audit trail entry.', confirmDeactivate: 'Deactivate {name}? This account will no longer be able to sign in.', deactivatedSuccess: 'Account deactivated.', confirmReactivate: 'Reactivate {name}? They will be able to log in again.', reactivatedSuccess: 'Account reactivated.',
     // Account details panel
     userDetails: 'Account details', username: 'Username', membershipNumber: 'Member number',
     mustChange: 'Must change password',

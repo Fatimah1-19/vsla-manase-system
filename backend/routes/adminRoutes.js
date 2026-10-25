@@ -11,6 +11,8 @@ router.get('/accounts/:id', requirePermission('accounts.view'), c.getAccount);
 router.post('/accounts', requirePermission('accounts.manage'), c.createAccount);
 router.patch('/accounts/:id/role', requirePermission('accounts.manage'), c.setSystemRole);
 router.post('/accounts/:id/reset-password', requirePermission('accounts.manage'), c.resetAccountPassword);
+router.post('/accounts/:id/deactivate', requirePermission('accounts.manage'), c.deactivateAccount);
+router.post('/accounts/:id/reactivate', requirePermission('accounts.manage'), c.reactivateAccount);
 
 router.get('/change-requests', requirePermission('accounts.view'), c.listMyChangeRequests);
 router.post('/change-requests', requirePermission('accounts.manage'), c.proposeChange);

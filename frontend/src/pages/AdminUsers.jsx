@@ -17,10 +17,10 @@ const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
 /** How one account stands right now: locked by wrong passwords, or on/off. */
 function statusOf(a) {
   if (a.locked_until && new Date(a.locked_until) > new Date()) return 'locked';
-  return a.is_active ? 'active' : 'suspended';
+  return a.is_active ? 'active' : 'deactivated';
 }
 
-const STATUS_TAG = { active: 'tag--green', suspended: 'tag--grey', locked: 'tag--gold' };
+const STATUS_TAG = { active: 'tag--green', deactivated: 'tag--grey', suspended: 'tag--grey', locked: 'tag--gold' };
 
 /**
  * The account table. The administrator searches it, opens a person's details,
@@ -44,6 +44,9 @@ export default function AdminUsers() {
   const [edit, setEdit] = useState(null);    // the "ask for a change" form
   const [view, setView] = useState(null);    // the details panel
   const [roleFor, setRoleFor] = useState(null); // the "manage role" panel
+  const [deactivateFor, setDeactivateFor] = useState(null); // direct deactivation modal
+  const [deactivateReason, setDeactivateReason] = useState('');
+  const [deactivateOther, setDeactivateOther] = useState('');
 
   const load = useCallback(async () => {
     const [members, myRequests] = await Promise.all([
@@ -104,45 +107,50 @@ export default function AdminUsers() {
     }
   }
 
-  async function askStatusChange(account) {
-    if (account.is_active) {
-      const reasons = [
-        { key: 'misconduct', label: t('members.deactivateReasons.misconduct') },
-        { key: 'nonCompliance', label: t('members.deactivateReasons.nonCompliance') },
-        { key: 'failureToContribute', label: t('members.deactivateReasons.failureToContribute') },
-        { key: 'other', label: t('members.deactivateReasons.other') },
-      ];
-      const reasonChoice = window.prompt(
-        `${t('members.deactivateReasonLabel')}:\n1) ${reasons[0].label}\n2) ${reasons[1].label}\n3) ${reasons[2].label}\n4) ${reasons[3].label}\n\nEnter 1-4`
-      );
-      if (!reasonChoice) return;
-      const idx = Number(reasonChoice.trim());
-      if (![1,2,3,4].includes(idx)) return;
-      let reasonDetail = reasons[idx-1].label;
-      if (idx === 4) {
-        const other = window.prompt(t('members.deactivateReasonOther'));
-        if (!other || !other.trim()) return;
-        reasonDetail = other.trim();
-      }
-      if (!(await confirm({ message: `${t('members.confirmSuspendWithReason').replace('{name}', account.full_name)} ${t('members.deactivateReasonLabel')}: ${reasonDetail}` }))) return;
-      setBusy(account.id);
-      try {
-        await api.post('/admin/change-requests', { kind: 'deactivate_user', target_user_id: account.id, reason: reasonDetail });
-        toast.success(t('admin.requestSent'));
-        await load();
-      } catch (err) {
-        toast.error(err.message);
-      } finally {
-        setBusy(0);
-      }
+  function openDeactivateModal(account) {
+    setDeactivateFor(account);
+    setDeactivateReason('');
+    setDeactivateOther('');
+  }
+
+  async function doDeactivate(e) {
+    if (e) e.preventDefault();
+    if (!deactivateFor) return;
+    if (!deactivateReason) {
+      toast.error(t('admin.selectReason'));
       return;
     }
-    const msg = t('admin.reactivate');
-    if (!(await confirm({ message: `${msg} — ${account.full_name}?` }))) return;
+    if (deactivateReason === 'Other' && !deactivateOther.trim()) {
+      toast.error(t('admin.specifyReason'));
+      return;
+    }
+    const msg = t('admin.confirmDeactivate').replace('{name}', deactivateFor.full_name);
+    if (!(await confirm({ message: msg }))) return;
+    setBusy(deactivateFor.id);
+    try {
+      await api.post(`/admin/accounts/${deactivateFor.id}/deactivate`, {
+        reason: deactivateReason,
+        reasonDetail: deactivateOther,
+      });
+      toast.success(t('admin.deactivatedSuccess'));
+      setDeactivateFor(null);
+      setDeactivateReason('');
+      setDeactivateOther('');
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(0);
+    }
+  }
+
+  async function doReactivate(account) {
+    const msg = t('admin.confirmReactivate').replace('{name}', account.full_name);
+    if (!(await confirm({ message: msg }))) return;
     setBusy(account.id);
     try {
-      await api.post('/admin/change-requests', { kind: 'reactivate_user', target_user_id: account.id });
-      toast.success(t('admin.requestSent'));
+      await api.post(`/admin/accounts/${account.id}/reactivate`);
+      toast.success(t('admin.reactivatedSuccess'));
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -232,6 +240,7 @@ export default function AdminUsers() {
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">{t('admin.allStatus')}</option>
             <option value="active">{t('admin.active')}</option>
+            <option value="deactivated">{t('admin.deactivated')}</option>
             <option value="suspended">{t('admin.suspended')}</option>
             <option value="locked">{t('admin.statusLocked')}</option>
           </select>
@@ -272,7 +281,7 @@ export default function AdminUsers() {
                       <td><span className="tag">{t(`roles.${a.role}`)}</span></td>
                       <td>
                         <span className={`tag ${STATUS_TAG[st]}`}>
-                          {st === 'active' ? t('admin.active') : st === 'suspended' ? t('admin.suspended') : t('admin.statusLocked')}
+                          {st === 'active' ? t('admin.active') : st === 'deactivated' || st === 'suspended' ? t('admin.deactivated') : t('admin.statusLocked')}
                         </span>
                       </td>
                       <td>{shortDate(a.created_at)}</td>
@@ -288,15 +297,21 @@ export default function AdminUsers() {
                           })}>
                             {t('admin.edit')}
                           </button>
-                          <button type="button" className={a.is_active ? "btn btn--small btn--danger" : "btn btn--small btn--sky"} disabled={busy === a.id} onClick={() => askStatusChange(a)}>
-                            {a.is_active ? t('admin.suspend') : t('admin.reactivate')}
+                          <button type="button" className="btn btn--small" onClick={() => setRoleFor(a)}>
+                            {t('admin.manageRole')}
                           </button>
                           <button type="button" className="btn btn--small btn--sky" disabled={busy === a.id} onClick={() => resetPassword(a)}>
                             {t('admin.resetPassword')}
                           </button>
-                          <button type="button" className="btn btn--small" onClick={() => setRoleFor(a)}>
-                            {t('admin.manageRole')}
-                          </button>
+                          {a.is_active ? (
+                            <button type="button" className="btn btn--small btn--danger" disabled={busy === a.id} onClick={() => openDeactivateModal(a)}>
+                              {t('admin.deactivate')}
+                            </button>
+                          ) : (
+                            <button type="button" className="btn btn--small btn--sky" disabled={busy === a.id} onClick={() => doReactivate(a)}>
+                              {t('admin.reactivate')}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -427,7 +442,7 @@ export default function AdminUsers() {
             <div><dt>{t('admin.fullName')}</dt><dd>{view.full_name}</dd></div>
             <div><dt>{t('admin.username')}</dt><dd><code>{view.username}</code></dd></div>
             <div><dt>{t('common.role')}</dt><dd>{t(`roles.${view.role}`)}</dd></div>
-            <div><dt>{t('common.status')}</dt><dd>{statusOf(view) === 'active' ? t('admin.active') : statusOf(view) === 'suspended' ? t('admin.suspended') : t('admin.statusLocked')}</dd></div>
+            <div><dt>{t('common.status')}</dt><dd>{statusOf(view) === 'active' ? t('admin.active') : statusOf(view) === 'deactivated' || statusOf(view) === 'suspended' ? t('admin.deactivated') : t('admin.statusLocked')}</dd></div>
             <div><dt>{t('admin.contact')}</dt><dd>{view.phone || '—'}</dd></div>
             <div><dt>{t('admin.membershipNumber')}</dt><dd>{view.membership_number || '—'}</dd></div>
             <div><dt>{t('admin.village')}</dt><dd>{view.village || '—'}</dd></div>
@@ -470,6 +485,54 @@ export default function AdminUsers() {
               <p className="settings__note">{t('admin.roleNote')}</p>
             )}
           </div>
+        )}
+      </Modal>
+
+      {/* Deactivate account */}
+      <Modal
+        open={!!deactivateFor}
+        title={t('admin.deactivateAccount')}
+        onClose={() => setDeactivateFor(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => setDeactivateFor(null)}>{t('common.cancel')}</button>
+            <button type="button" className="btn btn--danger" onClick={doDeactivate} disabled={busy === deactivateFor?.id}>
+              {busy === deactivateFor?.id ? t('common.saving') : t('admin.deactivate')}
+            </button>
+          </>
+        }
+      >
+        {deactivateFor && (
+          <form onSubmit={doDeactivate} className="settings__form">
+            <div className="settings__row">
+              <p><strong>{deactivateFor.full_name}</strong> <span className="muted">({deactivateFor.username})</span></p>
+              <p className="muted">{t('common.status')}: {deactivateFor.is_active ? t('admin.active') : t('admin.deactivated')}</p>
+            </div>
+            <div className="settings__row">
+              <label className="field-label" htmlFor="deact-reason">{t('admin.reasonForDeactivation')}</label>
+              <select id="deact-reason" value={deactivateReason} onChange={(e) => setDeactivateReason(e.target.value)} required>
+                <option value="">{t('admin.selectReason')}</option>
+                <option value="Resigned">{t('admin.reasonResigned')}</option>
+                <option value="Removed by group decision">{t('admin.reasonRemoved')}</option>
+                <option value="Misappropriation of funds">{t('admin.reasonMisappropriation')}</option>
+                <option value="Fraudulent activity">{t('admin.reasonFraud')}</option>
+                <option value="Repeated rule violations">{t('admin.reasonViolations')}</option>
+                <option value="Long-term inactivity">{t('admin.reasonInactivity')}</option>
+                <option value="Serious loan default">{t('admin.reasonLoanDefault')}</option>
+                <option value="False or duplicate information/account">{t('admin.reasonFalse')}</option>
+                <option value="Deceased">{t('admin.reasonDeceased')}</option>
+                <option value="Other">{t('admin.reasonOther')}</option>
+              </select>
+            </div>
+            {deactivateReason === 'Other' && (
+              <div className="settings__row">
+                <label className="field-label" htmlFor="deact-other">{t('admin.specifyReason')}</label>
+                <input id="deact-other" value={deactivateOther} onChange={(e) => setDeactivateOther(e.target.value)} required />
+              </div>
+            )}
+            <p className="notice notice--warn">{t('admin.deactivateWarning')}</p>
+            <p className="settings__note">{t('admin.deactivateNote')}</p>
+          </form>
         )}
       </Modal>
     </div>

@@ -752,7 +752,7 @@ export default {
     addMember: 'Onjezani membala', addAccount: 'Tsegulani akaunti',
     accounts: 'Maakaunti onse', role: 'Udindo', status: 'Mkhalidwe', lastLogin: 'Kulowa komaliza',
     active: 'Akugwira', suspended: 'Aletsedwa', never: 'Sanatuluke',
-    edit: 'Sinthani zambiri', suspend: 'Pemphani kuletsa', reactivate: 'Pemphani kubweza',
+    edit: 'Sinthani zambiri', suspend: 'Pemphani kuletsa', reactivate: 'Bwezeretsani', deactivate: 'Yimitsani', deactivated: 'Waimitsidwa',
     proposeChange: 'Pemphani mtsogoleri kutsimikizira',
     myRequests: 'Zopempha zanga', withdraw: 'Chotsani', noRequests: 'Simunapemphe kusintha kulikonse.',
     requestSent: 'Zatumizidwa kwa mtsogoleri kuti atsimikizire.', requestSentNote: 'Zimagwira ntchito mtsogoleri akatsimikizira.',
@@ -793,7 +793,7 @@ export default {
     searchUsers: 'Fufuzani dzina, dzina lolowera kapena foni',
     allRoles: 'Maudindo onse', allStatus: 'Mikhalidwe yonse',
     noUsers: 'Palibe akaunti yogwirizana ndi kufufuza kwanu.',
-    resetPassword: 'Sinthani achinsinsi', manageRole: 'Yang\'anirani udindo',
+    resetPassword: 'Sinthani achinsinsi', manageRole: 'Yang\'anirani udindo', deactivateAccount: 'Yimitsani Akaunti', reasonForDeactivation: 'Chifukwa choyimitsira', selectReason: 'Sankhani chifukwa', specifyReason: 'Fotokozani chifukwa', reasonResigned: 'Anasiya', reasonRemoved: 'Anachotsedwa ndi chigamulo cha gulu', reasonMisappropriation: 'Kubisa ndalama', reasonFraud: 'Chinyengo', reasonViolations: 'Kuphwanya malamulo mobwerezabwereza', reasonInactivity: 'Kusachita kwa nthawi yayitali', reasonLoanDefault: 'Kulephera kubweza ngongole kwambiri', reasonFalse: 'Zabodza kapena zolembedwa kawiri', reasonDeceased: 'Wamwalira', reasonOther: 'Zina', deactivateWarning: 'Izi ziletsera akauntiyi kulowa. Mkhalidwe wake udzakhala Waimitsidwa. Zolemba zonse zidzakhala zosinthidwa. Sizingachotsedwe mosavuta.', deactivateNote: 'Mwini dongosolo yekha angachite izi. Izi zipanga zolembedwa mu mbiri ya kasamalidwe.', confirmDeactivate: 'Yimitsani {name}? Akauntiyi sidzathanso kulowa.', deactivatedSuccess: 'Akaunti yaimitsidwa.', confirmReactivate: 'Bwezeretsani {name}? Adzatha kulowanso.', reactivatedSuccess: 'Akaunti yabwezeretsedwa.',
     // Account details panel
     userDetails: 'Zambiri za akaunti', username: 'Dzina lolowera', membershipNumber: 'Nambala ya membala',
     mustChange: 'Ayenera kusintha achinsinsi',

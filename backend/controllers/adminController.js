@@ -372,6 +372,93 @@ const setSystemRole = wrap(async (req, res) => {
   });
 });
 
+// POST /api/admin/accounts/:id/deactivate — system administrator deactivates directly
+const deactivateAccount = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const { reason, reasonDetail } = req.body || {};
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+  if (id === req.user.id) return res.status(400).json({ message: 'You cannot deactivate your own account.' });
+
+  if (!reason) return res.status(400).json({ message: 'Select a reason for deactivation.' });
+  const allowed = [
+    'Resigned',
+    'Removed by group decision',
+    'Misappropriation of funds',
+    'Fraudulent activity',
+    'Repeated rule violations',
+    'Long-term inactivity',
+    'Serious loan default',
+    'False or duplicate information/account',
+    'Deceased',
+    'Other',
+  ];
+  if (!allowed.includes(reason)) return res.status(400).json({ message: 'Select a valid reason for deactivation.' });
+  if (reason === 'Other') {
+    if (!reasonDetail || !String(reasonDetail).trim()) {
+      return res.status(400).json({ message: 'Specify the reason.' });
+    }
+  }
+
+  const target = await one(`SELECT id, full_name, role, is_active, username FROM users WHERE id = $1`, [id]);
+  if (!target) return res.status(404).json({ message: 'That account does not exist.' });
+  if (!target.is_active) return res.status(400).json({ message: 'That account is already deactivated.' });
+
+  const removable = canRemoveAdministrator({
+    targetIsAdmin: target.role === 'system_admin',
+    activeAdministrators: await activeAdministrators(),
+  });
+  if (!removable.ok) {
+    return res.status(400).json({ message: 'This is the only active administrator. Keep at least one.' });
+  }
+
+  const openLoan = await one(
+    `SELECT l.id FROM loans l JOIN members m ON m.id = l.member_id
+      WHERE m.user_id = $1 AND l.status IN ('pending','approved') LIMIT 1`,
+    [target.id]
+  );
+  if (openLoan) return res.status(400).json({ message: 'That member still has an open loan. It must be settled first.' });
+
+  const finalReason = reason === 'Other' ? String(reasonDetail).trim() : reason;
+  await query(`UPDATE users SET is_active = FALSE WHERE id = $1`, [target.id]);
+  await query(`UPDATE members SET status = 'inactive' WHERE user_id = $1`, [target.id]);
+
+  await audit(
+    req.user.id,
+    'DEACTIVATE_ACCOUNT',
+    'users',
+    target.id,
+    `Deactivated ${target.full_name} (${target.username}) by ${req.user.full_name} (${req.user.role}). Reason: ${finalReason}`,
+    { previous: 'active', next: 'deactivated' }
+  );
+
+  res.json({ message: `${target.full_name} has been deactivated.`, reason: finalReason });
+});
+
+// POST /api/admin/accounts/:id/reactivate — system administrator reactivates directly
+const reactivateAccount = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+  if (id === req.user.id) return res.status(400).json({ message: 'You cannot reactivate your own account.' });
+
+  const target = await one(`SELECT id, full_name, role, is_active, username FROM users WHERE id = $1`, [id]);
+  if (!target) return res.status(404).json({ message: 'That account does not exist.' });
+  if (target.is_active) return res.status(400).json({ message: 'That account is already active.' });
+
+  await query(`UPDATE users SET is_active = TRUE, failed_attempts = 0, locked_until = NULL WHERE id = $1`, [target.id]);
+  await query(`UPDATE members SET status = 'active' WHERE user_id = $1`, [target.id]);
+
+  await audit(
+    req.user.id,
+    'REACTIVATE_ACCOUNT',
+    'users',
+    target.id,
+    `Reactivated ${target.full_name} (${target.username}) by ${req.user.full_name} (${req.user.role})`,
+    { previous: 'deactivated', next: 'active' }
+  );
+
+  res.json({ message: `${target.full_name} has been reactivated.` });
+});
+
 // POST /api/admin/accounts/:id/reset-password — the administrator sets a fresh
 // password and texts it. The member must choose her own the next time she signs in.
 const resetAccountPassword = wrap(async (req, res) => {
@@ -448,6 +535,7 @@ const smsInfo = wrap(async (req, res) => {
 
 module.exports = {
   listMembers, getAccount, createAccount, resetAccountPassword,
+  deactivateAccount, reactivateAccount,
   listMyChangeRequests, proposeChange, withdrawChangeRequest,
   listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,
   smsInfo,
