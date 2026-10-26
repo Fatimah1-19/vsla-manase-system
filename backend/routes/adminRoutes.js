@@ -9,6 +9,7 @@ router.use(protect);
 router.get('/members', requirePermission('accounts.view'), c.listMembers);
 router.get('/accounts/:id', requirePermission('accounts.view'), c.getAccount);
 router.post('/accounts', requirePermission('accounts.manage'), c.createAccount);
+router.patch('/accounts/:id', requirePermission('accounts.manage'), c.updateAccount);
 router.patch('/accounts/:id/role', requirePermission('accounts.manage'), c.setSystemRole);
 router.post('/accounts/:id/reset-password', requirePermission('accounts.manage'), c.resetAccountPassword);
 router.post('/accounts/:id/deactivate', requirePermission('accounts.manage'), c.deactivateAccount);

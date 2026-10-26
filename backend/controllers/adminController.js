@@ -54,7 +54,41 @@ const getAccount = wrap(async (req, res) => {
   res.json(row);
 });
 
-// POST /api/admin/accounts — the administrator opens an account for a new member
+// PATCH /api/admin/accounts/:id — the administrator edits account details directly
+const updateAccount = wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ message: 'Choose the account.' });
+
+  const target = await one(`SELECT id, full_name FROM users WHERE id = $1`, [id]);
+  if (!target) return res.status(404).json({ message: 'That account does not exist.' });
+
+  const clean = {};
+  for (const key of EDITABLE) {
+    if (req.body?.[key] !== undefined && String(req.body[key]).trim() !== '') {
+      clean[key] = String(req.body[key]).trim();
+    }
+  }
+  if (!Object.keys(clean).length) {
+    return res.status(400).json({ message: 'There is nothing to change.' });
+  }
+  if (clean.language && !['en', 'ny'].includes(clean.language)) clean.language = 'ny';
+
+  await query(
+    `UPDATE users SET full_name = COALESCE($2, full_name), phone = COALESCE($3, phone),
+                      language = COALESCE($4, language)
+      WHERE id = $1`,
+    [id, clean.full_name || null, clean.phone || null, clean.language || null]
+  );
+
+  if (clean.village) {
+    await query(`UPDATE members SET village = $2 WHERE user_id = $1`, [id, clean.village]);
+  }
+
+  await audit(req.user.id, 'UPDATE_USER', 'users', id, clean.full_name || target.full_name);
+  res.json({ message: 'Details saved.' });
+});
+
+// POST /api/admin/accounts - the administrator opens an account for a new member
 const createAccount = wrap(async (req, res) => {
   const { full_name, phone, language = 'ny', village } = req.body || {};
 
@@ -534,7 +568,7 @@ const smsInfo = wrap(async (req, res) => {
 });
 
 module.exports = {
-  listMembers, getAccount, createAccount, resetAccountPassword,
+  listMembers, getAccount, updateAccount, createAccount, resetAccountPassword,
   deactivateAccount, reactivateAccount,
   listMyChangeRequests, proposeChange, withdrawChangeRequest,
   listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,

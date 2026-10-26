@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -8,24 +9,52 @@ import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
-import { shortDate, dateTime } from '../utils/format.js';
+import StatCard from '../components/StatCard.jsx';
+import { shortDate, dateTime, plainNumber, humanAction } from '../utils/format.js';
 import '../styles.css';
 
 const ROLE_ORDER = ['admin', 'treasurer', 'secretary', 'member', 'system_admin'];
 const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
+const OVERVIEW_ROLES = [
+  { key: 'system_admin', label: 'admin.administrators' },
+  { key: 'admin', label: 'admin.chairpersons' },
+  { key: 'secretary', label: 'admin.secretaries' },
+  { key: 'treasurer', label: 'admin.treasurers' },
+  { key: 'member', label: 'admin.membersLabel' },
+];
+const ACCOUNT_ACTION_LABELS = {
+  CREATE_USER: 'admin.accountCreated',
+  UPDATE_USER: 'admin.accountDetailsUpdated',
+  DEACTIVATE_USER: 'admin.accountDeactivated',
+  DEACTIVATE_ACCOUNT: 'admin.accountDeactivated',
+  REACTIVATE_USER: 'admin.accountReactivated',
+  REACTIVATE_ACCOUNT: 'admin.accountReactivated',
+  UNLOCK_USER: 'admin.accountUnlocked',
+  ADMIN_RESET_PASSWORD: 'admin.accountPasswordReset',
+  GRANT_SYSTEM_ADMIN: 'admin.accountAdminGranted',
+  REVOKE_SYSTEM_ADMIN: 'admin.accountAdminRemoved',
+};
 
-/** How one account stands right now: locked by wrong passwords, or on/off. */
+/** How one account stands right now: locked by wrong passwords, suspended, or on/off. */
 function statusOf(a) {
   if (a.locked_until && new Date(a.locked_until) > new Date()) return 'locked';
-  return a.is_active ? 'active' : 'deactivated';
+  if (!a.is_active || a.member_status === 'dismissed') return 'deactivated';
+  if (a.member_status === 'suspended') return 'suspended';
+  return 'active';
 }
 
-const STATUS_TAG = { active: 'tag--green', deactivated: 'tag--grey', suspended: 'tag--grey', locked: 'tag--gold' };
+const STATUS_TAG = { active: 'tag--green', deactivated: 'tag--grey', suspended: 'tag--gold', locked: 'tag--gold' };
+const STATUS_LABEL = {
+  active: 'admin.active',
+  deactivated: 'admin.deactivated',
+  suspended: 'admin.statusSuspended',
+  locked: 'admin.statusLocked',
+};
 
 /**
- * The account table. The administrator searches it, opens a person's details,
- * asks the chairperson to change details or suspend an account, sets a fresh
- * password herself, and hands out or takes back the system-administrator role.
+ * The account table and overview. The administrator searches accounts, opens a
+ * person's details, edits them directly, sets a fresh password herself, and
+ * hands out or takes back the system-administrator role.
  */
 export default function AdminUsers() {
   const { t } = useLang();
@@ -34,14 +63,14 @@ export default function AdminUsers() {
   const { user, isSystemAdmin } = useAuth();
 
   const [accounts, setAccounts] = useState(null);
-  const [requests, setRequests] = useState([]);
+  const [activity, setActivity] = useState([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [busy, setBusy] = useState(0);
 
   const [add, setAdd] = useState(null);      // the "open an account" form
-  const [edit, setEdit] = useState(null);    // the "ask for a change" form
+  const [edit, setEdit] = useState(null);    // the "change details" form
   const [view, setView] = useState(null);    // the details panel
   const [roleFor, setRoleFor] = useState(null); // the "manage role" panel
   const [deactivateFor, setDeactivateFor] = useState(null); // direct deactivation modal
@@ -49,15 +78,42 @@ export default function AdminUsers() {
   const [deactivateOther, setDeactivateOther] = useState('');
 
   const load = useCallback(async () => {
-    const [members, myRequests] = await Promise.all([
-      api.get('/admin/members'),
-      api.get('/admin/change-requests'),
-    ]);
-    setAccounts(members);
-    setRequests(myRequests);
+    setAccounts(await api.get('/admin/members'));
   }, []);
 
-  useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+  const loadActivity = useCallback(async () => {
+    try {
+      const res = await api.get('/audit?scope=accounts&limit=5');
+      setActivity(res.rows || []);
+    } catch {
+      setActivity([]);
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    await Promise.all([load(), loadActivity()]);
+  }, [load, loadActivity]);
+
+  useEffect(() => { refresh().catch((e) => toast.error(e.message)); }, [refresh, toast]);
+
+  const summary = useMemo(() => {
+    const rows = accounts || [];
+    const isDeactivated = (a) => !a.is_active || a.member_status === 'dismissed';
+    const isSuspended = (a) => !isDeactivated(a) && a.member_status === 'suspended';
+    const isActive = (a) => !isDeactivated(a) && !isSuspended(a);
+    const roleCount = (role) => rows.filter((a) => a.role === role).length;
+    return {
+      total: rows.length,
+      active: rows.filter(isActive).length,
+      suspended: rows.filter(isSuspended).length,
+      deactivated: rows.filter(isDeactivated).length,
+      roles: Object.fromEntries(OVERVIEW_ROLES.map(({ key }) => [key, roleCount(key)])),
+    };
+  }, [accounts]);
+
+  const namesById = useMemo(() => {
+    return new Map((accounts || []).map((a) => [a.id, a.full_name]));
+  }, [accounts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -78,7 +134,7 @@ export default function AdminUsers() {
       toast.success(res.message);
       if (!res.sms_sent) toast.info(res.sms_error || t('admin.passwordNotTexted'));
       setAdd(null);
-      await load();
+      await refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -94,12 +150,10 @@ export default function AdminUsers() {
       for (const key of ['full_name', 'phone', 'language', 'village']) {
         if (edit[key]) payload[key] = edit[key];
       }
-      await api.post('/admin/change-requests', {
-        kind: 'update_user', target_user_id: edit.id, payload, reason: edit.reason,
-      });
-      toast.success(t('admin.requestSent'));
+      await api.patch(`/admin/accounts/${edit.id}`, payload);
+      toast.success(t('admin.detailsSaved'));
       setEdit(null);
-      await load();
+      await refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -136,7 +190,7 @@ export default function AdminUsers() {
       setDeactivateFor(null);
       setDeactivateReason('');
       setDeactivateOther('');
-      await load();
+      await refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -151,7 +205,7 @@ export default function AdminUsers() {
     try {
       await api.post(`/admin/accounts/${account.id}/reactivate`);
       toast.success(t('admin.reactivatedSuccess'));
-      await load();
+      await refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -182,7 +236,7 @@ export default function AdminUsers() {
       const res = await api.patch(`/admin/accounts/${account.id}/role`, { system_admin: makeAdmin });
       toast.success(res.message);
       setRoleFor(null);
-      await load();
+      await refresh();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -199,21 +253,87 @@ export default function AdminUsers() {
     }
   }
 
-  async function withdraw(id) {
-    if (!(await confirm({ message: t('admin.withdraw') + '?' }))) return;
-    try {
-      await api.post(`/admin/change-requests/${id}/withdraw`);
-      await load();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }
-
   if (!accounts) return <Spinner />;
 
   return (
     <div className="adminusers">
-      <PageHeader title={t('admin.title')} />
+      <PageHeader title={t('admin.title')} subtitle={t('admin.subtitle')} />
+
+      {/* Account management overview */}
+      <section className="adminusers__overview" aria-labelledby="accountOverviewTitle">
+        <div className="adminusers__overviewHead">
+          <div>
+            <h2 id="accountOverviewTitle" className="dash__sectionTitle">{t('admin.accountOverview')}</h2>
+            <p className="sysadmin__note">{t('admin.accountOverviewNote')}</p>
+          </div>
+          <Link to="/app/activity" className="btn btn--ghost btn--small">{t('admin.viewFullAudit')}</Link>
+        </div>
+
+        <div className="page-grid page-grid--stat adminusers__summary">
+          <StatCard label={t('admin.totalAccounts')} value={plainNumber(summary.total)} icon="members" />
+          <StatCard label={t('admin.activeAccounts')} value={plainNumber(summary.active)} tone="green" icon="members" />
+          <StatCard
+            label={t('admin.suspendedAccounts')}
+            value={plainNumber(summary.suspended)}
+            tone={summary.suspended > 0 ? 'gold' : 'plain'}
+            icon="lock"
+          />
+          <StatCard
+            label={t('admin.deactivatedAccounts')}
+            value={plainNumber(summary.deactivated)}
+            tone={summary.deactivated > 0 ? 'red' : 'plain'}
+            icon="lock"
+          />
+        </div>
+
+        <div className="adminusers__overviewGrid">
+          <section className="dash__card">
+            <h3 className="dash__sectionTitle">{t('admin.roleBreakdown')}</h3>
+            <ul className="adminusers__roleCounts">
+              {OVERVIEW_ROLES.map((role) => (
+                <li key={role.key}>
+                  <span>{t(role.label)}</span>
+                  <strong>{plainNumber(summary.roles[role.key])}</strong>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="dash__card">
+            <h3 className="dash__sectionTitle">{t('admin.recentAccountChanges')}</h3>
+            {activity.length === 0 ? (
+              <p className="muted">{t('admin.noRecentAccountChanges')}</p>
+            ) : (
+              <div className="adminusers__activityScroll">
+                <table className="sysadmin__table adminusers__activity">
+                  <thead>
+                    <tr>
+                      <th>{t('admin.actDate')}</th>
+                      <th>{t('admin.accountMember')}</th>
+                      <th>{t('admin.actAction')}</th>
+                      <th>{t('admin.changedBy')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activity.map((row) => {
+                      const member = namesById.get(Number(row.entity_id));
+                      const actionKey = ACCOUNT_ACTION_LABELS[row.action];
+                      return (
+                        <tr key={row.id}>
+                          <td>{shortDate(row.created_at)}</td>
+                          <td>{member || '—'}</td>
+                          <td>{actionKey ? t(actionKey) : humanAction(row.action)}</td>
+                          <td>{row.full_name || t('activity.system')}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+      </section>
 
       {/* Search and filters */}
       <div className="adminusers__filters">
@@ -238,7 +358,7 @@ export default function AdminUsers() {
             <option value="">{t('admin.allStatus')}</option>
             <option value="active">{t('admin.active')}</option>
             <option value="deactivated">{t('admin.deactivated')}</option>
-            <option value="suspended">{t('admin.suspended')}</option>
+            <option value="suspended">{t('admin.statusSuspended')}</option>
             <option value="locked">{t('admin.statusLocked')}</option>
           </select>
         </label>
@@ -278,7 +398,7 @@ export default function AdminUsers() {
                       <td><span className="tag">{t(`roles.${a.role}`)}</span></td>
                       <td>
                         <span className={`tag ${STATUS_TAG[st]}`}>
-                          {st === 'active' ? t('admin.active') : st === 'deactivated' || st === 'suspended' ? t('admin.deactivated') : t('admin.statusLocked')}
+                          {t(STATUS_LABEL[st])}
                         </span>
                       </td>
                       <td>{shortDate(a.created_at)}</td>
@@ -290,7 +410,7 @@ export default function AdminUsers() {
                           </button>
                           <button type="button" className="btn btn--small btn--gold" onClick={() => setEdit({
                             id: a.id, full_name: a.full_name, phone: a.phone || '',
-                            language: a.language || 'ny', village: a.village || '', reason: '',
+                            language: a.language || 'ny', village: a.village || '',
                           })}>
                             {t('admin.edit')}
                           </button>
@@ -317,34 +437,6 @@ export default function AdminUsers() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
-
-      {/* What the administrator has already asked the chairperson for */}
-      <section className="dash__card adminusers__requestsCard">
-        <h2 className="dash__sectionTitle">{t('admin.myRequests')}</h2>
-        {requests.length === 0 ? (
-          <p className="muted">{t('admin.noRequests')}</p>
-        ) : (
-          <ul className="adminusers__requests">
-            {requests.map((r) => (
-              <li key={r.id} className="adminusers__request">
-                <div>
-                  <strong>{t(`admin.kind_${r.kind}`)}</strong>
-                  {r.target_name ? <span className="muted"> · {r.target_name}</span> : null}
-                  <p className="muted">{shortDate(r.created_at)}</p>
-                </div>
-                <span className={`tag ${r.status === 'approved' ? 'tag--green' : r.status === 'rejected' ? 'tag--grey' : 'tag--gold'}`}>
-                  {t(`admin.status${r.status.charAt(0).toUpperCase()}${r.status.slice(1)}`)}
-                </span>
-                {r.status === 'pending' && (
-                  <button type="button" className="btn btn--ghost btn--small" onClick={() => withdraw(r.id)}>
-                    {t('admin.withdraw')}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
         )}
       </section>
 
@@ -383,21 +475,21 @@ export default function AdminUsers() {
                 <option value="en">{t('admin.languageEn')}</option>
               </select>
             </div>
-            <p className="settings__note">{t('admin.requestSentNote')}</p>
+            <p className="settings__note">{t('admin.accountCreatedNote')}</p>
           </form>
         )}
       </Modal>
 
-      {/* Ask for a change */}
+      {/* Change account details */}
       <Modal
         open={!!edit}
-        title={t('admin.proposeChange')}
+        title={t('admin.edit')}
         onClose={() => setEdit(null)}
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</button>
             <button type="submit" form="editAccountForm" className="btn" disabled={busy === -1}>
-              {busy === -1 ? t('common.sending') : t('admin.proposeChange')}
+              {busy === -1 ? t('common.saving') : t('common.save')}
             </button>
           </>
         }
@@ -423,11 +515,6 @@ export default function AdminUsers() {
                 <option value="en">{t('admin.languageEn')}</option>
               </select>
             </div>
-            <div className="settings__row">
-              <label className="field-label" htmlFor="edit-reason">{t('admin.reason')}</label>
-              <input id="edit-reason" value={edit.reason} onChange={(e) => setEdit({ ...edit, reason: e.target.value })} />
-            </div>
-            <p className="settings__note">{t('admin.requestSentNote')}</p>
           </form>
         )}
       </Modal>
@@ -439,7 +526,7 @@ export default function AdminUsers() {
             <div><dt>{t('admin.fullName')}</dt><dd>{view.full_name}</dd></div>
             <div><dt>{t('admin.username')}</dt><dd><code>{view.username}</code></dd></div>
             <div><dt>{t('common.role')}</dt><dd>{t(`roles.${view.role}`)}</dd></div>
-            <div><dt>{t('common.status')}</dt><dd>{statusOf(view) === 'active' ? t('admin.active') : statusOf(view) === 'deactivated' || statusOf(view) === 'suspended' ? t('admin.deactivated') : t('admin.statusLocked')}</dd></div>
+            <div><dt>{t('common.status')}</dt><dd>{t(STATUS_LABEL[statusOf(view)])}</dd></div>
             <div><dt>{t('admin.contact')}</dt><dd>{view.phone || '—'}</dd></div>
             <div><dt>{t('admin.membershipNumber')}</dt><dd>{view.membership_number || '—'}</dd></div>
             <div><dt>{t('admin.village')}</dt><dd>{view.village || '—'}</dd></div>

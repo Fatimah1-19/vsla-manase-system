@@ -4877,12 +4877,28 @@ section[id] { scroll-margin-top: 4.5rem; }
 .sysadmin__quick { margin-top: 1.4rem; }
 .sysadmin__links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.6rem; }
 
-.adminusers__requests { list-style: none; margin: 0; padding: 0; }
-.adminusers__request {
-  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  padding: 0.6rem 0; border-bottom: 1px solid var(--rule);
+.adminusers__overview { margin: 0 0 var(--space-lg); }
+.adminusers__overviewHead {
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+  gap: 0.6rem 0.9rem; margin-bottom: 0.75rem;
 }
-.adminusers__request:last-child { border-bottom: 0; }
+.adminusers__overviewHead .dash__sectionTitle { margin-bottom: 0.15rem; }
+.adminusers__summary { margin: 0 0 1rem; }
+.adminusers__overviewGrid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+.adminusers__overviewGrid > .dash__card { margin-bottom: 0; }
+.adminusers__roleCounts { list-style: none; margin: 0; padding: 0; }
+.adminusers__roleCounts li {
+  display: flex; justify-content: space-between; gap: 0.75rem;
+  padding: 0.45rem 0; border-bottom: 1px solid var(--rule);
+}
+.adminusers__roleCounts li:last-child { border-bottom: 0; }
+.adminusers__roleCounts span { color: var(--slate); }
+.adminusers__activityScroll { overflow-x: auto; }
+.adminusers__activity { min-width: 560px; }
+.adminusers__activity td { vertical-align: top; }
+@media (min-width: 900px) {
+  .adminusers__overviewGrid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr); }
+}
 .adminusers__list {
   list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.75rem;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -5020,7 +5036,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 .adminusers__sub { margin-top: 0.15rem; font-size: 0.78rem; color: var(--slate); }
 .adminusers__rowActions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 .adminusers__rowActions .btn { white-space: nowrap; }
-.adminusers__requestsCard { margin-top: 1.4rem; }
+
 .adminusers__details { margin: 0; display: grid; gap: 0.45rem; }
 .adminusers__details > div { display: flex; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.45rem; }
 .adminusers__details dt { color: var(--slate); font-size: 0.85rem; }

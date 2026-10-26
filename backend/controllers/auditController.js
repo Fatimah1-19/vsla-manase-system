@@ -18,6 +18,20 @@ const ADMINISTRATIVE_ACTIONS = [
   'UPDATE_MEETING',     // the written-up meeting record was updated
 ];
 
+// The account-management actions shown on the System Administrator's overview.
+const ACCOUNT_ACTIONS = [
+  'CREATE_USER',
+  'UPDATE_USER',
+  'DEACTIVATE_USER',
+  'REACTIVATE_USER',
+  'UNLOCK_USER',
+  'DEACTIVATE_ACCOUNT',
+  'REACTIVATE_ACCOUNT',
+  'ADMIN_RESET_PASSWORD',
+  'GRANT_SYSTEM_ADMIN',
+  'REVOKE_SYSTEM_ADMIN',
+];
+
 // Turn the page's filters into a WHERE clause. Shared by the list and the export.
 function buildFilters(req) {
   const { action, user_id, from, to, q, scope } = req.query;
@@ -26,6 +40,10 @@ function buildFilters(req) {
   if (action) { params.push(action); where.push(`a.action = $${params.length}`); }
   if (scope === 'administrative') {
     params.push(ADMINISTRATIVE_ACTIONS);
+    where.push(`a.action = ANY($${params.length})`);
+  }
+  if (scope === 'accounts') {
+    params.push(ACCOUNT_ACTIONS);
     where.push(`a.action = ANY($${params.length})`);
   }
   if (user_id) { params.push(Number(user_id)); where.push(`a.user_id = $${params.length}`); }
@@ -160,4 +178,4 @@ const listSessions = wrap(async (req, res) => {
   res.json({ sessions, unassigned });
 });
 
-module.exports = { listAudit, exportAudit, listSessions, ADMINISTRATIVE_ACTIONS };
+module.exports = { listAudit, exportAudit, listSessions, ADMINISTRATIVE_ACTIONS, ACCOUNT_ACTIONS };
