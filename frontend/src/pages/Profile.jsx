@@ -7,6 +7,7 @@ import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import PersonHeader from '../components/PersonHeader.jsx';
+import ReportHeader from '../components/ReportHeader.jsx';
 import Avatar from '../components/Avatar.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
@@ -16,6 +17,7 @@ import Ledger from '../components/Ledger.jsx';
 import StatusTag from '../components/StatusTag.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { money, shortDate, inputDate, monthLong } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import '../styles.css';
 
 const DOC_TYPES = ['national_id', 'membership_form', 'passport_photo', 'proof_of_address', 'other'];
@@ -57,6 +59,7 @@ export default function Profile() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const fileRef = useRef(null);
   const photoRef = useRef(null);
+  const reportRef = useRef(null);
 
   const load = useCallback(async () => {
     if (!user.member_id) { setData(EMPTY_PROFILE); return; }
@@ -72,6 +75,12 @@ export default function Profile() {
   }, [user.member_id]);
 
   useEffect(() => { load().catch((e) => { toast.error(e.message); setData(EMPTY_PROFILE); }); }, [load, toast]);
+
+  const exportReport = () => {
+    const ok = exportReportAsPdf(reportRef.current, { title: `${t('profile.tab_report')} - ${t('app.name')}` });
+    if (!ok) toast.error(t('reports.reportExportBlocked'));
+    else toast.info(t('reports.reportPdfHint'));
+  };
 
   const setField = (k) => (e) => setDetails((d) => ({ ...d, [k]: e.target.value }));
 
@@ -463,12 +472,16 @@ export default function Profile() {
             <button type="button" className="btn btn--small" onClick={load} disabled={busy}>
               {t('profile.reportReload')}
             </button>
-            <button type="button" className="btn btn--sky btn--small no-print" onClick={() => window.print()}>
+            <button type="button" className="btn btn--sky btn--small no-print" onClick={exportReport}>
               {t('profile.reportPrint')}
             </button>
           </div>
 
-          <div className="print-area">
+          <div className="print-area" ref={reportRef}>
+            <ReportHeader
+              title={t('profile.tab_report')}
+              subtitle={m ? `${t('members.number')} ${m.membership_number}` : undefined}
+            />
             <section className="profile__card">
               <h2 className="profile__h2">{t('profile.shareholdingTitle')}</h2>
               <dl className="profile__rows">

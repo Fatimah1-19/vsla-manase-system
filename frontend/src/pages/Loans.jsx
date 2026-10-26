@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api, fetchFile } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -14,7 +14,9 @@ import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import StatCard from '../components/StatCard.jsx';
+import ReportHeader from '../components/ReportHeader.jsx';
 import { money, shortDate, monthLong, plainNumber } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import '../styles.css';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -110,6 +112,7 @@ export default function Loans() {
   const [busy, setBusy] = useState(false);
 
   const [detail, setDetail] = useState(null);       // { loan, repayments }
+  const detailRef = useRef(null);
   const [eligibility, setEligibility] = useState(null); // the applicant's full eligibility
   const [decisionNote, setDecisionNote] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
@@ -977,8 +980,10 @@ export default function Loans() {
         wide
       >
         {detail && (
-          <div className="loans__detail print-area">
-            <p className="print-only loans__printHead">{t('app.name')} — {t('loans.statementFor')} · {shortDate(new Date())}</p>
+          <div className="loans__detail print-area" ref={detailRef}>
+            <div className="print-only">
+              <ReportHeader title={t('loans.statementFor')} subtitle={detail.loan.full_name} />
+            </div>
             <dl className="loans__rows">
               <div><dt>{t('common.status')}</dt>
                 <dd><StatusTag status={detail.loan.status}>{loanStatusLabel(t, detail.loan.status)}</StatusTag></dd></div>
@@ -1167,7 +1172,17 @@ export default function Loans() {
             )}
 
             <div className="no-print loans__printRow">
-              <button type="button" className="btn btn--gold" onClick={() => window.print()}>
+              <button
+                type="button"
+                className="btn btn--gold"
+                onClick={() => {
+                  const ok = exportReportAsPdf(detailRef.current, {
+                    title: `${t('loans.statementFor')} - ${detail.loan.full_name}`,
+                  });
+                  if (!ok) toast.error(t('reports.reportExportBlocked'));
+                  else toast.info(t('reports.reportPdfHint'));
+                }}
+              >
                 {t('loans.print')}
               </button>
             </div>

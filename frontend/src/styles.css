@@ -4556,6 +4556,38 @@ section[id] { scroll-margin-top: 4.5rem; }
 .reports__totals { margin-bottom: 1.2rem; }
 .reports__member { margin-bottom: 1.2rem; }.reports__panel { margin-bottom: 0; }
 .reports__repNote { margin: -0.3rem 0 0.8rem; font-size: 0.88rem; color: var(--slate); }
+
+/* ---- the letterhead shared by every report and report PDF ---- */
+.report-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start;
+  gap: 1rem 1.5rem; padding: 0 0 1rem; margin: 0 0 1rem;
+  border-bottom: 2px solid var(--ink);
+}
+.report-head__brand { display: flex; align-items: center; gap: 0.7rem; min-width: 220px; }
+.report-head__logo { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; flex: 0 0 auto; }
+.report-head__name { display: block; font-family: var(--head); font-size: 1rem; font-weight: 700; line-height: 1.2; color: var(--ink); }
+.report-head__tagline { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--slate); }
+.report-head__titleBlock { flex: 1 1 280px; text-align: right; }
+.report-head__eyebrow {
+  margin: 0 0 0.15rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--slate);
+}
+.report-head__title { margin: 0; font-family: var(--head); font-size: 1.35rem; line-height: 1.2; color: var(--ink); }
+.report-head__subtitle { margin: 0.2rem 0 0; color: var(--slate); font-size: 0.9rem; }
+.report-head__meta { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.25rem 1rem; margin: 0.45rem 0 0; }
+.report-head__meta > div { display: flex; gap: 0.35rem; font-size: 0.82rem; }
+.report-head__meta dt { color: var(--slate); }
+.report-head__meta dd { margin: 0; font-weight: 600; }
+.report-head__date { margin: 0.35rem 0 0; font-size: 0.75rem; color: var(--slate); }
+@media (max-width: 640px) {
+  .report-head__titleBlock { text-align: left; }
+  .report-head__meta { justify-content: flex-start; }
+}
+@media print {
+  .report-head { break-inside: avoid; }
+  .report-head__logo { width: 44px; height: 44px; }
+}
+
 .reports__repHead {
   display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;
   align-items: flex-start; margin-bottom: 0.9rem; padding-bottom: 0.9rem;

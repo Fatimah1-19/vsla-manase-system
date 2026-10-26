@@ -9,6 +9,7 @@ import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { BarChart, LineChart, HBars, Ring } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLabel } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import Reports from './Reports.jsx';
 import '../styles.css';
 
@@ -193,20 +194,29 @@ function AnalyticsView() {
 
 export default function Analytics() {
   const { t } = useLang();
+  const toast = useToast();
   const [tab, setTab] = useState(() =>
     new URLSearchParams(window.location.search).get('tab') === 'reports' ? 'reports' : 'analytics');
   const [scope, setScope] = useState('group');
+
+  const exportPdf = () => {
+    const node = document.querySelector('.reports .print-area');
+    const reportTitle = node?.querySelector('.report-head__title')?.textContent;
+    const ok = exportReportAsPdf(node, { title: `${reportTitle || t('reports.title')} - ${t('app.name')}` });
+    if (!ok) toast.error(t('reports.reportExportBlocked'));
+    else toast.info(t('reports.reportPdfHint'));
+  };
 
   return (
     <div className="analytics">
       <PageHeader
         title={t('nav.analyticsReports')}
         subtitle={tab === 'reports' ? t('reports.subtitle') : undefined}
-        action={
-          <button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>
-            {t('loans.print')}
+        action={tab === 'reports' ? (
+          <button type="button" className="btn btn--gold no-print" onClick={exportPdf}>
+            {t('reports.reportExport')}
           </button>
-        }
+        ) : undefined}
       />
 
       <BackButton />

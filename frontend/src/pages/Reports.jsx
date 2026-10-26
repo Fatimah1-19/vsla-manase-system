@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import ReportHeader from '../components/ReportHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
 import StatusTag from '../components/StatusTag.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -10,6 +11,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { MultiLineChart, LineChart, BarChart } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLong } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import '../styles.css';
 
 const STATUSES = ['absent', 'excused'];
@@ -70,6 +72,7 @@ const dayBefore = (iso) =>
 export default function Reports({ embedded = false, scope: scopeProp, onScopeChange } = {}) {
   const { t } = useLang();
   const toast = useToast();
+  const printRef = useRef(null);
 
   const [view, setView] = useState('list');
   const [status, setStatus] = useState('absent');
@@ -198,10 +201,24 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     ? monthLong(`${year || CURRENT_YEAR}-${String(month).padStart(2, '0')}`)
     : year ? String(year) : t('reports.reportAllTime');
 
+  const activeCategory = CATEGORIES.find((c) => c.key === category);
+  const categoryLabel = t(`reports.${activeCategory ? activeCategory.label : 'reportAttendance'}`);
+  const reportSubtitle = `${scope === 'member' ? t('reports.scopeMember') : t('reports.scopeGroup')} - ${
+    category === 'attendance' && (from || to)
+      ? `${from ? shortDate(from) : '-'} - ${to ? shortDate(to) : '-'}`
+      : periodLabel
+  }`;
+
+  const exportPdf = () => {
+    const ok = exportReportAsPdf(printRef.current, { title: `${categoryLabel} - ${t('app.name')}` });
+    if (!ok) toast.error(t('reports.reportExportBlocked'));
+    else toast.info(t('reports.reportPdfHint'));
+  };
+
   const memberHead = report && (
     <div className="reports__repHead">
       <div className="reports__repHeadText">
-        <h2 className="panel__title">{t('reports.reportForM', report.member.full_name)}</h2>
+        <h2 className="panel__title">{t('reports.scopeMember')}</h2>
         <p className="reports__repNote">{periodLabel}</p>
       </div>
       <dl className="reports__repMeta">
@@ -1060,8 +1077,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
           title={t('reports.title')}
           subtitle={t('reports.subtitle')}
           action={
-            <button type="button" className="btn btn--gold no-print" onClick={() => window.print()}>
-              {t('reports.print')}
+            <button type="button" className="btn btn--gold no-print" onClick={exportPdf}>
+              {t('reports.reportExport')}
             </button>
           }
         />
@@ -1114,7 +1131,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
               {t('reports.reportFilter')}
             </button>
           )}
-          <button type="button" className="btn btn--danger btn--small reports__exportBtn" onClick={() => window.print()}>
+          <button type="button" className="btn btn--danger btn--small reports__exportBtn" onClick={exportPdf}>
             {t('reports.reportExport')}
           </button>
         </div>
@@ -1130,9 +1147,10 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
         </div>
       </div>
 
-      <div className="print-area">
+      <div className="print-area" ref={printRef}>
+        <ReportHeader title={categoryLabel} subtitle={reportSubtitle} />
         {totals && scope === 'group' && (
-          <div className="page-grid page-grid--stat reports__totals">
+          <div className="page-grid page-grid--stat reports__totals no-print">
             <StatCard label={t('reports.totalContribution')} value={money(totals.wrappers.cycle_total)} tone="gold" icon="wrappers" />
             <StatCard label={t('reports.totalLoans')} value={money(totals.loans.lent_principal)} tone="blue" icon="loans" />
             <StatCard label={t('reports.totalFines')} value={money(totals.fines.collected + totals.fines.outstanding)} tone="red" icon="fines" />
