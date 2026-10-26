@@ -127,6 +127,53 @@ export const NAV_ITEMS = [
 
 export const navFor = (role) => NAV_ITEMS.filter((i) => i.roles.includes(role));
 
+/**
+ * The chairperson's menu keeps the major areas at the top and folds the busy
+ * money pages under three collapsible headings. Every child is an existing
+ * route; nothing new is created here.
+ */
+const CHAIR_SIDEBAR = [
+  { to: '/app', key: 'nav.dashboard', icon: 'dashboard', end: true },
+  { to: '/app/approvals', key: 'nav.approvals', icon: 'requests' },
+  { to: '/app/members', key: 'nav.members', icon: 'members' },
+  {
+    key: 'nav.gSavings',
+    icon: 'savings',
+    children: [
+      { to: '/app/savings', key: 'nav.recordSavings', icon: 'savings' },
+      { to: '/app/cycles', key: 'nav.currentCycle', icon: 'cycles' },
+      { to: '/app/analytics?tab=reports', key: 'nav.savingsReports', icon: 'analytics' },
+    ],
+  },
+  {
+    key: 'nav.gLoans',
+    icon: 'loans',
+    children: [
+      { to: '/app/loans?filter=pending', key: 'nav.loanApplications', icon: 'loans' },
+      { to: '/app/loans?tab=repayments', key: 'nav.loanRepayments', icon: 'loans' },
+      { to: '/app/financial-activity?type=loans', key: 'nav.loanActivity', icon: 'activity' },
+    ],
+  },
+  {
+    key: 'nav.gContributions',
+    icon: 'fines',
+    children: [
+      { to: '/app/fines', key: 'nav.fines', icon: 'fines' },
+      { to: '/app/welfare', key: 'nav.welfare', icon: 'welfare' },
+      { to: '/app/wrappers', key: 'nav.groceries', icon: 'wrappers' },
+    ],
+  },
+  { to: '/app/shareout', key: 'nav.shareout', icon: 'shareout' },
+  { to: '/app/meetings', key: 'nav.meetings', icon: 'meetings' },
+  { to: '/app/activity', key: 'nav.groupActivity', icon: 'activity' },
+  { to: '/app/profile', key: 'nav.profile', icon: 'profile' },
+];
+
+/** The sidebar menu for a role. Other roles keep their existing flat menu. */
+export const sidebarFor = (role) => (
+  role === 'admin' ? CHAIR_SIDEBAR : navFor(role).filter((i) => !i.sub)
+);
+
 /** The path part of a nav target, without the query string. */
 const pathOf = (to) => to.split('?')[0];
 

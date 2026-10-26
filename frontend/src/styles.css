@@ -1050,6 +1050,80 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .sidebar__icon { color: var(--maize); flex-shrink: 0; }
 .sidebar__link.is-on .sidebar__icon { color: #fff; }
 
+/* A collapsible section of the menu, such as Savings or Contributions. */
+.sidebar__groupWrap { min-width: 0; }
+.sidebar__groupToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #C6D6CD;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.sidebar__groupToggle > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar__groupToggle:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.sidebar__groupToggle.is-active {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-weight: 600;
+}
+.sidebar__groupToggle.is-active .sidebar__icon { color: #fff; }
+.sidebar__chevron {
+  margin-left: auto;
+  opacity: 0.65;
+  transition: transform 150ms ease;
+}
+.sidebar__groupToggle.is-open .sidebar__chevron { transform: rotate(180deg); }
+.sidebar__children {
+  list-style: none;
+  margin: 0.1rem 0 0.35rem 0.9rem;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+.sidebar__sublink {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 38px;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  color: #B8CBC0;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 120ms ease, color 120ms ease;
+}
+.sidebar__sublink > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar__sublink:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.sidebar__sublink.is-on {
+  background: linear-gradient(180deg, var(--leaf) 0%, var(--leaf-dark) 100%);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.sidebar__sublink .sidebar__icon { color: var(--maize); }
+.sidebar__sublink.is-on .sidebar__icon { color: #fff; }
+
 /* The signed-in person, with a shortcut to "My account". */
 .sidebar__me {
   display: flex;
