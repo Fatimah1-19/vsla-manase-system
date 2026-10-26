@@ -417,7 +417,7 @@ export default function AdminUsers() {
                           <button type="button" className="btn btn--small" onClick={() => setRoleFor(a)}>
                             {t('admin.manageRole')}
                           </button>
-                          <button type="button" className="btn btn--small btn--sky" disabled={busy === a.id} onClick={() => resetPassword(a)}>
+                          <button type="button" className="btn btn--small btn--gold" disabled={busy === a.id} onClick={() => resetPassword(a)}>
                             {t('admin.resetPassword')}
                           </button>
                           {a.is_active ? (
