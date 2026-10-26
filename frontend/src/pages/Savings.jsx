@@ -252,6 +252,9 @@ export default function Savings() {
           {isAdmin && (
             <button type="button" className="btn btn--small btn--ghost" onClick={() => remove(r)}>{t('common.del')}</button>
           )}
+          {canRecordMoney && !isAdmin && (
+            <button type="button" className="btn btn--small btn--ghost" onClick={() => remove(r)}>{t('common.del')}</button>
+          )}
         </span>
       ) }] : []),
   ];

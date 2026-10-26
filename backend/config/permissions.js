@@ -30,14 +30,14 @@ const GROUPS = {
 const PERMISSIONS = {
   // ---- savings ----
   // The treasurer alone writes in the books; the secretary alone checks her
-  // work. Nobody may verify her own entry. Nobody but the chairperson takes an
-  // entry out.
+  // work. Nobody may verify her own entry. The chairperson and the treasurer
+  // take an entry out.
   'savings.view': ['admin', 'treasurer', 'secretary'],
   'savings.record': ['treasurer'],
   // The secretary checks a saving against the money actually handed over.
   // A saving only counts toward totals once she has verified it.
   'savings.verify': ['secretary'],
-  'savings.delete': ['admin'],
+  'savings.delete': ['admin', 'treasurer'],
 
   // ---- loans ----
   'loans.viewAll': ['admin', 'treasurer', 'secretary'],

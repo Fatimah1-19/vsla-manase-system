@@ -525,6 +525,8 @@ export default function Members() {
       } },
   ];
 
+  // The register has no action column now, so there is no
+  // `if (!isAdmin) columns.pop()` to remove it for the secretary.
   return (
     <div className="members">
       <PageHeader
