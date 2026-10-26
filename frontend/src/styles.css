@@ -4187,6 +4187,46 @@ section[id] { scroll-margin-top: 4.5rem; }
 .members__feeFor { margin: 0 0 0.9rem; font-weight: 700; }
 .members__regCell { display: inline-flex; align-items: center; gap: 0.45rem; }
 
+/* ---- registration fee receipt ---- */
+.receipt { background: #fff; }
+.receipt__card {
+  background: linear-gradient(180deg, #FFFFFF, #F8FAF6);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+.receipt__head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 1rem; padding-bottom: 0.85rem; margin-bottom: 0.35rem;
+  border-bottom: 1px dashed var(--rule-dark);
+}
+.receipt__eyebrow {
+  margin: 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--slate);
+}
+.receipt__no { margin: 0.2rem 0 0; font-weight: 700; }
+.receipt__amount { display: grid; gap: 0.15rem; text-align: right; }
+.receipt__amount span { font-size: 0.75rem; color: var(--slate); }
+.receipt__amount strong { font-family: var(--head); font-size: 1.45rem; line-height: 1.1; }
+.receipt__rows { margin: 0; }
+.receipt__rows > div {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--rule);
+}
+.receipt__rows > div:last-child { border-bottom: 0; }
+.receipt__rows dt { color: var(--slate); font-size: 0.88rem; flex-shrink: 0; }
+.receipt__rows dd { margin: 0; font-weight: 600; text-align: right; }
+.receipt__thanks { margin: 0.9rem 0 0; color: var(--leaf-dark); font-weight: 600; }
+.receipt__sign {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  margin-top: 1.4rem; padding-top: 0.55rem; border-top: 1px solid var(--rule);
+  font-size: 0.82rem; color: var(--slate);
+}
+.receipt__sign strong { color: var(--ink); }
+@media print {
+  .receipt__card { border: 0; padding: 0; background: #fff; }
+}
+
 .members__rowActs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 
 /* ---- empty committee office ---- */

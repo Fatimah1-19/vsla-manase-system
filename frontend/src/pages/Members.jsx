@@ -13,7 +13,9 @@ import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
+import ReportHeader from '../components/ReportHeader.jsx';
 import { money, shortDate, inputDate, monthName, plainNumber } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import '../styles.css';
 
 const blank = {
@@ -118,6 +120,8 @@ export default function Members() {
   const [fees, setFees] = useState(null);
   const [feeForm, setFeeForm] = useState(null);
   const [feeBusy, setFeeBusy] = useState(false);
+  const [receipt, setReceipt] = useState(null);
+  const receiptRef = useRef(null);
   const [events, setEvents] = useState(null);   // the whole register's story
   const [allDocs, setAllDocs] = useState(null);  // every membership paper on file
   const [records, setRecords] = useState(null);  // the register with each member's balances
@@ -343,6 +347,24 @@ export default function Members() {
     }
   }
 
+  function openFeeReceipt(person) {
+    const fee = feeByMember[person?.member_id];
+    if (!fee?.paid) return;
+    setReceipt({
+      ...fee,
+      full_name: person.full_name || fee.full_name,
+      membership_number: person.membership_number || fee.membership_number,
+    });
+  }
+
+  function printFeeReceipt() {
+    const ok = exportReportAsPdf(receiptRef.current, {
+      title: `${t('members.feeReceipt')} - ${receipt.full_name}`,
+    });
+    if (!ok) toast.error(t('reports.reportExportBlocked'));
+    else toast.info(t('reports.reportPdfHint'));
+  }
+
   const filtered = useMemo(() => {
     if (!people) return [];
     const q = search.trim().toLowerCase();
@@ -510,7 +532,15 @@ export default function Members() {
       render: (p) => {
         const f = feeByMember[p.member_id];
         if (!f) return <span className="muted">—</span>;
-        if (f.paid) return <span className="tag tag--green">{t('members.regFeePaidTag')}</span>;
+        if (f.paid) return (
+          <span className="members__regCell">
+            <span className="tag tag--green">{t('members.regFeePaidTag')}</span>
+            <button type="button" className="btn btn--small btn--ghost"
+              onClick={(e) => { e.stopPropagation(); openFeeReceipt(p); }}>
+              {t('members.feeReceiptButton')}
+            </button>
+          </span>
+        );
         return (
           <span className="members__regCell">
             <span className="tag tag--gold">{t('members.regFeeDueTag')}</span>
@@ -851,13 +881,21 @@ export default function Members() {
               <div className="members__fee">
                 <h3 className="members__feeTitle">{t('members.regFee')}</h3>
                 {feeByMember[detail.member_id]?.paid ? (
-                  <p className="members__feePaid">
-                    {t('members.regFeePaid',
-                      money(feeByMember[detail.member_id].amount),
-                      shortDate(feeByMember[detail.member_id].paid_on))}
-                    {feeByMember[detail.member_id].recorded_by_name
-                      ? ` · ${t('savings.recordedBy')}: ${feeByMember[detail.member_id].recorded_by_name}` : ''}
-                  </p>
+                  <>
+                    <p className="members__feePaid">
+                      {t('members.regFeePaid',
+                        money(feeByMember[detail.member_id].amount),
+                        shortDate(feeByMember[detail.member_id].paid_on))}
+                      {feeByMember[detail.member_id].recorded_by_name
+                        ? ` · ${t('savings.recordedBy')}: ${feeByMember[detail.member_id].recorded_by_name}` : ''}
+                    </p>
+                    <div className="members__rowActs">
+                      <button type="button" className="btn btn--small btn--ghost"
+                        onClick={() => openFeeReceipt(detail)}>
+                        {t('members.feeReceiptButton')}
+                      </button>
+                    </div>
+                  </>
                 ) : (
                   <p className="muted">{t('members.regFeeDue', money(fees?.fee ?? 0))}</p>
                 )}
@@ -928,6 +966,64 @@ export default function Members() {
               </div>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* ---- registration fee receipt ---- */}
+      <Modal
+        open={!!receipt}
+        title={t('members.feeReceipt')}
+        onClose={() => setReceipt(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => setReceipt(null)}>
+              {t('common.close')}
+            </button>
+            <button type="button" className="btn btn--gold" onClick={printFeeReceipt}>
+              {t('members.feeReceiptPrint')}
+            </button>
+          </>
+        }
+      >
+        {receipt && (
+          <div className="receipt print-area" ref={receiptRef}>
+            <div className="print-only">
+              <ReportHeader title={t('members.feeReceipt')} subtitle={receipt.full_name} />
+            </div>
+            <div className="receipt__card">
+              <div className="receipt__head">
+                <div>
+                  <p className="receipt__eyebrow">{t('members.feeReceiptOfficial')}</p>
+                  <p className="receipt__no">
+                    {t('members.feeReceiptNumber')} RF-{String(receipt.payment_id).padStart(5, '0')}
+                  </p>
+                </div>
+                <div className="receipt__amount">
+                  <span>{t('common.amount')}</span>
+                  <strong className="money">{money(receipt.amount)}</strong>
+                </div>
+              </div>
+
+              <dl className="receipt__rows">
+                <div><dt>{t('common.name')}</dt><dd>{receipt.full_name}</dd></div>
+                {receipt.membership_number && (
+                  <div><dt>{t('members.number')}</dt><dd>{receipt.membership_number}</dd></div>
+                )}
+                <div><dt>{t('members.regFee')}</dt><dd>{t('members.regFeePaidTag')}</dd></div>
+                <div><dt>{t('common.date')}</dt><dd>{shortDate(receipt.paid_on)}</dd></div>
+                {receipt.recorded_by_name && (
+                  <div><dt>{t('savings.recordedBy')}</dt><dd>{receipt.recorded_by_name}</dd></div>
+                )}
+                {receipt.note && <div><dt>{t('savings.note')}</dt><dd>{receipt.note}</dd></div>}
+              </dl>
+
+              <p className="receipt__thanks">{t('members.feeReceiptThanks')}</p>
+              <div className="receipt__sign">
+                <span>{t('members.feeReceiptSignature')}</span>
+                <strong>{receipt.recorded_by_name || t('members.feeReceiptCommittee')}</strong>
+              </div>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

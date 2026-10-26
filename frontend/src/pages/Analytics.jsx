@@ -331,6 +331,12 @@ export default function Analytics() {
 
   const groupScopeLabel = tab === 'reports' ? t('reports.scopeGroup') : t('analytics.scopeGroup');
   const memberScopeLabel = tab === 'reports' ? t('reports.scopeMember') : t('analytics.scopeMember');
+  const pageTitle = scope === 'member'
+    ? (tab === 'reports' ? t('reports.personalTitle') : t('analytics.personalTitle'))
+    : t('nav.analyticsReports');
+  const pageSubtitle = scope === 'member'
+    ? (tab === 'reports' ? t('reports.personalSubtitle') : t('analytics.personalNote'))
+    : (tab === 'reports' ? t('reports.subtitle') : undefined);
 
   const exportPdf = () => {
     const node = document.querySelector('.reports .print-area');
@@ -343,8 +349,8 @@ export default function Analytics() {
   return (
     <div className="analytics">
       <PageHeader
-        title={t('nav.analyticsReports')}
-        subtitle={tab === 'reports' ? t('reports.subtitle') : undefined}
+        title={pageTitle}
+        subtitle={pageSubtitle}
         action={tab === 'reports' ? (
           <button type="button" className="btn btn--gold no-print" onClick={exportPdf}>
             {t('reports.reportExport')}
