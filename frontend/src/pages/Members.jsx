@@ -523,41 +523,7 @@ export default function Members() {
           </span>
         );
       } },
-    { key: 'action', label: t('common.actions'),
-      render: (p) => {
-        if (!p.is_active) {
-          return (
-            <button type="button" className="btn btn--gold btn--small" disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (p.role === 'member') navigate(`/app/cases?member=${p.member_id}&action=reinstate`);
-                else act(p.id, 'reactivate');
-              }}>{t('members.bringBack')}</button>
-          );
-        }
-        return (
-          <div className="members__rowActs">
-            <button type="button" className="btn btn--danger btn--small" disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (p.role === 'member') navigate(`/app/cases?member=${p.member_id}&action=suspend`);
-                else act(p.id, 'suspend');
-              }}>{t('members.suspend')}</button>
-            {p.role === 'member' && (
-              <button type="button" className="btn btn--ghost btn--small" disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/app/cases?member=${p.member_id}&action=dismiss`);
-                }}>{t('members.dismiss')}</button>
-            )}
-          </div>
-        );
-      } },
   ];
-
-  // Suspending, unlocking and case motions need powers the secretary does not
-  // hold, so the action column stays with the chairperson.
-  if (!isAdmin) columns.pop();
 
   return (
     <div className="members">
