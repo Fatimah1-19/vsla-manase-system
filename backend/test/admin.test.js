@@ -482,7 +482,7 @@ function run(middleware, user) {
                      'reportStatus', 'reportRequests']) {
     assert.ok(reportsPage.includes(`'${key}'`), `the reports must offer ${key}`);
   }
-  assert.ok(reportsPage.includes('window.print()') && reportsPage.includes("t('reports.print')")
+  assert.ok(reportsPage.includes('exportReportAsPdf')
     && reportsPage.includes("t('reports.reportExport')"),
     'a report can be printed and exported');
   assert.ok(reportsPage.includes("q.set('memberId'"),

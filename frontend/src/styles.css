@@ -4062,6 +4062,171 @@ section[id] { scroll-margin-top: 4.5rem; }
 .meetings__where { margin: 0 0 0.2rem; font-weight: 600; }
 .meetings__agenda { margin: 0 0 0.3rem; font-size: 0.9rem; color: var(--ink-soft); }
 .meetings__count { margin: 0; font-size: 0.85rem; color: var(--slate); }
+.meetings__minutesPreview {
+  margin: 0.55rem 0 0.45rem;
+  padding: 0.55rem 0.7rem 0.6rem;
+  background: linear-gradient(90deg, rgba(31, 107, 77, 0.075), rgba(31, 107, 77, 0.018));
+  border-left: 3px solid var(--leaf);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.meetings__minutesLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--leaf-dark);
+}
+.meetings__minutesLabel .icon { color: var(--leaf); }
+.meetings__minutesPreview p { margin: 0; line-height: 1.5; white-space: pre-line; }
+
+.meetings__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: -0.25rem 0 0.8rem;
+  color: var(--slate);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.meetings__legendItem { display: inline-flex; align-items: center; gap: 0.35rem; }
+.meetings__legendDot { display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+.meetings__legendDot.is-present { background: var(--leaf); }
+.meetings__legendDot.is-absent { background: var(--flame); }
+.meetings__legendDot.is-excused { background: var(--maize); }
+
+.meetings__names { display: flex; flex-wrap: wrap; gap: 0.3rem; max-width: 34rem; }
+.meetings__name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.meetings__name.is-present { background: var(--leaf-wash); color: var(--leaf-dark); border-color: #BBD8C7; }
+.meetings__name.is-absent { background: var(--flame-wash); color: #7E271E; border-color: #E8C4BF; }
+.meetings__name.is-excused { background: var(--maize-wash); color: #6B4A0E; border-color: #E7D2A0; }
+.meetings__notMarked {
+  display: inline-flex;
+  padding: 0.14rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #E8EDE6;
+  color: var(--slate);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.meetings__exportBtn { box-shadow: 0 2px 8px rgba(169, 116, 26, 0.18); }
+
+.meetings__pdf { font-size: 0.92rem; }
+.meetings__pdfStats {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0.4rem;
+}
+.meetings__pdfStats > div {
+  flex: 1 1 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--leaf);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+.meetings__pdfStats span {
+  display: block;
+  color: var(--slate);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.meetings__pdfStats strong { display: block; font-family: var(--head); font-size: 1.15rem; line-height: 1.2; }
+
+.meetings__pdfItem {
+  break-inside: avoid;
+  padding: 0.9rem 0 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.meetings__pdfHead { display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline; }
+.meetings__pdfHead h3 { margin: 0; font-family: var(--head); font-size: 1.02rem; }
+.meetings__pdfHead span {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--slate);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.meetings__pdfHead span.is-upcoming { background: var(--leaf-wash); border-color: #BBD8C7; color: var(--leaf-dark); }
+.meetings__pdfHead span.is-held { background: #E8EDE6; }
+
+.meetings__pdfMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.2rem;
+  margin: 0.4rem 0 0.5rem;
+}
+.meetings__pdfMeta > div { display: flex; gap: 0.35rem; font-size: 0.82rem; }
+.meetings__pdfMeta dt { color: var(--slate); font-weight: 600; }
+.meetings__pdfMeta dd { margin: 0; }
+.meetings__pdfBlock { margin-top: 0.45rem; }
+.meetings__pdfBlock h4 {
+  margin: 0 0 0.15rem;
+  color: var(--leaf-dark);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.meetings__pdfBlock p { margin: 0; font-size: 0.86rem; line-height: 1.45; }
+.meetings__pdfBlock--minutes {
+  padding: 0.4rem 0.55rem;
+  background: var(--paper);
+  border-left: 3px solid var(--maize);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.meetings__pdfText { white-space: pre-line; }
+.meetings__pdfAttendance { display: grid; gap: 0.3rem; margin: 0; }
+.meetings__pdfAttendance > div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.55rem;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.meetings__pdfAttendance dt { color: var(--slate); font-size: 0.76rem; font-weight: 700; }
+.meetings__pdfAttendance dd { margin: 0; font-size: 0.82rem; overflow-wrap: anywhere; }
+.meetings__pdfAttendance dd.is-present { color: var(--leaf-dark); }
+.meetings__pdfAttendance dd.is-absent { color: #7E271E; }
+.meetings__pdfAttendance dd.is-excused { color: #6B4A0E; }
+.meetings__pdfCount {
+  display: inline-flex;
+  margin: 0.4rem 0 0;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--leaf-wash);
+  color: var(--leaf-dark);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .meetings .pagehead__action .row-actions { width: 100%; justify-content: flex-start; }
+  .meetings .pagehead__action .btn { flex: 1 1 auto; }
+  .meetings__pdfStats { flex-direction: column; }
+}
 
 .meetings__item .btn { grid-column: 1 / -1; }
 .meetings__item .btn.is-marked {

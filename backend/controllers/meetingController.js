@@ -31,7 +31,20 @@ const listMeetings = wrap(async (req, res) => {
   const rows = await query(
     `SELECT mt.*, u.full_name AS recorded_by_name,
             (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id AND a.status = 'present') AS present_count,
-            (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id) AS marked_count
+            (SELECT COUNT(*)::int FROM attendance a WHERE a.meeting_id = mt.id) AS marked_count,
+            COALESCE((
+              SELECT json_agg(json_build_object(
+                       'member_id', m.id,
+                       'membership_number', m.membership_number,
+                       'full_name', mu.full_name,
+                       'has_avatar', (m.avatar IS NOT NULL),
+                       'status', COALESCE(a.status, 'absent')
+                     ) ORDER BY mu.full_name)
+                FROM members m
+                JOIN users mu ON mu.id = m.user_id
+                LEFT JOIN attendance a ON a.member_id = m.id AND a.meeting_id = mt.id
+               WHERE m.status = 'active'
+            ), '[]'::json) AS attendance
        FROM meetings mt LEFT JOIN users u ON u.id = mt.recorded_by
       ORDER BY mt.meeting_date DESC, mt.id DESC`
   );

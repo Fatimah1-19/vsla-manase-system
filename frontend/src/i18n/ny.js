@@ -194,6 +194,12 @@ const base = {
     noPlace: 'Palibe malo olembedwa',
     attendanceHint: 'Sankhani msonkhano kuti mulembe amene analipo, kapena kuwerenga kaundula.',
     recordsHint: 'Zolembedwa za msonkhano uliwonse: tsiku, malo, zomwe zinakambidwa, zomwe zinchitika, ndi amene analemba.',
+    exportPdf: 'Sindikizani misonkhano ku PDF',
+    exportTitle: 'Misonkhano ndi kupezeka',
+    exportSubtitle: 'Misonkhano yonse, zolemba zake ndi kaundula wa kupezeka mu cholembedwa chimodzi.',
+    came: 'Anabwera',
+    attendanceNotMarked: 'Kupezeka sikunalembedwe',
+    noMinutes: 'Palibe zolemba za msonkhano.',
   },
 
   welfare: {

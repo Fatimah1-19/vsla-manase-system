@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
+import ReportHeader from '../components/ReportHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
 import Modal from '../components/Modal.jsx';
@@ -13,9 +14,30 @@ import EmptyState from '../components/EmptyState.jsx';
 import MemberAvatar from '../components/MemberAvatar.jsx';
 import Icon from '../components/Icon.jsx';
 import { shortDate, inputDate } from '../utils/format.js';
+import { exportReportAsPdf } from '../utils/reportPdf.js';
 import '../styles.css';
 
 const blank = { meeting_date: inputDate(), meeting_time: '', location: '', agenda: '', notify: true };
+
+function attendanceGroups(meeting) {
+  const list = Array.isArray(meeting.attendance) ? meeting.attendance : [];
+  return {
+    present: list.filter((a) => a.status === 'present'),
+    absent: list.filter((a) => a.status === 'absent'),
+    excused: list.filter((a) => a.status === 'excused'),
+  };
+}
+
+function AttendanceNames({ people }) {
+  if (!people.length) return <span className="muted">-</span>;
+  return (
+    <div className="meetings__names">
+      {people.map((a) => (
+        <span key={a.member_id} className={`meetings__name is-${a.status}`}>{a.full_name}</span>
+      ))}
+    </div>
+  );
+}
 
 export default function Meetings() {
   const { t } = useLang();
@@ -31,6 +53,7 @@ export default function Meetings() {
   const [marks, setMarks] = useState({});
   const [minutes, setMinutes] = useState('');
   const [info, setInfo] = useState({ location: '', agenda: '', meeting_time: '' });
+  const pdfRef = useRef(null);
 
   // The secretary's menu links straight to a section: the meeting list, the
   // attendance register, or the written-up meeting records. Read from the
@@ -102,6 +125,14 @@ export default function Meetings() {
     }
   }
 
+  function exportMeetings() {
+    const ok = exportReportAsPdf(pdfRef.current, {
+      title: `${t('meetings.exportTitle')} - ${t('app.name')}`,
+    });
+    if (!ok) toast.error(t('reports.reportExportBlocked'));
+    else toast.info(t('reports.reportPdfHint'));
+  }
+
   if (!meetings) return <Spinner />;
 
   // The secretary keeps the meeting book: what is coming, who was there, and
@@ -136,6 +167,15 @@ export default function Meetings() {
               {m.meeting_time ? <span className="muted"> · {m.meeting_time}</span> : null}
             </p>
             {m.agenda && <p className="meetings__agenda">{m.agenda}</p>}
+            {m.notes && (
+              <div className="meetings__minutesPreview">
+                <span className="meetings__minutesLabel">
+                  <Icon name="reports" size={13} />
+                  {t('meetings.minutes')}
+                </span>
+                <p>{m.notes}</p>
+              </div>
+            )}
             <p className="meetings__count">
               {m.marked_count > 0
                 ? t('meetings.presentCount', m.present_count, m.marked_count)
@@ -162,8 +202,21 @@ export default function Meetings() {
     <div className="meetings">
       <PageHeader
         title={t('meetings.title')}
-        action={isRecorder && (
-          <button type="button" className="btn" onClick={() => setOpen(true)}>{t('meetings.schedule')}</button>
+        action={(
+          <div className="row-actions">
+            {meetings.length > 0 && (
+              <button type="button" className="btn btn--gold meetings__exportBtn" onClick={exportMeetings}>
+                <Icon name="reports" size={18} />
+                {t('meetings.exportPdf')}
+              </button>
+            )}
+            {isRecorder && (
+              <button type="button" className="btn" onClick={() => setOpen(true)}>
+                <Icon name="meetings" size={18} />
+                {t('meetings.schedule')}
+              </button>
+            )}
+          </div>
         )}
       />
 
@@ -206,12 +259,23 @@ export default function Meetings() {
       {tab === 'attendance' ? (
         <section className="meetings__section">
           <p className="muted">{t('meetings.attendanceHint')}</p>
+          <div className="meetings__legend" aria-label={t('meetings.attendance')}>
+            <span className="meetings__legendItem"><i className="meetings__legendDot is-present" />{t('meetings.present')}</span>
+            <span className="meetings__legendItem"><i className="meetings__legendDot is-absent" />{t('meetings.absent')}</span>
+            <span className="meetings__legendItem"><i className="meetings__legendDot is-excused" />{t('meetings.excused')}</span>
+          </div>
           <Ledger
             columns={[
               { key: 'meeting_date', label: t('common.date'), render: (m) => shortDate(m.meeting_date) },
               { key: 'location', label: t('meetings.place'), render: (m) => m.location || '—' },
-              { key: 'present_count', label: t('meetings.present'), align: 'right' },
-              { key: 'marked_count', label: t('meetings.marked'), align: 'right' },
+              { key: 'present', label: t('meetings.came'),
+                render: (m) => (m.marked_count > 0
+                  ? <AttendanceNames people={attendanceGroups(m).present} />
+                  : <span className="meetings__notMarked">{t('meetings.attendanceNotMarked')}</span>) },
+              { key: 'absent', label: t('meetings.absent'),
+                render: (m) => (m.marked_count > 0 ? <AttendanceNames people={attendanceGroups(m).absent} /> : null) },
+              { key: 'excused', label: t('meetings.excused'),
+                render: (m) => (m.marked_count > 0 ? <AttendanceNames people={attendanceGroups(m).excused} /> : null) },
               { key: 'action', label: '', render: (m) => (isCommittee ? (
                 <button type="button" className="btn btn--ghost btn--small" onClick={() => openDetail(m.id)}>
                   {isRecorder ? t('meetings.markAttendance') : t('meetings.viewRecord')}
@@ -389,6 +453,63 @@ export default function Meetings() {
           </>
         )}
       </Modal>
+
+      <div className="meetings__pdf print-area print-only" ref={pdfRef}>
+        <ReportHeader title={t('meetings.exportTitle')} subtitle={t('meetings.exportSubtitle')} />
+
+        <div className="meetings__pdfStats">
+          <div><span>{t('meetings.title')}</span><strong>{meetings.length}</strong></div>
+          <div><span>{t('meetings.statusHeld')}</span><strong>{previousMeetings.length}</strong></div>
+          <div><span>{t('meetings.statusUpcoming')}</span><strong>{upcomingMeetings.length}</strong></div>
+        </div>
+
+        {meetings.map((m) => {
+          const groups = attendanceGroups(m);
+          const names = (list) => (list.length ? list.map((a) => a.full_name).join(', ') : '-');
+          return (
+            <section className="meetings__pdfItem" key={m.id}>
+              <div className="meetings__pdfHead">
+                <h3>{shortDate(m.meeting_date)}</h3>
+                <span className={isUpcoming(m) ? 'is-upcoming' : 'is-held'}>
+                  {isUpcoming(m) ? t('meetings.statusUpcoming') : t('meetings.statusHeld')}
+                </span>
+              </div>
+
+              <dl className="meetings__pdfMeta">
+                <div><dt>{t('meetings.time')}</dt><dd>{m.meeting_time || '-'}</dd></div>
+                <div><dt>{t('meetings.place')}</dt><dd>{m.location || '-'}</dd></div>
+                <div><dt>{t('savings.recordedBy')}</dt><dd>{m.recorded_by_name || '-'}</dd></div>
+              </dl>
+
+              <div className="meetings__pdfBlock">
+                <h4>{t('meetings.agenda')}</h4>
+                <p>{m.agenda || '-'}</p>
+              </div>
+
+              <div className="meetings__pdfBlock meetings__pdfBlock--minutes">
+                <h4>{t('meetings.minutes')}</h4>
+                <p className="meetings__pdfText">{m.notes || t('meetings.noMinutes')}</p>
+              </div>
+
+              <div className="meetings__pdfBlock">
+                <h4>{t('meetings.attendance')}</h4>
+                {m.marked_count > 0 ? (
+                  <>
+                    <dl className="meetings__pdfAttendance">
+                      <div><dt>{t('meetings.came')}</dt><dd className="is-present">{names(groups.present)}</dd></div>
+                      <div><dt>{t('meetings.absent')}</dt><dd className="is-absent">{names(groups.absent)}</dd></div>
+                      <div><dt>{t('meetings.excused')}</dt><dd className="is-excused">{names(groups.excused)}</dd></div>
+                    </dl>
+                    <p className="meetings__pdfCount">{t('meetings.presentCount', m.present_count, m.marked_count)}</p>
+                  </>
+                ) : (
+                  <p>{t('meetings.attendanceNotMarked')}</p>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

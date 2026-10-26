@@ -187,6 +187,12 @@ const base = {
     noPlace: 'No place written down',
     attendanceHint: 'Choose a meeting to mark who was present, or to read the register.',
     recordsHint: 'Every meeting record: when and where it was held, what was discussed, what happened, and who wrote it up.',
+    exportPdf: 'Export meetings to PDF',
+    exportTitle: 'Meetings and attendance',
+    exportSubtitle: 'Every meeting, its minutes and the attendance register in one record.',
+    came: 'Came',
+    attendanceNotMarked: 'Attendance not marked',
+    noMinutes: 'No minutes recorded.',
   },
 
   welfare: {
