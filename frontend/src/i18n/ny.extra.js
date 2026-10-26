@@ -14,6 +14,7 @@ export default {
     membershipVoting: 'Kuvota kwa mamembala', officeElections: 'Kusankha oyendetsa gulu', memberDetails: 'Zambiri za membala',
     loanRepayments: 'Kubwezera ngongole', attendance: 'Kupezeka', settingsApproval: 'Kutsimikizira zokhazikika za gulu',
     financialReports: 'Malipoti a ndalama', membershipReports: 'Malipoti a mamembala', loanReports: 'Malipoti a ngongole',
+    memberReports: 'Malipoti a membala',
     savingsReports: 'Malipoti a kusunga', shareoutReports: 'Malipoti a kugawana',
     membershipHistory: 'Mbiri ya umembala', meetingRecords: 'Zolembedwa za misonkhano', memberRecords: 'Zolembedwa za mamembala',
     membershipDocuments: 'Zikalata za umembala', adminRecords: 'Zolembedwa za kasamalidwe',
@@ -562,6 +563,10 @@ export default {
 
   analytics: {
     title: 'Ziwerengero', updated: 'zasinthidwa', print: 'Sindikizani tsamba ili',
+    scopeGroup: 'Ziwerengero za gulu', scopeMember: 'Ziwerengero za membala',
+    personalNote: 'Zosungidwa, zolipira, ngongole ndi zindapusa za membala mmodzi.',
+    personalFlow: 'Zosungidwa ndi zolipira',
+    personalFlowNote: 'Zomwe membala uyu adasunga ndi kulipira ku thumba la zakudya, mwezi ndi mwezi.',
     lentOut: 'Zokongozedwa tsopano', ofBox: (p) => `${p}% ya ndalama za gulu yakongozedwa`,
     interestNote: 'Chimabwerera kwa amene analipira',
     avgSavings: 'Avereji yosunga pa membala', median: (x) => `Membala wamba: ${x}`,
@@ -608,6 +613,7 @@ export default {
     reportExportBlocked: 'Lipoti la PDF silinatsegulidwe. Chonde lolani kusindikiza ndi kuyesa kachiwiri.',
     reportChoose: 'Sankhani membala',
     reportHint: 'Sankhani membala pamwambapa kuti muone lipoti lake pa nthawi imeneyi.',
+    reportFiltered: 'Lipoti lasefedwa.',
     reportEmpty: 'Palibe chomwe chinalembedwa kwa membala uyu pa nthawi imeneyi.',
     reportAttendance: 'Kupezeka',
     reportSummary: 'Chidule cha ndalama',

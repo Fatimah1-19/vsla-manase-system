@@ -55,7 +55,7 @@ export const NAV_ITEMS = [
   { to: '/app/meetings', key: 'nav.meetings', group: 'nav.gMeetings', icon: 'meetings', roles: ['admin'] },
 
   { to: '/app/analytics?tab=reports', key: 'nav.financialReports', icon: 'analytics', roles: ['admin'], sub: true },
-  { to: '/app/analytics?tab=reports', key: 'nav.memberReports', icon: 'analytics', roles: ['admin'], sub: true },
+  { to: '/app/analytics?tab=reports&scope=member', key: 'nav.memberReports', icon: 'analytics', roles: ['admin'], sub: true },
 
   { to: '/app/profile', key: 'nav.profile', group: 'nav.gProfile', icon: 'profile', roles: ['admin'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['admin'], sub: true },

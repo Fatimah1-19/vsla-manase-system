@@ -1698,6 +1698,9 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .analytics__tab.is-on { background: var(--leaf); color: #fff; }
 .analytics__tabRow .reports__scope { margin: 0; }
 .analytics__viewNote { margin: 0 0 0.9rem; font-size: 0.88rem; }
+.analytics__personal { display: grid; gap: 1rem; }
+.analytics__memberPick { max-width: 360px; }
+.analytics__personal .analytics__note { margin: 0; }
 .cases__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
 
 .cases__card {
@@ -4564,7 +4567,7 @@ section[id] { scroll-margin-top: 4.5rem; }
   border-bottom: 2px solid var(--ink);
 }
 .report-head__brand { display: flex; align-items: center; gap: 0.7rem; min-width: 220px; }
-.report-head__logo { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; flex: 0 0 auto; }
+.report-head__logo { display: none; width: 48px; height: 48px; object-fit: contain; border-radius: 8px; flex: 0 0 auto; }
 .report-head__name { display: block; font-family: var(--head); font-size: 1rem; font-weight: 700; line-height: 1.2; color: var(--ink); }
 .report-head__tagline { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--slate); }
 .report-head__titleBlock { flex: 1 1 280px; text-align: right; }
@@ -4585,7 +4588,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 @media print {
   .report-head { break-inside: avoid; }
-  .report-head__logo { width: 44px; height: 44px; }
+  .report-head__logo { display: block; width: 44px; height: 44px; }
 }
 
 .reports__repHead {

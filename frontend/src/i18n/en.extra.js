@@ -15,6 +15,7 @@ export default {
     membershipVoting: 'Membership Voting', officeElections: 'Office Elections', memberDetails: 'Member Details',
     loanRepayments: 'Loan Repayments', attendance: 'Attendance', settingsApproval: 'VSLA Settings Approval',
     financialReports: 'Financial Reports', membershipReports: 'Membership Reports', loanReports: 'Loan Reports',
+    memberReports: 'Member Reports',
     savingsReports: 'Savings Reports', shareoutReports: 'Share-Out Reports',
     membershipHistory: 'Membership History', meetingRecords: 'Meeting Records', memberRecords: 'Member Records',
     membershipDocuments: 'Membership Documents', adminRecords: 'Administrative Records',
@@ -564,6 +565,10 @@ export default {
 
   analytics: {
     title: 'Analytics', updated: 'updated', print: 'Print this page',
+    scopeGroup: 'Group analytics', scopeMember: 'Personal analytics',
+    personalNote: 'One member\'s own savings, contributions, loans and fines.',
+    personalFlow: 'Savings and contributions',
+    personalFlowNote: 'What this member saved and paid into the groceries fund, month by month.',
     lentOut: 'Lent out now', ofBox: (p) => `${p}% of the group's money is out on loan`,
     interestNote: 'Goes back to the members who paid it',
     avgSavings: 'Average saved per member', median: (x) => `Typical member: ${x}`,
@@ -610,6 +615,7 @@ export default {
     reportExportBlocked: 'The PDF report could not be opened. Please allow printing and try again.',
     reportChoose: 'Choose a member',
     reportHint: 'Choose a member above to see their report for these dates.',
+    reportFiltered: 'Report filtered.',
     reportEmpty: 'Nothing was recorded for this member in this period.',
     reportAttendance: 'Attendance',
     reportSummary: 'Financial summary',

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -23,6 +24,111 @@ function Panel({ title, note, children }) {
       {note && <p className="analytics__note">{note}</p>}
       {children}
     </section>
+  );
+}
+
+function PersonalAnalytics({ members, membersLoading, memberId, onMemberChange }) {
+  const { t } = useLang();
+  const toast = useToast();
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!memberId) { setReport(null); setLoading(false); return undefined; }
+    let cancelled = false;
+    setLoading(true);
+    api.get(`/reports/member/${memberId}`)
+      .then((d) => { if (!cancelled) setReport(d); })
+      .catch((e) => { if (!cancelled) { toast.error(e.message); setReport(null); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [memberId, toast]);
+
+  const flow = useMemo(() => {
+    if (!report) return [];
+    const byMonth = new Map();
+    const add = (ym, key, amount) => {
+      if (!ym) return;
+      const row = byMonth.get(ym) || { savings: 0, contributions: 0 };
+      row[key] += Number(amount || 0);
+      byMonth.set(ym, row);
+    };
+    report.savings.forEach((s) => add(s.date?.slice(0, 7), 'savings', s.amount));
+    report.contributions.forEach((c) => add(c.period, 'contributions', c.amount));
+    return [...byMonth.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([ym, row]) => ({ label: monthLabel(ym), ...row }));
+  }, [report]);
+
+  const picker = (
+    <label className="reports__field reports__field--member analytics__memberPick">
+      <span className="field-label">{t('reports.reportMember')}</span>
+      <select value={memberId} onChange={(e) => onMemberChange(e.target.value)}>
+        <option value="">{t('reports.reportChoose')}</option>
+        {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+      </select>
+    </label>
+  );
+
+  if (membersLoading) return <Spinner />;
+
+  if (!memberId) {
+    return (
+      <div className="analytics__personal">
+        {picker}
+        <p className="notice">{t('reports.reportHint')}</p>
+      </div>
+    );
+  }
+
+  if (loading || !report) {
+    return <div className="analytics__personal">{picker}<Spinner /></div>;
+  }
+
+  return (
+    <div className="analytics__personal">
+      {picker}
+      <p className="analytics__note">{t('analytics.personalNote')}</p>
+
+      <div className="page-grid page-grid--stat">
+        <StatCard label={t('reports.reportSaved')} value={money(report.totals.savings)} tone="green" icon="savings" big />
+        <StatCard label={t('reports.reportShares')} value={plainNumber(report.totals.shares)} tone="gold" icon="shareout" />
+        <StatCard label={t('reports.reportOwing')} value={money(report.totals.loans_outstanding)} tone="blue" icon="loans" />
+        <StatCard label={t('reports.reportFinesUnpaid')} value={money(report.totals.fines_unpaid)} tone="red" icon="fines" />
+      </div>
+
+      <Panel title={t('analytics.personalFlow')} note={t('analytics.personalFlowNote')}>
+        {flow.length
+          ? (
+            <BarChart
+              data={flow}
+              series={[
+                { key: 'savings', label: t('nav.savings') },
+                { key: 'contributions', label: t('reports.reportContributions') },
+              ]}
+            />
+          )
+          : <p className="muted">{t('reports.reportEmpty')}</p>}
+      </Panel>
+
+      <div className="analytics__cols">
+        <Panel title={t('reports.reportLoans')}>
+          <dl className="analytics__facts">
+            <div><dt>{t('reports.reportLoansGiven')}</dt><dd className="money">{money(report.totals.loans_given)}</dd></div>
+            <div><dt>{t('reports.reportOwing')}</dt><dd className="money money--neg">{money(report.totals.loans_outstanding)}</dd></div>
+            <div className="is-strong"><dt>{t('reports.reportNet')}</dt><dd className="money">{money(report.totals.net)}</dd></div>
+          </dl>
+        </Panel>
+
+        <Panel title={t('reports.reportFines')}>
+          <dl className="analytics__facts">
+            <div><dt>{t('reports.reportFinesTotal')}</dt><dd className="money">{money(report.totals.fines)}</dd></div>
+            <div><dt>{t('reports.reportFinesUnpaid')}</dt><dd className="money money--neg">{money(report.totals.fines_unpaid)}</dd></div>
+            <div><dt>{t('reports.reportWrappers')}</dt><dd className="money">{money(report.totals.contributions)}</dd></div>
+          </dl>
+        </Panel>
+      </div>
+    </div>
   );
 }
 
@@ -195,9 +301,36 @@ function AnalyticsView() {
 export default function Analytics() {
   const { t } = useLang();
   const toast = useToast();
-  const [tab, setTab] = useState(() =>
-    new URLSearchParams(window.location.search).get('tab') === 'reports' ? 'reports' : 'analytics');
-  const [scope, setScope] = useState('group');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'reports' ? 'reports' : 'analytics';
+  const scope = searchParams.get('scope') === 'member' ? 'member' : 'group';
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [memberId, setMemberId] = useState('');
+
+  const setTab = (next) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'reports') params.set('tab', 'reports'); else params.delete('tab');
+    setSearchParams(params, { replace: true });
+  };
+
+  const setScope = (next) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'member') params.set('scope', 'member'); else params.delete('scope');
+    setSearchParams(params, { replace: true });
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/members')
+      .then((d) => { if (!cancelled) setMembers(d); })
+      .catch((e) => { if (!cancelled) toast.error(e.message); })
+      .finally(() => { if (!cancelled) setMembersLoading(false); });
+    return () => { cancelled = true; };
+  }, [toast]);
+
+  const groupScopeLabel = tab === 'reports' ? t('reports.scopeGroup') : t('analytics.scopeGroup');
+  const memberScopeLabel = tab === 'reports' ? t('reports.scopeMember') : t('analytics.scopeMember');
 
   const exportPdf = () => {
     const node = document.querySelector('.reports .print-area');
@@ -231,19 +364,37 @@ export default function Analytics() {
             onClick={() => setTab('reports')}>{t('reports.title')}</button>
         </div>
 
-        {tab === 'reports' && (
-          <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
-            <button type="button" role="tab" aria-selected={scope === 'group'}
-              className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-              onClick={() => setScope('group')}>{t('reports.scopeGroup')}</button>
-            <button type="button" role="tab" aria-selected={scope === 'member'}
-              className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-              onClick={() => setScope('member')}>{t('reports.scopeMember')}</button>
-          </div>
-        )}
+        <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
+          <button type="button" role="tab" aria-selected={scope === 'group'}
+            className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+            onClick={() => setScope('group')}>{groupScopeLabel}</button>
+          <button type="button" role="tab" aria-selected={scope === 'member'}
+            className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+            onClick={() => setScope('member')}>{memberScopeLabel}</button>
+        </div>
       </div>
 
-      {tab === 'analytics' ? <AnalyticsView /> : <Reports embedded scope={scope} onScopeChange={setScope} />}
+      {tab === 'analytics'
+        ? (scope === 'member'
+          ? (
+            <PersonalAnalytics
+              members={members}
+              membersLoading={membersLoading}
+              memberId={memberId}
+              onMemberChange={setMemberId}
+            />
+          )
+          : <AnalyticsView />)
+        : (
+          <Reports
+            embedded
+            scope={scope}
+            onScopeChange={setScope}
+            members={members}
+            memberId={memberId}
+            onMemberChange={setMemberId}
+          />
+        )}
     </div>
   );
 }

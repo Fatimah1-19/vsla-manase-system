@@ -23,11 +23,10 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => ({
   label: new Date(2000, i, 1).toLocaleDateString('en-GB', { month: 'long' }),
 }));
 
-// The report categories (chips) under the member picker.
-const CATEGORIES = [
+// Reports for the whole group. Personal reports use a different list below.
+const GROUP_CATEGORIES = [
   { key: 'summary', label: 'reportSummary' },
   { key: 'attendance', label: 'reportAttendance' },
-  { key: 'overview', label: 'reportOverview' },
   { key: 'contributions', label: 'reportContributions' },
   { key: 'savings', label: 'reportSavings' },
   { key: 'loans', label: 'reportLoans' },
@@ -44,6 +43,19 @@ const CATEGORIES = [
   { key: 'history', label: 'reportHistory' },
   { key: 'meetings', label: 'reportMeetings' },
 ];
+
+// Reports about one member, in the personal report view.
+const MEMBER_CATEGORIES = [
+  { key: 'overview', label: 'reportOverview' },
+  { key: 'attendance', label: 'reportAttendance' },
+  { key: 'contributions', label: 'reportContributions' },
+  { key: 'savings', label: 'reportSavings' },
+  { key: 'loans', label: 'reportLoans' },
+  { key: 'repayments', label: 'reportRepayments' },
+  { key: 'fines', label: 'reportFines' },
+];
+
+const REPORT_CATEGORIES = [...GROUP_CATEGORIES, ...MEMBER_CATEGORIES];
 
 // Reports that only make sense for the whole group.
 const GROUP_ONLY = ['summary', 'welfare', 'shareout', 'status', 'requests',
@@ -69,10 +81,14 @@ const dayBefore = (iso) =>
   new Date(new Date(`${iso}T00:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10);
 
 /** A register of who has been missing meetings, by meeting or by member. */
-export default function Reports({ embedded = false, scope: scopeProp, onScopeChange } = {}) {
+export default function Reports({
+  embedded = false, scope: scopeProp, onScopeChange,
+  members: membersProp, memberId: memberIdProp, onMemberChange,
+} = {}) {
   const { t } = useLang();
   const toast = useToast();
   const printRef = useRef(null);
+  const memberSelectRef = useRef(null);
 
   const [view, setView] = useState('list');
   const [status, setStatus] = useState('absent');
@@ -84,14 +100,20 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   const [scopeState, setScopeState] = useState('group');
   const scope = scopeProp ?? scopeState;
   const setScope = onScopeChange ?? setScopeState;
-  const [members, setMembers] = useState([]);
-  const [memberId, setMemberId] = useState('');
+  const [membersState, setMembersState] = useState([]);
+  const members = membersProp ?? membersState;
+  const [memberIdState, setMemberIdState] = useState('');
+  const memberId = memberIdProp ?? memberIdState;
+  const setMemberId = onMemberChange ?? setMemberIdState;
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   // A report can be opened straight from a link (the secretary's shortcuts).
   const [category, setCategory] = useState(() => {
     const wanted = new URLSearchParams(window.location.search).get('report');
-    return CATEGORIES.some((c) => c.key === wanted) ? wanted : 'attendance';
+    const initialScope = scopeProp ?? 'group';
+    const list = initialScope === 'member' ? MEMBER_CATEGORIES : GROUP_CATEGORIES;
+    if (list.some((c) => c.key === wanted)) return wanted;
+    return initialScope === 'member' ? 'overview' : 'attendance';
   });
   const [report, setReport] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -118,8 +140,22 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   }, [view, status, from, to, scope, memberId]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
-  useEffect(() => { api.get('/members').then(setMembers).catch(() => {}); }, []);
+  useEffect(() => {
+    if (membersProp !== undefined) return;
+    api.get('/members').then(setMembersState).catch(() => {});
+  }, [membersProp]);
   useEffect(() => { api.get('/analytics').then(setTotals).catch(() => {}); }, []);
+
+  // The group and personal views keep separate report lists. Switching scope
+  // starts that view at its own home report instead of carrying a report that
+  // only belongs to the other one.
+  const previousScope = useRef(scope);
+  useEffect(() => {
+    if (previousScope.current === scope) return;
+    previousScope.current = scope;
+    setCategory(scope === 'member' ? 'overview' : 'attendance');
+    if (scope === 'member') setView('list');
+  }, [scope]);
   useEffect(() => {
     if (category === 'shareout' && shareouts === null) {
       api.get('/shareout').then(setShareouts).catch((e) => toast.error(e.message));
@@ -160,19 +196,32 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
   }, [granularity, chartYear, month]);
 
   const loadReport = useCallback(() => {
-    if (!memberId) { setReport(null); setReportLoading(false); return; }
+    if (!memberId) { setReport(null); setReportLoading(false); return Promise.resolve(false); }
     const q = new URLSearchParams();
     const y = year || (month ? String(CURRENT_YEAR) : '');
     if (y) q.set('year', y);
     if (month) q.set('month', month);
     setReportLoading(true);
-    api.get(`/reports/member/${memberId}?${q.toString()}`)
-      .then(setReport)
-      .catch((e) => { toast.error(e.message); setReport(null); })
+    return api.get(`/reports/member/${memberId}?${q.toString()}`)
+      .then((data) => { setReport(data); return true; })
+      .catch((e) => { toast.error(e.message); setReport(null); return false; })
       .finally(() => setReportLoading(false));
   }, [memberId, year, month, toast]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
+
+  const filterMemberReport = async () => {
+    if (!memberId) {
+      toast.info(t('reports.reportHint'));
+      memberSelectRef.current?.focus();
+      return;
+    }
+    const ok = await loadReport();
+    if (ok) {
+      toast.success(t('reports.reportFiltered'));
+      printRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const listColumns = [
     { key: 'full_name', label: t('common.name') },
@@ -201,7 +250,8 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
     ? monthLong(`${year || CURRENT_YEAR}-${String(month).padStart(2, '0')}`)
     : year ? String(year) : t('reports.reportAllTime');
 
-  const activeCategory = CATEGORIES.find((c) => c.key === category);
+  const categories = scope === 'member' ? MEMBER_CATEGORIES : GROUP_CATEGORIES;
+  const activeCategory = categories.find((c) => c.key === category) || REPORT_CATEGORIES.find((c) => c.key === category);
   const categoryLabel = t(`reports.${activeCategory ? activeCategory.label : 'reportAttendance'}`);
   const reportSubtitle = `${scope === 'member' ? t('reports.scopeMember') : t('reports.scopeGroup')} - ${
     category === 'attendance' && (from || to)
@@ -1088,7 +1138,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
           {scope === 'member' && (
             <label className="reports__field reports__field--member">
               <span className="field-label">{t('reports.reportMember')}</span>
-              <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
+              <select ref={memberSelectRef} value={memberId} onChange={(e) => setMemberId(e.target.value)}>
                 <option value="">{t('reports.reportChoose')}</option>
                 {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
               </select>
@@ -1127,7 +1177,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
           )}
 
           {scope === 'member' && (
-            <button type="button" className="btn btn--gold btn--small reports__filterBtn" onClick={loadReport}>
+            <button type="button" className="btn btn--gold btn--small reports__filterBtn" onClick={filterMemberReport}>
               {t('reports.reportFilter')}
             </button>
           )}
@@ -1137,7 +1187,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
         </div>
 
         <div className="reports__chips" role="tablist">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button key={c.key} type="button" role="tab" aria-selected={category === c.key}
               className={category === c.key ? 'reports__chip is-on' : 'reports__chip'}
               onClick={() => setCategory(c.key)}>
@@ -1163,7 +1213,7 @@ export default function Reports({ embedded = false, scope: scopeProp, onScopeCha
             {scope === 'group' && groupAttendancePanel}
 
             <div className="reports__tabs no-print" role="tablist">
-              {['list', 'register'].map((k) => (
+              {(scope === 'group' ? ['list', 'register'] : ['list']).map((k) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k}
                   className={view === k ? 'reports__tab is-on' : 'reports__tab'} onClick={() => setView(k)}>
                   {t(`reports.tab_${k}`)}

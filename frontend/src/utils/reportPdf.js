@@ -13,6 +13,7 @@ const PDF_CSS = `
     width: auto !important; padding: 0 !important;
   }
   .no-print { display: none !important; }
+  .report-head__logo { display: block !important; }
   .report-head, .panel, .reports__panel, .profile__card, .loans__detail,
   table, tr, .reports__facts > div { break-inside: avoid; }
   .reports__tableWrap, .profile__card, .loans__detail {
