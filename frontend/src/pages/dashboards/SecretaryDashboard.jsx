@@ -1,9 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
 import QuickActions from '../../components/QuickActions.jsx';
-import { plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
+import { plainNumber, shortDate } from '../../utils/format.js';
 import '../../styles.css';
 
 /**
@@ -12,7 +12,6 @@ import '../../styles.css';
  */
 export default function SecretaryDashboard({ data }) {
   const { t } = useLang();
-  const navigate = useNavigate();
   const attendance = [...(data.recent_meetings || [])].reverse();
   const changes = data.membership_changes || { joined: 0, changed: 0, total: 0 };
 
@@ -71,7 +70,6 @@ export default function SecretaryDashboard({ data }) {
           tone={changes.total > 0 ? 'gold' : 'plain'}
           icon="activity"
           hint={t('dashboard.changesHint', changes.joined, changes.changed)}
-          onClick={() => navigate('/app/activity')}
         />
       </div>
 
@@ -142,23 +140,6 @@ export default function SecretaryDashboard({ data }) {
           <Link to="/app/meetings" className="btn btn--sky btn--small">{t('meetings.title')}</Link>
         </div>
 
-        <div className="sdash__col">
-          <h2 className="dash__sectionTitle">{t('dashboard.recentActivity')}</h2>
-          {data.recent_activity?.length ? (
-            <ul className="sdash__activity">
-              {data.recent_activity.map((a, i) => (
-                <li key={i}>
-                  <span className="sdash__action">{humanAction(a.action)}</span>
-                  {a.details && <span className="sdash__details">{a.details}</span>}
-                  <span className="sdash__when">{a.full_name || '—'} · {dateTime(a.created_at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">{t('common.none')}</p>
-          )}
-          <Link to="/app/activity" className="btn btn--gold btn--small">{t('nav.activity')}</Link>
-        </div>
       </section>
     </>
   );

@@ -138,7 +138,7 @@ function run(middleware, user) {
   // She leads the group: decides joins, carries out votes, confirms rules.
   for (const perm of ['cases.manage', 'officeVotes.manage', 'joinRequests.decide',
                       'approvals.decide', 'groupRules.view', 'groupRules.propose',
-                      'cycles.manage', 'audit.view']) {
+                      'cycles.manage']) {
     assert.ok(can('admin', perm), `the chairperson must hold ${perm}`);
   }
   // ...and she is never the system administrator.
@@ -536,16 +536,18 @@ function run(middleware, user) {
   assert.ok(!/const FAILED = .*REJECT/.test(activityPage),
     'a rejection is a decision of the group, not a failed action');
 
-  // ---- audit history: read by the chairperson, changed by nobody ----------
-  assert.ok(can('admin', 'audit.view') && can('secretary', 'audit.view')
-    && can('treasurer', 'audit.view') && can('system_admin', 'audit.view'),
-    'the offices and the administrator may read the history');
+  // ---- audit history: read by the administrator alone, changed by nobody --
+  assert.ok(can('system_admin', 'audit.view')
+    && !can('admin', 'audit.view') && !can('secretary', 'audit.view')
+    && !can('treasurer', 'audit.view'),
+    'the audit trail is kept for the system administrator alone');
   const systemActivity = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'SystemActivity.jsx'), 'utf8');
   assert.ok(!/api\.(post|put|patch|del)\s*\(/.test(systemActivity),
     'the administrator reads the trail too and never rewrites it');
-  assert.ok(routeLine('activity').includes('COMMITTEE') && routeLine('activity').includes('system_admin'),
-    'the committee and the administrator may open the group activity');
+  assert.ok(!routeLine('activity').includes('COMMITTEE')
+    && routeLine('activity').includes('system_admin'),
+    'only the administrator may open the audit trail');
   assert.ok(routeLine('admin/activity').includes('system_admin')
     && !routeLine('admin/activity').includes("'admin'"),
     'the technical audit management stays with the administrator alone');
@@ -770,7 +772,7 @@ function run(middleware, user) {
   }
   // §2 her own work: meetings, membership records and the paperwork.
   for (const perm of ['meetings.record', 'registration.view', 'registration.record',
-                      'users.view', 'reports.view', 'analytics.view', 'audit.view',
+                      'users.view', 'reports.view', 'analytics.view',
                       'messages.view', 'messages.send', 'savings.view', 'members.create']) {
     assert.ok(can('secretary', perm), `the secretary must hold ${perm}`);
   }
@@ -1050,28 +1052,28 @@ function run(middleware, user) {
   const adminActivitySrc = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'AdministrativeActivity.jsx'), 'utf8');
   assert.ok(routeLine('activity/administrative').includes('AdministrativeActivity')
-    && routeLine('activity/administrative').includes('COMMITTEE'),
-    'the administrative activity page is open to the committee');
+    && !routeLine('activity/administrative').includes('COMMITTEE'),
+    'the administrative activity page is closed to the committee');
   assert.ok(adminActivitySrc.includes("scope: 'administrative'"),
     'the page asks for the administrative actions alone');
   for (const col of ['colUser', 'colAction', 'colRecord', 'colDate', 'colTime', 'colStatus']) {
     assert.ok(adminActivitySrc.includes(`activity.${col}`), `the page must show the ${col} column`);
   }
-  assert.ok(recordsNav.includes("to: '/app/activity/administrative'")
-    && recordsNav.includes("key: 'nav.adminActivity'"),
-    'the secretary reaches the administrative activity from her sidebar');
+  assert.ok(!recordsNav.includes("to: '/app/activity/administrative'")
+    && !recordsNav.includes("key: 'nav.adminActivity'"),
+    'the secretary has no way to reach the audit trail from her sidebar');
 
-  // §18 the audit trail is read-only for the secretary too.
+  // A18 the audit trail is read-only and kept from the secretary.
   const trailRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'auditRoutes.js'), 'utf8');
   const auditSchema = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
-  assert.ok(can('secretary', 'audit.view'), 'the secretary may read the trail');
+  assert.ok(!can('secretary', 'audit.view'), 'the secretary may not read the trail');
   assert.ok(!/router\.(post|put|patch|delete)\s*\(/.test(trailRoutes),
     'the audit routes must not write, for any role');
   assert.ok(auditSchema.includes('audit_logs is append-only')
     && /BEFORE UPDATE OR DELETE ON audit_logs/.test(auditSchema),
     'the database refuses to edit, delete or re-stamp an audit record');
   const secAudit = await run(requirePermission('audit.view'), { role: 'secretary' });
-  assert.ok(secAudit.passed, 'the secretary reads the trail with audit.view');
+  assert.strictEqual(secAudit.status, 403, 'the secretary is refused audit.view');
   assert.ok(!can('secretary', 'system.settings') && !can('secretary', 'accounts.manage'),
     'system-wide audit management stays with the administrator');
 
@@ -1124,7 +1126,7 @@ function run(middleware, user) {
     'the chairperson cannot open the roles page');
 
   // Her sidebar is the leadership menu: membership, money, group, reports,
-  // activity, profile — and never one of the administrator's pages.
+  // profile — and never one of the administrator's pages.
   const navSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'navItems.js'), 'utf8');
   const chairLines = navSrc.split('\n').filter((l) => l.includes("roles: ['admin']"));
   assert.ok(chairLines.length >= 20, `the chairperson must keep her leadership menu (found ${chairLines.length})`);
@@ -1135,15 +1137,15 @@ function run(middleware, user) {
   const chairTargets = chairLines.join('\n');
   for (const page of ['/app/members', '/app/requests', '/app/cases', '/app/leadership', '/app/cycles',
                       '/app/savings', '/app/loans', '/app/fines', '/app/welfare', '/app/shareout',
-                      '/app/meetings', '/app/approvals', '/app/analytics', '/app/activity', '/app/profile']) {
+                      '/app/meetings', '/app/approvals', '/app/analytics', '/app/profile']) {
     assert.ok(chairTargets.includes(`to: '${page}`), `the chairperson menu must include ${page}`);
   }
 
   // Her sidebar is records, meetings, reports and profile — never the
   // administrator's pages, and the full replacement removes the money menu.
   const secLines = navSrc.split('\n').filter((l) => l.includes("roles: ['secretary']"));
-  assert.strictEqual(secLines.length, 16,
-    `the secretary menu must be the fifteen spec links plus the dashboard (found ${secLines.length})`);
+  assert.strictEqual(secLines.length, 15,
+    `the secretary menu must be the fourteen spec links plus the dashboard (found ${secLines.length})`);
   const secTargets = secLines.join('\n');
   for (const line of secLines) {
     assert.ok(!line.includes('/app/admin/'),
@@ -1159,14 +1161,16 @@ function run(middleware, user) {
                       "to: '/app/members?view=history'", "to: '/app/meetings',",
                       "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
                       "to: '/app/members?view=details'", "to: '/app/members?view=documents'",
-                      "to: '/app/records',", "to: '/app/activity/administrative',",
+                      "to: '/app/records',",
                       "to: '/app/profile',", "to: '/app/profile?tab=account'"]) {
     assert.ok(secTargets.includes(page), `the secretary menu must include ${page}`);
   }
+  assert.ok(!secTargets.includes("to: '/app/activity"),
+    'the secretary has no audit trail link');
   assert.ok((secTargets.match(/to: '\/app\/analytics\?tab=reports'/g) || []).length === 3,
     'her three reports all open the reports screen');
   for (const group of ['nav.gDashboard', 'nav.gMembership', 'nav.gMeetings', 'nav.gRecords',
-                       'nav.gReports', 'nav.gActivity', 'nav.gProfile']) {
+                       'nav.gReports', 'nav.gProfile']) {
     assert.ok(secTargets.includes(`group: '${group}'`), `the secretary menu must head it with ${group}`);
   }
   assert.ok((secLines.filter((l) => l.includes('phone: true')).length) === 4,

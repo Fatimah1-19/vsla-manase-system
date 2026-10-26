@@ -227,7 +227,7 @@ const getDashboard = wrap(async (req, res) => {
   const [
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
-    recentSavings, pendingLoans, recentMeetings, attendance, recentActivity, system,
+    recentSavings, pendingLoans, recentMeetings, attendance, system,
     chairJoins, chairRules, chairVotes,
     monthlyFlow, todayTick, contribMonthly, expectedFines,
     upcomingCount, membershipChanges,
@@ -293,11 +293,6 @@ const getDashboard = wrap(async (req, res) => {
     wantsPeople ? one(
       `SELECT COALESCE(ROUND(100.0 * COUNT(*) FILTER (WHERE status='present') / NULLIF(COUNT(*),0)), 0)::int AS rate
          FROM attendance`
-    ) : null,
-    wantsPeople ? query(
-      `SELECT a.action, a.details, a.created_at, u.full_name
-         FROM audit_logs a LEFT JOIN users u ON u.id = a.user_id
-        ORDER BY a.created_at DESC LIMIT 8`
     ) : null,
 
     // The admin also watches the system itself, and carries the chairperson's
@@ -443,7 +438,6 @@ const getDashboard = wrap(async (req, res) => {
   if (wantsPeople) {
     payload.recent_meetings = recentMeetings;
     payload.attendance_rate = attendance.rate;
-    payload.recent_activity = recentActivity;
     payload.upcoming_meetings = upcomingCount.c;
     payload.membership_changes = {
       joined: membershipChanges.joined,

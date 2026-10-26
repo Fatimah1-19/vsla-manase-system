@@ -513,7 +513,7 @@ async function check(n, title, fn) {
       'the audit routes must offer reading only');
     assert.ok(schema.includes('audit_logs is append-only'),
       'the database itself must refuse to rewrite history');
-    assert.ok(can('treasurer', 'audit.view'), 'she may still read the history');
+    assert.ok(!can('treasurer', 'audit.view'), 'the audit trail is kept for the administrator alone');
   });
 
   await check(24, 'the treasurer cannot change VSLA settings without the approval process', async () => {
@@ -641,7 +641,7 @@ async function check(n, title, fn) {
     // Grouped, with a heading over each section of the menu.
     for (const group of ['nav.gDashboard', 'nav.gSavings', 'nav.gLoans', 'nav.gFines',
                          'nav.gWelfare', 'nav.gShareout', 'nav.gFinancialReports',
-                         'nav.gActivity', 'nav.gProfile']) {
+                         'nav.gProfile']) {
       assert.ok(targets.includes(group), `the treasurer menu is missing the ${group} heading`);
     }
     // The administrator's pages and membership approval are not hers.

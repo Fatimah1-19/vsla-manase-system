@@ -29,13 +29,6 @@ const GROUPS = [
     ],
   },
   {
-    key: 'recordsDecisions',
-    links: [
-      ['/app/activity?view=audit', 'nav.adminRecords', 'audit'],
-      ['/app/activity', 'nav.adminActivity', 'activity'],
-    ],
-  },
-  {
     key: 'recordsReports',
     links: [
       ['/app/analytics?tab=reports', 'nav.membershipReports', 'analytics'],

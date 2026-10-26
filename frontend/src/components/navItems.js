@@ -54,7 +54,6 @@ export const NAV_ITEMS = [
 
   { to: '/app/meetings', key: 'nav.meetings', group: 'nav.gMeetings', icon: 'meetings', roles: ['admin'] },
 
-  { to: '/app/activity', key: 'nav.groupActivity', group: 'nav.gReports', icon: 'activity', roles: ['admin'] },
   { to: '/app/analytics?tab=reports', key: 'nav.financialReports', icon: 'analytics', roles: ['admin'], sub: true },
   { to: '/app/analytics?tab=reports', key: 'nav.memberReports', icon: 'analytics', roles: ['admin'], sub: true },
 
@@ -79,8 +78,6 @@ export const NAV_ITEMS = [
 
   { to: '/app/financial-activity',     key: 'nav.financialReports', group: 'nav.gFinancialReports', icon: 'analytics', roles: ['treasurer'] },
   { to: '/app/analytics?tab=reports',  key: 'nav.financialReports', icon: 'analytics', roles: ['treasurer'], sub: true },
-
-  { to: '/app/activity',              key: 'nav.groupActivity',   group: 'nav.gActivity', icon: 'activity', roles: ['treasurer'] },
 
   { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['treasurer'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['treasurer'], sub: true },
@@ -117,8 +114,6 @@ export const NAV_ITEMS = [
   { to: '/app/analytics?tab=reports', key: 'nav.membershipReports', group: 'nav.gReports', icon: 'analytics', roles: ['secretary'] },
   { to: '/app/analytics?tab=reports', key: 'nav.attendanceReports', icon: 'analytics', roles: ['secretary'], sub: true },
   { to: '/app/analytics?tab=reports', key: 'nav.meetingReports',    icon: 'analytics', roles: ['secretary'], sub: true },
-
-  { to: '/app/activity/administrative', key: 'nav.adminActivity', group: 'nav.gActivity', icon: 'activity', roles: ['secretary'] },
 
   { to: '/app/profile',    key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['secretary'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['secretary'], sub: true },
@@ -164,7 +159,6 @@ const CHAIR_SIDEBAR = [
   },
   { to: '/app/shareout', key: 'nav.shareout', icon: 'shareout' },
   { to: '/app/meetings', key: 'nav.meetings', icon: 'meetings' },
-  { to: '/app/activity', key: 'nav.groupActivity', icon: 'activity' },
   { to: '/app/profile', key: 'nav.profile', icon: 'profile' },
 ];
 

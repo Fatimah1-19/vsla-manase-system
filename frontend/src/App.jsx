@@ -72,9 +72,9 @@ export default function App() {
         <Route path="leadership" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Leadership /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
-        <Route path="activity" element={<ProtectedRoute roles={[...COMMITTEE, 'system_admin']}><Activity /></ProtectedRoute>} />
+        <Route path="activity" element={<ProtectedRoute roles={['system_admin']}><Activity /></ProtectedRoute>} />
         <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
-        <Route path="activity/administrative" element={<ProtectedRoute roles={COMMITTEE}><AdministrativeActivity /></ProtectedRoute>} />
+        <Route path="activity/administrative" element={<ProtectedRoute roles={['system_admin']}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
         {/* The financial rules, read-only for the treasurer and the chairperson:
             they work by the active settings and may not change them here. */}

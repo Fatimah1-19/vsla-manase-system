@@ -139,7 +139,9 @@ const PERMISSIONS = {
   'system.settings': ['system_admin'],
 
   // ---- the record of everything ----
-  'audit.view': ['admin', 'secretary', 'treasurer', 'system_admin'],
+  // Security: the audit trail is kept for the system administrator alone. The
+  // elected offices write to it through their work, but they never read it.
+  'audit.view': ['system_admin'],
 };
 
 /**

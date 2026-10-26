@@ -4,7 +4,7 @@ import StatCard from '../../components/StatCard.jsx';
 import { BarChart, Pie } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
 import QuickActions from '../../components/QuickActions.jsx';
-import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
+import { money, plainNumber, shortDate } from '../../utils/format.js';
 import { groupRuleLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
 
@@ -199,25 +199,6 @@ export default function AdminDashboard({ data }) {
           )}
         </section>
 
-        <section className="dash__card adash__activityCard">
-          <div className="adash__activityHead">
-            <h2 className="dash__sectionTitle">{t('dashboard.recentActivity')}</h2>
-            <Link to="/app/activity" className="adash__viewAll">{t('dashboard.viewAllActivities')}</Link>
-          </div>
-          {data.recent_activity?.length ? (
-            <ul className="adash__activity">
-              {data.recent_activity.slice(0, 6).map((a, i) => (
-                <li key={i}>
-                  <span className="adash__action">{humanAction(a.action)}</span>
-                  {a.details && <span className="adash__details">{a.details}</span>}
-                  <span className="adash__when">{a.full_name || '—'} · {dateTime(a.created_at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">{t('common.none')}</p>
-          )}
-        </section>
       </div>
 
       <section className="adash__group">
