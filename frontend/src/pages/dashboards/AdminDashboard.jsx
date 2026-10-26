@@ -3,6 +3,7 @@ import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart, Pie } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
+import QuickActions from '../../components/QuickActions.jsx';
 import { money, plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
 import { groupRuleLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
@@ -56,6 +57,17 @@ export default function AdminDashboard({ data }) {
     text: money(c.amount),
   }));
   const contributed = monthContribs.reduce((s, c) => s + c.amount, 0);
+
+  const quickActions = [
+    { to: '/app/requests', key: 'chair.qaReviewRequests', icon: 'requests', cls: '' },
+    { to: '/app/members', key: 'chair.qaViewMembers', icon: 'members', cls: 'btn--sky' },
+    { to: '/app/loans', key: 'chair.qaViewLoans', icon: 'loans', cls: '' },
+    { to: '/app/savings', key: 'chair.qaViewSavings', icon: 'savings', cls: '' },
+    { to: '/app/loans?tab=repayments', key: 'chair.qaViewRepayments', icon: 'loans', cls: '' },
+    { to: '/app/analytics?tab=reports', key: 'chair.qaViewReports', icon: 'reports', cls: 'btn--sky' },
+    { to: '/app/approvals', key: 'chair.qaReviewSettings', icon: 'settings', cls: 'btn--gold' },
+    { to: '/app/meetings', key: 'chair.qaViewMeetings', icon: 'meetings', cls: 'btn--ghost' },
+  ];
 
   return (
     <>
@@ -302,16 +314,7 @@ export default function AdminDashboard({ data }) {
 
       <section className="adash__quick">
         <h2 className="dash__sectionTitle">{t('chair.qaTitle')}</h2>
-        <div className="adash__links">
-          <Link to="/app/requests" className="btn">{t('chair.qaReviewRequests')}</Link>
-          <Link to="/app/members" className="btn btn--sky">{t('chair.qaViewMembers')}</Link>
-          <Link to="/app/loans" className="btn">{t('chair.qaViewLoans')}</Link>
-          <Link to="/app/savings" className="btn">{t('chair.qaViewSavings')}</Link>
-          <Link to="/app/loans?tab=repayments" className="btn">{t('chair.qaViewRepayments')}</Link>
-          <Link to="/app/analytics?tab=reports" className="btn btn--sky">{t('chair.qaViewReports')}</Link>
-          <Link to="/app/approvals" className="btn btn--gold">{t('chair.qaReviewSettings')}</Link>
-          <Link to="/app/meetings" className="btn btn--ghost">{t('chair.qaViewMeetings')}</Link>
-        </div>
+        <QuickActions actions={quickActions} />
       </section>
 
       {data.next_meeting && (

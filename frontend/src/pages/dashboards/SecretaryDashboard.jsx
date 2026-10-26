@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import { BarChart } from '../../components/Charts.jsx';
+import QuickActions from '../../components/QuickActions.jsx';
 import { plainNumber, shortDate, dateTime, humanAction } from '../../utils/format.js';
 import '../../styles.css';
 
@@ -18,15 +19,15 @@ export default function SecretaryDashboard({ data }) {
   // Her shortcuts: everything she opens at every meeting. Nothing that only
   // the chairperson may decide is offered here.
   const quickActions = [
-    { to: '/app/members', key: 'dashboard.qaViewMembers', cls: 'btn--sky' },
-    { to: '/app/members?add=1', key: 'dashboard.qaAddMember', cls: '' },
-    { to: '/app/requests', key: 'dashboard.qaReviewRequests', cls: 'btn--gold' },
-    { to: '/app/members?view=history', key: 'dashboard.qaMembershipHistory', cls: 'btn--ghost' },
-    { to: '/app/meetings?new=1', key: 'dashboard.qaCreateMeeting', cls: 'btn--sky' },
-    { to: '/app/meetings?tab=attendance', key: 'dashboard.qaRecordAttendance', cls: '' },
-    { to: '/app/meetings?tab=records', key: 'dashboard.qaMeetingRecords', cls: 'btn--ghost' },
-    { to: '/app/analytics?tab=reports&report=members', key: 'dashboard.qaMembershipReport', cls: 'btn--sky' },
-    { to: '/app/analytics?tab=reports&report=attendance', key: 'dashboard.qaAttendanceReport', cls: '' },
+    { to: '/app/members', key: 'dashboard.qaViewMembers', icon: 'members', cls: 'btn--sky' },
+    { to: '/app/members?add=1', key: 'dashboard.qaAddMember', icon: 'plus', cls: '' },
+    { to: '/app/requests', key: 'dashboard.qaReviewRequests', icon: 'requests', cls: 'btn--gold' },
+    { to: '/app/members?view=history', key: 'dashboard.qaMembershipHistory', icon: 'history', cls: 'btn--ghost' },
+    { to: '/app/meetings?new=1', key: 'dashboard.qaCreateMeeting', icon: 'meetings', cls: 'btn--sky' },
+    { to: '/app/meetings?tab=attendance', key: 'dashboard.qaRecordAttendance', icon: 'check', cls: '' },
+    { to: '/app/meetings?tab=records', key: 'dashboard.qaMeetingRecords', icon: 'reports', cls: 'btn--ghost' },
+    { to: '/app/analytics?tab=reports&report=members', key: 'dashboard.qaMembershipReport', icon: 'reports', cls: 'btn--sky' },
+    { to: '/app/analytics?tab=reports&report=attendance', key: 'dashboard.qaAttendanceReport', icon: 'reports', cls: '' },
   ];
 
   return (
@@ -83,13 +84,7 @@ export default function SecretaryDashboard({ data }) {
 
       <section className="dash__card sdash__quick">
         <h2 className="dash__sectionTitle">{t('dashboard.quickActions')}</h2>
-        <div className="sdash__quickGrid">
-          {quickActions.map((a) => (
-            <Link key={a.to + a.key} to={a.to} className={`btn ${a.cls}`.trim()}>
-              {t(a.key)}
-            </Link>
-          ))}
-        </div>
+        <QuickActions actions={quickActions} />
       </section>
 
       {attendance.length > 0 && (

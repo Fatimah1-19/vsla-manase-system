@@ -5,6 +5,7 @@ import { BarChart } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
 import Icon from '../../components/Icon.jsx';
+import QuickActions from '../../components/QuickActions.jsx';
 import { money, plainNumber, shortDate } from '../../utils/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import '../../styles.css';
@@ -26,34 +27,28 @@ export default function TreasurerDashboard({ data }) {
 
   // The treasurer's seven day-to-day actions, in the order she does them.
   const quickActions = isRecorder ? [
-    { to: '/app/savings', key: 'treas.qaRecordSavings', cls: 'btn--sky' },
-    { to: '/app/loans?action=apply', key: 'treas.qaRecordLoan', cls: '' },
-    { to: '/app/loans?action=record', key: 'treas.qaRecordRepayment', cls: 'btn--gold' },
-    { to: '/app/fines', key: 'treas.qaRecordFine', cls: '' },
-    { to: '/app/welfare', key: 'treas.qaRecordWelfare', cls: 'btn--sky' },
-    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', cls: 'btn--ghost' },
-    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
+    { to: '/app/savings', key: 'treas.qaRecordSavings', icon: 'savings', cls: 'btn--sky' },
+    { to: '/app/loans?action=apply', key: 'treas.qaRecordLoan', icon: 'loans', cls: '' },
+    { to: '/app/loans?action=record', key: 'treas.qaRecordRepayment', icon: 'loans', cls: 'btn--gold' },
+    { to: '/app/fines', key: 'treas.qaRecordFine', icon: 'fines', cls: '' },
+    { to: '/app/welfare', key: 'treas.qaRecordWelfare', icon: 'welfare', cls: 'btn--sky' },
+    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
+    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ] : [
-    { to: '/app/savings', key: 'treas.qaViewSavings', cls: 'btn--sky' },
-    { to: '/app/loans', key: 'treas.qaViewLoans', cls: '' },
-    { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', cls: 'btn--gold' },
-    { to: '/app/fines', key: 'treas.qaViewFines', cls: '' },
-    { to: '/app/welfare', key: 'treas.qaViewWelfare', cls: 'btn--sky' },
-    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', cls: 'btn--ghost' },
-    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', cls: 'btn--ghost' },
+    { to: '/app/savings', key: 'treas.qaViewSavings', icon: 'savings', cls: 'btn--sky' },
+    { to: '/app/loans', key: 'treas.qaViewLoans', icon: 'loans', cls: '' },
+    { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', icon: 'loans', cls: 'btn--gold' },
+    { to: '/app/fines', key: 'treas.qaViewFines', icon: 'fines', cls: '' },
+    { to: '/app/welfare', key: 'treas.qaViewWelfare', icon: 'welfare', cls: 'btn--sky' },
+    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
+    { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ];
 
   return (
     <>
       <section className="dash__card sdash__quick">
         <h2 className="dash__sectionTitle">{t('treas.qaTitle')}</h2>
-        <div className="sdash__quickGrid">
-          {quickActions.map((a) => (
-            <Link key={a.to + a.key} to={a.to} className={`btn ${a.cls}`.trim()}>
-              {t(a.key)}
-            </Link>
-          ))}
-        </div>
+        <QuickActions actions={quickActions} />
       </section>
 
       {cycle && (

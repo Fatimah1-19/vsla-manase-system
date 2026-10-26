@@ -5191,3 +5191,8 @@ section[id] { scroll-margin-top: 4.5rem; }
 /* ---- member documents kept with the register ---- */
 .members__docUpload { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; margin-bottom: 0.7rem; padding: 0.7rem; border: 1px dashed rgba(0, 0, 0, 0.15); border-radius: 8px; }
 
+
+/* ---- dashboard quick actions: symbols only, labels on hover ---- */
+.quick-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.quick-actions .quick-actions__btn { width: 46px; min-width: 46px; height: 46px; min-height: 46px; padding: 0; border-radius: 12px; }
+.quick-actions .quick-actions__btn:hover:not(:disabled) { filter: none; }

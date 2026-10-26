@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client.js';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
+import QuickActions from '../../components/QuickActions.jsx';
 import { plainNumber, dateTime, humanAction } from '../../utils/format.js';
 import { categoryLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
@@ -25,6 +26,15 @@ export default function SystemAdminDashboard({ data }) {
       .catch(() => {});
     return () => { alive = false; };
   }, []);
+
+  const quickActions = [
+    { to: '/app/admin/users', key: 'admin.qaManageUsers', icon: 'members', cls: '' },
+    { to: '/app/admin/roles', key: 'admin.qaManageRoles', icon: 'leadership', cls: 'btn--sky' },
+    { to: '/app/activity', key: 'admin.qaAuditTrail', icon: 'audit', cls: 'btn--gold' },
+    { to: '/app/admin/activity', key: 'admin.qaSystemActivity', icon: 'activity', cls: 'btn--ghost' },
+    { to: '/app/admin/settings', key: 'admin.qaPendingChanges', icon: 'requests', cls: 'btn--ghost' },
+    { to: '/app/admin/system', key: 'admin.qaSystemSettings', icon: 'settings', cls: 'btn--ghost' },
+  ];
 
   return (
     <>
@@ -87,14 +97,7 @@ export default function SystemAdminDashboard({ data }) {
       <section className="sysadmin__quick">
         <section className="dash__card">
           <h2 className="dash__sectionTitle">{t('admin.quickActions') || t('nav.settings') || 'Quick actions'}</h2>
-          <div className="sysadmin__links">
-            <Link to="/app/admin/users" className="btn">{t('admin.qaManageUsers')}</Link>
-            <Link to="/app/admin/roles" className="btn btn--sky">{t('admin.qaManageRoles')}</Link>
-            <Link to="/app/activity" className="btn btn--gold">{t('admin.qaAuditTrail')}</Link>
-            <Link to="/app/admin/activity" className="btn btn--ghost">{t('admin.qaSystemActivity')}</Link>
-            <Link to="/app/admin/settings" className="btn btn--ghost">{t('admin.qaPendingChanges')}</Link>
-            <Link to="/app/admin/system" className="btn btn--ghost">{t('admin.qaSystemSettings')}</Link>
-          </div>
+          <QuickActions actions={quickActions} />
         </section>
       </section>
 
