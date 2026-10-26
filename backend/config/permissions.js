@@ -118,6 +118,7 @@ const PERMISSIONS = {
   // The rules the group lives by: the administrator keeps every one of them now.
   'groupRules.view': ['admin', 'treasurer', 'system_admin'],
   'groupRules.propose': ['admin', 'system_admin'],
+  'groupRules.configure': ['system_admin'],
   // The members vote, then the chairperson settles the request herself. The
   // treasurer records the money, never the final membership decision.
   'joinRequests.decide': ['admin'],

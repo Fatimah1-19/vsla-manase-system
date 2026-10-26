@@ -1,11 +1,10 @@
 const express = require('express');
-const { authenticate } = require('../middleware/auth');
-const { requirePermission } = require('../config/permissions');
+const { protect, requirePermission } = require('../middleware/auth');
 const c = require('../controllers/settingsRequestsController');
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(protect);
 
 // Chairperson creates requests
 router.post('/', requirePermission('settingsRequests.create'), c.createRequest);
@@ -17,7 +16,9 @@ router.get('/', requirePermission('settingsRequests.viewAll'), c.listAll);
 router.get('/counts', requirePermission('settingsRequests.viewAll'), c.getCounts);
 // Mark read
 router.post('/:id/read', requirePermission('settingsRequests.manage'), c.markRead);
-// Complete
+// Apply the requested values to the real setting, then close the request
+router.post('/:id/configure', requirePermission('settingsRequests.manage'), c.configureRequest);
+// Complete without re-applying values (the administrator configured them manually)
 router.post('/:id/complete', requirePermission('settingsRequests.manage'), c.completeRequest);
 // Reject
 router.post('/:id/reject', requirePermission('settingsRequests.manage'), c.rejectRequest);

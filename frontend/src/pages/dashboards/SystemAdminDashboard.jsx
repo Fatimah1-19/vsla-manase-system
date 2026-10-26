@@ -1,36 +1,63 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../../api/client.js';
 import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
-import { plainNumber, dateTime, shortDate, humanAction } from '../../utils/format.js';
-import { groupRuleLabel } from '../../utils/groupRuleLabels.js';
+import { plainNumber, dateTime, humanAction } from '../../utils/format.js';
+import { categoryLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
-
-/** A setting value in plain words, for the change beside it. */
-function shown(key, value, t) {
-  if (key === 'join_screening_questions') {
-    try {
-      const list = JSON.parse(value);
-      return Array.isArray(list) ? `${list.length}` : String(value);
-    } catch { return String(value); }
-  }
-  if (value === 'yes' || value === 'no') return value === 'yes' ? t('common.yes') : t('common.no');
-  return value === undefined || value === null || value === '' ? '—' : String(value);
-}
 
 /**
  * The system administrator looks after accounts and the system itself.
- * No money is ever shown here. VSLA settings are only proposed: the chairperson
- * confirms them, and the administrator can never confirm her own change.
+ * No money is ever shown here. The chairperson sends the VSLA configuration
+ * she needs and the administrator applies it in the matching settings tab.
  */
 export default function SystemAdminDashboard({ data }) {
   const { t } = useLang();
   const u = data.users || {};
   const s = data.system_settings || {};
-  const current = data.group_settings || {};
-  const pending = (data.config_changes || []).filter((c) => c.status === 'pending');
+  const [settingsRequests, setSettingsRequests] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    api.get('/settings-requests?status=pending')
+      .then((rows) => { if (alive) setSettingsRequests(Array.isArray(rows) ? rows : []); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   return (
     <>
+      {/* The chairperson's settings requests, straight from the existing tabs */}
+      {settingsRequests.length > 0 && (
+        <section className="dash__card settingsNotify" aria-live="polite">
+          <div className="settingsNotify__head">
+            <div>
+              <h2 className="dash__sectionTitle">{t('settingsRequests.notificationTitle')}</h2>
+              <p className="sysadmin__note">{t('settingsRequests.notificationNote')}</p>
+            </div>
+            <span className="tag tag--gold">{t('settingsRequests.newCount', settingsRequests.length)}</span>
+          </div>
+          <ul className="settingsNotify__list">
+            {settingsRequests.map((r) => (
+              <li key={r.id} className="settingsNotify__item">
+                <div>
+                  <strong>{t(categoryLabel(r.category))}</strong>
+                  <p className="muted">
+                    {t('settingsRequests.submittedBy', r.requested_by_name || t('activity.system'))}
+                    {' · '}{dateTime(r.created_at)}
+                  </p>
+                  {r.description ? <p className="settingsNotify__text">{r.description}</p> : null}
+                </div>
+                <Link to={`/app/admin/settings/${r.category}?requestId=${r.id}`} className="btn btn--small">
+                  {t('settingsRequests.openCategory', t(categoryLabel(r.category)))}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* The numbers */}
       <div className="page-grid page-grid--stat">
         <StatCard label={t('admin.totalUsers')} value={plainNumber(u.total)} icon="members" big />
@@ -49,9 +76,9 @@ export default function SystemAdminDashboard({ data }) {
         />
         <StatCard label={t('admin.sysAdmins')} value={plainNumber(u.administrators)} icon="lock" />
         <StatCard
-          label={t('admin.pendingConfigChanges')}
-          value={plainNumber(data.pending_config_changes)}
-          tone={data.pending_config_changes > 0 ? 'gold' : 'plain'}
+          label={t('settingsRequests.pendingStat')}
+          value={plainNumber(settingsRequests.length)}
+          tone={settingsRequests.length > 0 ? 'gold' : 'plain'}
           icon="requests"
         />
       </div>
@@ -189,70 +216,6 @@ export default function SystemAdminDashboard({ data }) {
           </table>
           <Link to="/app/admin/activity" className="btn btn--ghost btn--small">{t('admin.qaSystemActivity')}</Link>
         </section>
-
-        {/* Pending Configuration Changes */}
-        <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('admin.pendingConfigTitle')}</h2>
-        <p className="sysadmin__note">{t('admin.pendingConfigNote')}</p>
-        {pending.length === 0 ? (
-          <p className="muted">{t('admin.noPendingConfig')}</p>
-        ) : (
-          <table className="sysadmin__table">
-            <thead>
-              <tr>
-                <th>{t('settings.setting')}</th>
-                <th>{t('settings.currentValue')}</th>
-                <th>{t('settings.proposedValue')}</th>
-                <th>{t('settings.proposedBy')}</th>
-                <th>{t('settings.dateProposed')}</th>
-                <th>{t('admin.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((c) => {
-                const payload = c.payload || {};
-                return (
-                  <tr key={c.id}>
-                    <td>
-                      <strong>{t('admin.kind_group_rules')}</strong>
-                    </td>
-                    <td>
-                      <ul className="sysadmin__configKeys">
-                        {Object.entries(payload).map(([k]) => (
-                          <li key={k}>
-                            <span className="muted">{t(groupRuleLabel(k))}</span>
-                            <span className="sysadmin__configVal">
-                              <em>{shown(k, current[k], t)}</em>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td>
-                      <ul className="sysadmin__configKeys">
-                        {Object.entries(payload).map(([k, v]) => (
-                          <li key={k}>
-                            <span className="muted">{t(groupRuleLabel(k))}</span>
-                            <span className="sysadmin__configVal">
-                              <strong>{shown(k, v, t)}</strong>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td>{c.requested_by_name || t('activity.system')}</td>
-                    <td>{shortDate(c.created_at)}</td>
-                    <td>
-                      <span className="tag tag--gold">{t('admin.statusPending')}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        <Link to="/app/admin/settings" className="btn btn--sky btn--small">{t('settings.title')}</Link>
-      </section>
 
         {/* Recent system activity */}
         <section className="dash__card">

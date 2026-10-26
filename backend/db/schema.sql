@@ -590,6 +590,7 @@ CREATE TABLE IF NOT EXISTS settings_requests (
   title             VARCHAR(200),
   description       TEXT NOT NULL,
   details           TEXT,
+  requested_values  JSONB NOT NULL DEFAULT '{}'::jsonb,
   requested_by      INT NOT NULL REFERENCES users(id),
   status            VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','completed','rejected')),
   implemented_by    INT REFERENCES users(id),
@@ -602,6 +603,10 @@ CREATE TABLE IF NOT EXISTS settings_requests (
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Existing databases predate the structured values. The JSON object keeps each
+-- requested setting beside its category, instead of one free-text blob.
+ALTER TABLE settings_requests ADD COLUMN IF NOT EXISTS requested_values JSONB NOT NULL DEFAULT '{}'::jsonb;
+
 CREATE INDEX IF NOT EXISTS idx_settings_requests_status ON settings_requests(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_settings_requests_category ON settings_requests(category, status);
 CREATE INDEX IF NOT EXISTS idx_settings_requests_requested_by ON settings_requests(requested_by, created_at DESC);

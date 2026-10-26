@@ -143,8 +143,29 @@ async function applyGroupRules(payload, userId) {
   if (keys.includes('absence_fine') && Number(payload.absence_fine) > 0) {
     fines_created = await backfillAbsenceFines({ recorded_by: userId });
   }
-  return { keys, fines_created };
+  return { keys, fines_created, previous, next };
 }
+
+// PUT /api/settings/group-rules/apply  (system administrator)
+// The chairperson sends the configuration she needs; the administrator puts
+// that configuration into force here. No second confirmation is involved.
+const applyGroupRulesDirect = wrap(async (req, res) => {
+  const updates = req.body && typeof req.body === 'object' ? req.body : {};
+  const keys = Object.keys(updates).filter((k) => isGroupRule(k));
+  if (!keys.length) return res.status(400).json({ message: 'Nothing to change.' });
+
+  const payload = {};
+  for (const key of keys) {
+    try {
+      payload[key] = cleanGroupRule(key, updates[key]);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+  }
+
+  const result = await applyGroupRules(payload, req.user.id);
+  res.json({ message: 'Configuration saved.', ...result });
+});
 
 // GET /api/settings/system  (administrator)
 const listSystemSettings = wrap(async (req, res) => {
@@ -192,6 +213,7 @@ const updateSystemSettings = wrap(async (req, res) => {
 
 module.exports = {
   GROUP_RULES, SYSTEM_SETTINGS,
-  listGroupRules, proposeGroupRules, applyGroupRules,
+  listGroupRules, proposeGroupRules, applyGroupRules, applyGroupRulesDirect,
+  cleanGroupRule, isGroupRule,
   listSystemSettings, updateSystemSettings,
 };

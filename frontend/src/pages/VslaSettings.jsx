@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useConfirm } from '../context/ConfirmContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import Spinner from '../components/Spinner.jsx';
 import { money, dateTime } from '../utils/format.js';
-import { GROUP_LABELS, SECTION_KEYS } from '../utils/groupRuleLabels.js';
+import { GROUP_LABELS, REQUEST_FIELDS } from '../utils/groupRuleLabels.js';
 import '../styles.css';
 
 // savingRecorded -> "Saving recorded"; other_thing -> "Other thing".
@@ -47,8 +49,6 @@ const STATUS_TAG = {
 };
 const MONEY_KEYS = new Set(['weekly_share_value', 'monthly_levy', 'welfare_contribution', 'registration_fee', 'absence_fine']);
 const PERCENT_KEYS = new Set(['default_interest_rate', 'case_quorum_percent', 'case_dismiss_percent', 'office_quorum_percent']);
-const REQ_TAG_BY_STATUS = { pending: STATUS_TAG.waiting, approved: STATUS_TAG.in_force, rejected: STATUS_TAG.not_set, withdrawn: STATUS_TAG.not_set };
-
 /**
  * The VSLA settings, one dedicated page per category. The administrator reads the
  * current value of every rule and proposes a change; the chairperson confirms it.
@@ -57,26 +57,30 @@ const REQ_TAG_BY_STATUS = { pending: STATUS_TAG.waiting, approved: STATUS_TAG.in
 export default function VslaSettings({ readOnly = false }) {
   const { t } = useLang();
   const toast = useToast();
+  const confirm = useConfirm();
+  const { user } = useAuth();
   const { section: routeSection } = useParams();
   const [searchParams] = useSearchParams();
   const section = SECTIONS.find((s) => s.id === routeSection);
   const requestId = searchParams.get('requestId');
+  const canSend = readOnly && user?.role === 'admin';
 
   const [group, setGroup] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [system, setSystem] = useState(null);
   const [sms, setSms] = useState(null);
-  const [changes, setChanges] = useState([]);
-  const [pendingKeys, setPendingKeys] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
   const [settingsRequests, setSettingsRequests] = useState([]);
   const [requestCounts, setRequestCounts] = useState({});
+  const [requestValues, setRequestValues] = useState({});
+  const [requestSummary, setRequestSummary] = useState('');
+  const [requestNote, setRequestNote] = useState('');
+  const requestPanelRef = useRef(null);
 
   const load = useCallback(async () => {
-    const [rows, sys, changes, smsInfo] = await Promise.all([
+    const [rows, sys, smsInfo] = await Promise.all([
       api.get('/settings/group-rules').catch(() => []),
       readOnly ? Promise.resolve([]) : api.get('/settings/system').catch(() => []),
-      readOnly ? Promise.resolve([]) : api.get('/admin/config-changes').catch(() => []),
       readOnly ? Promise.resolve(null) : api.get('/admin/sms').catch(() => null),
     ]);
     setSms(smsInfo);
@@ -89,28 +93,43 @@ export default function VslaSettings({ readOnly = false }) {
     } catch { parsed = []; }
     setQuestions(parsed.map((q) => ({ id: q.id || '', good: q.good === 'no' ? 'no' : 'yes', en: q.en || '', ny: q.ny || '' })));
     setSystem(Object.fromEntries((sys || []).map((r) => [r.setting_key, r.setting_value])));
-    const list = changes || [];
-    setChanges(list);
-    const keys = new Set();
-    for (const c of list) {
-      if (c.status === 'pending' && c.payload) Object.keys(c.payload).forEach((k) => keys.add(k));
-    }
-    setPendingKeys(keys);
 
-    if (!readOnly) {
+    if (canSend) {
+      const mine = await api.get(`/settings-requests/mine?category=${routeSection}`).catch(() => []);
+      setSettingsRequests(Array.isArray(mine) ? mine : []);
+    } else if (!readOnly) {
       try {
         const [allReqs, counts] = await Promise.all([
-          api.get('/settings-requests').catch(() => []),
+          api.get(`/settings-requests?category=${routeSection}`).catch(() => []),
           api.get('/settings-requests/counts').catch(() => ({})),
         ]);
-        setSettingsRequests(Array.isArray(allReqs) ? allReqs.filter((r) => r.category === routeSection) : []);
+        setSettingsRequests(Array.isArray(allReqs) ? allReqs : []);
         setRequestCounts(counts || {});
       } catch {}
     }
-  }, [readOnly, routeSection]);
+  }, [canSend, readOnly, routeSection]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+  useEffect(() => {
+    setRequestValues({});
+    setRequestSummary('');
+    setRequestNote('');
+  }, [routeSection]);
 
+  // A notification link opens the category and brings its request panel into view.
+  useEffect(() => {
+    if (readOnly || !requestId || !settingsRequests.length) return;
+    const req = settingsRequests.find((r) => String(r.id) === String(requestId));
+    if (!req) return;
+    if (!req.read_by_admin) markRequestRead(req.id);
+    const timer = window.setTimeout(() => {
+      requestPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [readOnly, requestId, settingsRequests]);
+
+  // The administrator saves the real value here. There is no second approval:
+  // this is the configuration change itself.
   async function propose(e) {
     e.preventDefault();
     setBusy(true);
@@ -119,8 +138,51 @@ export default function VslaSettings({ readOnly = false }) {
       for (const k of (NUM_FIELDS[section.id] || [])) payload[k] = group[k];
       for (const k of (SWITCH_FIELDS[section.id] || [])) payload[k] = group[k];
       if (section.id === 'membership') payload.join_screening_questions = JSON.stringify(questions);
-      const res = await api.put('/settings/group-rules', payload);
-      toast.success(res.message || t('settings.proposedToChair'));
+      const res = await api.put('/settings/group-rules/apply', payload);
+      toast.success(res.message || t('settings.saved'));
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendRequest(e) {
+    e.preventDefault();
+    const values = Object.fromEntries(
+      Object.entries(requestValues).filter(([, value]) => String(value).trim() !== '')
+    );
+    if (!Object.keys(values).length && !requestSummary.trim()) {
+      toast.error(t('settingsRequests.valueRequired'));
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.post('/settings-requests', {
+        category: section.id,
+        description: requestSummary.trim() || t(section.label),
+        details: requestNote.trim(),
+        requested_values: values,
+      });
+      toast.success(t('settingsRequests.submitted'));
+      setRequestValues({});
+      setRequestSummary('');
+      setRequestNote('');
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyRequest(request) {
+    if (!(await confirm({ message: t('settingsRequests.confirmConfigure') }))) return;
+    setBusy(true);
+    try {
+      await api.post(`/settings-requests/${request.id}/configure`, {});
+      toast.success(t('settingsRequests.configured'));
       await load();
     } catch (err) {
       toast.error(err.message);
@@ -162,42 +224,16 @@ export default function VslaSettings({ readOnly = false }) {
     }
   }
 
-  async function rejectRequest(id) {
-    const reason = window.prompt(t('settingsRequests.rejectionReason') || 'Rejection reason');
-    if (!reason || !reason.trim()) return;
-    setBusy(true);
-    try {
-      await api.post(`/settings-requests/${id}/reject`, { rejection_reason: reason.trim() });
-      toast.success(t('admin.rejectedNote') || 'Rejected');
-      await load();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function withdraw(id) {
-    setBusy(true);
-    try {
-      const res = await api.post(`/admin/change-requests/${id}/withdraw`);
-      toast.success(res.message || t('settings.withdrawn'));
-      await load();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function addQuestion() {
     setQuestions((q) => [...q, { id: '', good: 'yes', en: '', ny: '' }]);
   }
   function updateQuestion(i, patch) { setQuestions((qs) => qs.map((q, j) => (j === i ? { ...q, ...patch } : q))); }
   function removeQuestion(i) { setQuestions((qs) => qs.filter((_, j) => j !== i)); }
 
+  // The chairperson may open every existing category; a treasurer keeps the five
+  // money pages she already had. Neither may reach the technical controls.
   const readOnlyIds = ['savings', 'loans', 'fines', 'welfare', 'shareout'];
-  if (!section || (readOnly && !readOnlyIds.includes(section.id))) {
+  if (!section || (readOnly && user?.role !== 'admin' && !readOnlyIds.includes(section.id))) {
     return <Navigate to={readOnly ? '/app/settings/savings' : '/app/admin/settings/general'} replace />;
   }
   if (!group || !system) return <Spinner />;
@@ -205,11 +241,9 @@ export default function VslaSettings({ readOnly = false }) {
   const setGroupVal = (k, v) => setGroup((g) => ({ ...g, [k]: v }));
   const isSet = (v) => v !== undefined && v !== null && String(v).trim() !== '';
   const money0 = (v) => (isSet(v) ? money(Number(v || 0)) : '—');
-  const statusOf = (key, present) => {
-    if (pendingKeys.has(key)) return { status: t('settings.stWaiting'), tag: STATUS_TAG.waiting };
-    if (!present) return { status: t('settings.stNotSet'), tag: STATUS_TAG.not_set };
-    return { status: t('settings.stInForce'), tag: STATUS_TAG.in_force };
-  };
+  const statusOf = (key, present) => (!present
+    ? { status: t('settings.stNotSet'), tag: STATUS_TAG.not_set }
+    : { status: t('settings.stInForce'), tag: STATUS_TAG.in_force });
   const fixed = () => ({ status: t('settings.stFixed'), tag: STATUS_TAG.fixed });
 
   // A rule value, shown the way the group reads it.
@@ -220,6 +254,9 @@ export default function VslaSettings({ readOnly = false }) {
       try { const a = JSON.parse(val); n = Array.isArray(a) ? a.length : 0; } catch { n = 0; }
       return t('settings.questionCount', n);
     }
+    if (key === 'sms_enabled') {
+      return String(val).toLowerCase() === 'false' ? t('settings.stDisabled') : t('settings.stEnabled');
+    }
     if (key.startsWith('include_')) return val === 'yes' ? t('common.yes') : t('common.no');
     if (key === 'loan_multiplier') return `${val} × ${t('settings.savingsWord')}`;
     if (MONEY_KEYS.has(key)) return money(Number(val || 0));
@@ -227,28 +264,19 @@ export default function VslaSettings({ readOnly = false }) {
     return String(val);
   };
 
-  // Everything the administrator has put to the chairperson about this page's
-  // rules, one row per rule: the value now, the value asked for, who asked, when,
-  // and who decided it.
-  const sectionKeys = SECTION_KEYS[section.id] || [];
-  const historyRows = [];
-  for (const c of changes) {
-    for (const key of (sectionKeys.length ? sectionKeys : Object.keys(c.payload || {}))) {
-      if (c.payload && Object.prototype.hasOwnProperty.call(c.payload, key)) historyRows.push({ change: c, key });
-    }
-  }
-
   const numFields = NUM_FIELDS[section.id] || [];
   const swFields = SWITCH_FIELDS[section.id] || [];
   const editable = numFields.length > 0 || swFields.length > 0 || section.id === 'membership';
-  useEffect(() => {
-    if (!readOnly && requestId && settingsRequests.length) {
-      const req = settingsRequests.find((r) => String(r.id) === String(requestId));
-      if (req && !req.read_by_admin) {
-        markRequestRead(req.id);
-      }
-    }
-  }, [readOnly, requestId, settingsRequests]);
+  const requestFields = REQUEST_FIELDS[section.id] || [];
+  const pendingRequests = settingsRequests.filter((r) => r.status === 'pending');
+  const pastRequests = settingsRequests.filter((r) => r.status !== 'pending');
+  const currentVal = (key) => (key === 'sms_enabled' ? system.sms_enabled : group[key]);
+  const requestStatus = (status) => {
+    if (status === 'completed') return { label: t('settingsRequests.statusConfigured'), tag: 'tag--green' };
+    if (status === 'rejected') return { label: t('settingsRequests.statusRejected'), tag: 'tag--grey' };
+    return { label: t('settingsRequests.statusSent'), tag: 'tag--gold' };
+  };
+  const basePath = readOnly ? '/app/settings' : '/app/admin/settings';
 
   const changeLink = (key) => (
     readOnly ? <span className="muted">—</span>
@@ -257,17 +285,22 @@ export default function VslaSettings({ readOnly = false }) {
 
   return (
     <div className="settings">
-      <PageHeader title={t('nav.vslaSettings')} subtitle={t('settings.vslaSubtitle')} />
+      <PageHeader
+        title={t('nav.vslaSettings')}
+        subtitle={readOnly ? (canSend ? t('settings.chairSubtitle') : t('settings.readOnlySubtitle')) : t('settings.vslaSubtitle')}
+      />
 
       <nav className="settings__cats" aria-label={t('nav.vslaSettings')}>
         {SECTIONS.map((s) => (
           <Link
             key={s.id}
-            to={`/app/admin/settings/${s.id}`}
+            to={`${basePath}/${s.id}`}
             className={section.id === s.id ? 'settings__cat is-on' : 'settings__cat'}
           >
             {t(s.label)}
-            {!readOnly && requestCounts[s.id] ? <span className="tag tag--gold" style={{ marginLeft: '6px' }}>{requestCounts[s.id]}</span> : null}
+            {!readOnly && requestCounts[s.id]
+              ? <span className="tag tag--gold settings__new">{t('settingsRequests.newCount', requestCounts[s.id])}</span>
+              : null}
           </Link>
         ))}
       </nav>
@@ -276,30 +309,183 @@ export default function VslaSettings({ readOnly = false }) {
         <h2 className="settings__h2">{t(section.label)}</h2>
         <p className="settings__note">{t(section.note)}</p>
 
-        {!readOnly && settingsRequests.length > 0 && (
-          <div className="settings__groupCard">
-            <h3 className="settings__h2">{t('settingsRequests.title') || 'Settings Requests'}</h3>
-            <ul className="settings__questions">
-              {settingsRequests.map((r) => (
-                <li key={r.id} className="settings__question">
-                  <div>
-                    <strong>{r.title || r.description}</strong>
-                    {r.description && r.title ? <p className="settings__note">{r.description}</p> : null}
-                    {r.details ? <p className="settings__note">{r.details}</p> : null}
-                    <p className="settings__note">
-                      {t('settings.proposedBy') || 'Requested by'}: {r.requested_by_name || '—'} · {dateTime(r.created_at)}
-                    </p>
-                    <span className={`tag ${r.status === 'pending' ? 'tag--gold' : r.status === 'completed' ? 'tag--green' : 'tag--grey'}`}>{r.status}</span>
-                    {r.status === 'rejected' && r.rejection_reason ? <p className="settings__note">{t('settingsRequests.reason') || 'Reason'}: {r.rejection_reason}</p> : null}
+        {/* ---- the chairperson sends the configuration she needs ---- */}
+        {canSend && (
+          <div className="settings__groupCard settings__requestBox">
+            <h3 className="settings__h2">{t('settingsRequests.sendTitle')}</h3>
+            <p className="settings__note">{t('settingsRequests.sendNote')}</p>
+            <form onSubmit={sendRequest} className="settings__form">
+              {requestFields.map((key) => {
+                const switchField = key === 'sms_enabled' || key.startsWith('include_');
+                const yes = key === 'sms_enabled' ? 'true' : 'yes';
+                const no = key === 'sms_enabled' ? 'false' : 'no';
+                return (
+                  <div className="settings__row" key={key}>
+                    <label className="field-label" htmlFor={`request-${key}`}>{t(GROUP_LABELS[key] || key)}</label>
+                    <span className="settings__hint">
+                      {t('settingsRequests.currentSetting')}: {fmtVal(key, currentVal(key))}
+                    </span>
+                    {switchField ? (
+                      <select
+                        id={`request-${key}`}
+                        value={requestValues[key] ?? ''}
+                        onChange={(e) => setRequestValues((v) => ({ ...v, [key]: e.target.value }))}
+                      >
+                        <option value="">{t('settingsRequests.keepCurrent')}</option>
+                        <option value={yes}>{t('common.yes')}</option>
+                        <option value={no}>{t('common.no')}</option>
+                      </select>
+                    ) : (
+                      <input
+                        id={`request-${key}`}
+                        type={MONEY_KEYS.has(key) || PERCENT_KEYS.has(key) || key.endsWith('_days') ? 'number' : 'text'}
+                        min="0"
+                        step="any"
+                        value={requestValues[key] ?? ''}
+                        placeholder={fmtVal(key, currentVal(key))}
+                        onChange={(e) => setRequestValues((v) => ({ ...v, [key]: e.target.value }))}
+                      />
+                    )}
                   </div>
-                  {r.status === 'pending' && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      <button type="button" className="btn btn--small" disabled={busy} onClick={() => completeRequest(r.id)}>{t('settingsRequests.markComplete') || 'Mark completed'}</button>
-                      <button type="button" className="btn btn--danger btn--small" disabled={busy} onClick={() => rejectRequest(r.id)}>{t('admin.reject') || 'Reject'}</button>
+                );
+              })}
+
+              {requestFields.length === 0 && (
+                <div className="settings__row">
+                  <label className="field-label" htmlFor="request-summary">{t('settingsRequests.requestedConfig')} *</label>
+                  <textarea
+                    id="request-summary"
+                    rows={3}
+                    value={requestSummary}
+                    onChange={(e) => setRequestSummary(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="settings__row">
+                <label className="field-label" htmlFor="request-note">{t('settingsRequests.noteOptional')}</label>
+                <textarea
+                  id="request-note"
+                  rows={3}
+                  value={requestNote}
+                  onChange={(e) => setRequestNote(e.target.value)}
+                />
+              </div>
+
+              <button type="submit" className="btn" disabled={busy}>
+                {busy ? t('common.saving') : t('settingsRequests.send')}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* ---- the administrator's NEW inbox for this exact tab ---- */}
+        {!readOnly && pendingRequests.length > 0 && (
+          <div className="settings__groupCard settings__inbox" id="settings-requests" ref={requestPanelRef}>
+            <div className="settings__requestHead">
+              <h3 className="settings__h2">{t('settingsRequests.adminTitle')}</h3>
+              <span className="tag tag--gold">{t('settingsRequests.newCount', pendingRequests.length)}</span>
+            </div>
+            <p className="settings__note">{t('settingsRequests.adminNote')}</p>
+            <ul className="settings__requestList">
+              {pendingRequests.map((r) => {
+                const values = r.requested_values && typeof r.requested_values === 'object' ? r.requested_values : {};
+                const keys = Object.keys(values);
+                return (
+                  <li key={r.id} className="settings__request">
+                    <div className="settings__requestMeta">
+                      <strong>{r.requested_by_name || '—'}</strong>
+                      <span className="muted">{dateTime(r.created_at)}</span>
+                      <span className="tag tag--gold">{t('settingsRequests.statusSent')}</span>
                     </div>
-                  )}
-                </li>
-              ))}
+                    {keys.length > 0 ? (
+                      <ul className="settings__compare">
+                        {keys.map((key) => (
+                          <li key={key}>
+                            <span className="settings__compareLabel">{t(GROUP_LABELS[key] || key)}</span>
+                            <span className="muted">{t('settingsRequests.currentSetting')}: {fmtVal(key, currentVal(key))}</span>
+                            <span><strong>{t('settingsRequests.requestedSetting')}: {fmtVal(key, values[key])}</strong></span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="settings__requestedText">
+                        <strong>{t('settingsRequests.requestedConfig')}:</strong> {r.description}
+                      </p>
+                    )}
+                    {r.details ? <p className="settings__note settings__requestNote">{t('settingsRequests.note')}: {r.details}</p> : null}
+                    <div className="settings__requestActions">
+                      {keys.length > 0 && (
+                        <button type="button" className="btn btn--small" disabled={busy} onClick={() => applyRequest(r)}>
+                          {t('settingsRequests.applyRequested')}
+                        </button>
+                      )}
+                      <button type="button" className="btn btn--ghost btn--small" disabled={busy} onClick={() => completeRequest(r.id)}>
+                        {t('settingsRequests.markComplete')}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* ---- the chairperson follows what she sent ---- */}
+        {canSend && settingsRequests.length > 0 && (
+          <div className="settings__groupCard">
+            <h3 className="settings__h2">{t('settingsRequests.sentTitle')}</h3>
+            <ul className="settings__requestList">
+              {settingsRequests.map((r) => {
+                const values = r.requested_values && typeof r.requested_values === 'object' ? r.requested_values : {};
+                const status = requestStatus(r.status);
+                return (
+                  <li key={r.id} className="settings__request">
+                    <div className="settings__requestMeta">
+                      <strong>{t('settingsRequests.statusSent')}</strong>
+                      <span className="muted">{dateTime(r.created_at)}</span>
+                      <span className={`tag ${status.tag}`}>{status.label}</span>
+                    </div>
+                    {Object.keys(values).length > 0 ? (
+                      <p className="settings__requestedText">
+                        {Object.entries(values).map(([key, value]) => (
+                          <span key={key}>{t(GROUP_LABELS[key] || key)}: <strong>{fmtVal(key, value)}</strong>{' · '}</span>
+                        ))}
+                      </p>
+                    ) : <p className="settings__requestedText">{r.description}</p>}
+                    {r.details ? <p className="settings__note settings__requestNote">{t('settingsRequests.note')}: {r.details}</p> : null}
+                    {r.status === 'completed' && r.implemented_at ? (
+                      <p className="settings__note">{t('settingsRequests.configuredOn', dateTime(r.implemented_at))}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* ---- configured requests stay in this tab's history ---- */}
+        {!readOnly && pastRequests.length > 0 && (
+          <div className="settings__groupCard">
+            <h3 className="settings__h2">{t('settingsRequests.historyTitle')}</h3>
+            <ul className="settings__requestList">
+              {pastRequests.map((r) => {
+                const status = requestStatus(r.status);
+                return (
+                  <li key={r.id} className="settings__request">
+                    <div className="settings__requestMeta">
+                      <strong>{r.requested_by_name || '—'}</strong>
+                      <span className="muted">{dateTime(r.created_at)}</span>
+                      <span className={`tag ${status.tag}`}>{status.label}</span>
+                    </div>
+                    <p className="settings__requestedText">{r.description}</p>
+                    {r.details ? <p className="settings__note settings__requestNote">{t('settingsRequests.note')}: {r.details}</p> : null}
+                    {r.implemented_at ? (
+                      <p className="settings__note">{t('settingsRequests.configuredOn', dateTime(r.implemented_at))}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
@@ -523,10 +709,10 @@ export default function VslaSettings({ readOnly = false }) {
           </div>
         )}
 
-        {/* ---- propose a change ---- */}
+        {/* ---- configure the setting directly (administrator) ---- */}
         {!readOnly && editable && section.id !== 'sms' && (
           <form onSubmit={propose} className="settings__form" id="settingsEdit">
-            <p className="settings__note">{t('settings.proposedToChairNote')}</p>
+            <p className="settings__note">{t('settings.adminConfigNote')}</p>
 
             {numFields.map((k) => (
               <div className="settings__row" key={k} id={`edit-${k}`}>
@@ -573,57 +759,14 @@ export default function VslaSettings({ readOnly = false }) {
               </>
             )}
 
-            {pendingKeys.size > 0 && <p className="notice notice--warn">{t('settings.alreadyWaiting')}</p>}
             <button type="submit" className="btn" disabled={busy}>
-              {busy ? t('common.saving') : t('settings.proposeToChair')}
+              {busy ? t('common.saving') : t('settings.saveConfiguration')}
             </button>
           </form>
         )}
 
-        {/* ---- the approval record: what was asked, by whom, and the verdict ---- */}
-        {sectionKeys.length > 0 && historyRows.length > 0 && (
-          <div className="settings__tableWrap">
-            <h3 className="settings__h2">{t('settings.historyTitle')}</h3>
-            <p className="settings__note">{t('settings.historyNote')}</p>
-            <table className="sysadmin__table">
-              <thead>
-                <tr>
-                  <th>{t('settings.tblSetting')}</th>
-                  <th>{t('settings.tblCurrent')}</th>
-                  <th>{t('settings.proposedValue')}</th>
-                  <th>{t('settings.proposedBy')}</th>
-                  <th>{t('settings.dateProposed')}</th>
-                  <th>{t('settings.tblStatus')}</th>
-                  <th>{t('settings.decidedBy')}</th>
-                  <th>{t('settings.decidedAt')}</th>
-                  <th>{t('settings.tblActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historyRows.map(({ change: c, key }) => (
-                  <tr key={`${c.id}-${key}`}>
-                    <td>{t(GROUP_LABELS[key] || key)}</td>
-                    <td>{fmtVal(key, group[key])}</td>
-                    <td>{fmtVal(key, c.payload[key])}</td>
-                    <td>{c.requested_by_name || '—'}</td>
-                    <td>{dateTime(c.created_at)}</td>
-                    <td><span className={`tag ${REQ_TAG_BY_STATUS[c.status] || STATUS_TAG.not_set}`}>{t(`settings.req_${c.status}`)}</span></td>
-                    <td>{c.decided_by_name || '—'}</td>
-                    <td>{c.decided_at ? dateTime(c.decided_at) : '—'}</td>
-                    <td>
-                      {!readOnly && c.status === 'pending'
-                        ? <button type="button" className="btn btn--ghost btn--small" disabled={busy} onClick={() => withdraw(c.id)}>{t('settings.withdraw')}</button>
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
         {/* ---- SMS: the administrator's own technical switch ---- */}
-        {section.id === 'sms' && (
+        {!readOnly && section.id === 'sms' && (
           <>
             {(() => {
               const on = String(system.sms_enabled).toLowerCase() !== 'false';

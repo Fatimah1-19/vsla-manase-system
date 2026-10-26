@@ -5090,6 +5090,32 @@ section[id] { scroll-margin-top: 4.5rem; }
 .settings__chip { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 0.25rem 0.7rem; font-size: 0.85rem; }
 .settings__chipCount { background: var(--leaf-wash); color: var(--leaf-dark); border-radius: 999px; padding: 0 0.45rem; font-weight: 700; font-size: 0.78rem; }
 
+/* Chairperson -> administrator settings requests, kept inside the existing tabs. */
+.settings__new { margin-left: 0.4rem; font-size: 0.62rem; letter-spacing: 0.03em; vertical-align: middle; }
+.settings__hint { display: block; color: var(--slate); font-size: 0.78rem; margin: -0.2rem 0 0.15rem; }
+.settings__requestBox { border: 1px solid var(--maize); }
+.settings__inbox { border: 2px solid var(--maize); box-shadow: 0 0 0 3px var(--maize-wash); }
+.settings__requestHead { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
+.settings__requestList { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.7rem; }
+.settings__request { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 0.85rem 0.95rem; }
+.settings__requestMeta { display: flex; align-items: center; flex-wrap: wrap; gap: 0.45rem 0.75rem; margin-bottom: 0.45rem; }
+.settings__requestMeta .muted { font-size: 0.82rem; }
+.settings__compare { list-style: none; margin: 0.35rem 0 0; padding: 0; display: grid; gap: 0.45rem; }
+.settings__compare li { display: flex; flex-direction: column; gap: 0.1rem; padding-bottom: 0.4rem; border-bottom: 1px dashed var(--rule); font-size: 0.9rem; }
+.settings__compare li:last-child { border-bottom: 0; padding-bottom: 0; }
+.settings__compareLabel { font-weight: 600; color: var(--ink); }
+.settings__requestedText { margin: 0.35rem 0; }
+.settings__requestNote { margin: 0.4rem 0; }
+.settings__requestActions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+
+/* Notification card on the administrator's dashboard. */
+.settingsNotify { border-left: 4px solid var(--maize); margin-bottom: 1rem; }
+.settingsNotify__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.settingsNotify__list { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.settingsNotify__item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 0.9rem; background: var(--maize-wash); border-radius: var(--radius); }
+.settingsNotify__item p { margin: 0.15rem 0 0; }
+.settingsNotify__text { color: var(--ink); }
+
 @media (min-width: 640px) {
   .settings__stats { grid-template-columns: repeat(4, 1fr); }
 }

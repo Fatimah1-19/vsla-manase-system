@@ -26,7 +26,6 @@ import Profile from './pages/Profile.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Wrappers from './pages/Wrappers.jsx';
 import Approvals from './pages/Approvals.jsx';
-import SettingsRequests from './pages/SettingsRequests.jsx';
 import AdminUsers from './pages/AdminUsers.jsx';
 import SystemSettings from './pages/SystemSettings.jsx';
 import VslaSettings from './pages/VslaSettings.jsx';
@@ -77,7 +76,6 @@ export default function App() {
         <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
         <Route path="activity/administrative" element={<ProtectedRoute roles={COMMITTEE}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />
-        <Route path="settings-requests" element={<ProtectedRoute roles={['admin']}><SettingsRequests /></ProtectedRoute>} />
         {/* The financial rules, read-only for the treasurer and the chairperson:
             they work by the active settings and may not change them here. */}
         <Route path="settings" element={<Navigate to="/app/settings/savings" replace />} />
