@@ -93,7 +93,7 @@ export default {
   },
 
 
-  common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', clear: 'Chotsani', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu' },
+  common: { showPassword: 'Onetsani achinsinsi', hidePassword: 'Bisani achinsinsi', clear: 'Chotsani', noResults: 'Palibe chomwe chikufanana ndi kufufuza kwanu', username: 'Dzina lolowera' },
 
   cases: {
     title: 'Milandu ya mamembala',
@@ -758,6 +758,7 @@ export default {
     totalUsers: 'Ogwiritsa onse', activeUsers: 'Ogwiritsa akugwira', inactiveUsers: 'Ogwiritsa osagwira',
     totalMembers: 'Mamembala onse', committeeMembers: 'Mamembala a komiti', sysAdmins: 'Oyanganira dongosolo',
     pendingConfigChanges: 'Zosintha za zoikamo zodikira',
+    quickActions: 'Ntchito Zachangu', usersTitle: 'Ogwiritsa', count: 'Chiwerengero',
     qaTitle: 'Ntchito zachangu', qaManageUsers: 'Yang\'anirani ogwiritsa', qaManageRoles: 'Yang\'anirani maudindo',
     qaAuditTrail: 'Onani mbiri ya kafukufuku', qaSystemActivity: 'Onani zochitika za dongosolo',
     qaPendingChanges: 'Onani zopempha za zoikamo', qaSystemSettings: 'Zokhazikika za dongosolo',

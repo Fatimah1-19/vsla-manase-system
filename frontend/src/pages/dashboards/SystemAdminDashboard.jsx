@@ -96,7 +96,7 @@ export default function SystemAdminDashboard({ data }) {
       {/* Quick actions */}
       <section className="sysadmin__quick">
         <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('admin.quickActions') || t('nav.settings') || 'Quick actions'}</h2>
+          <h2 className="dash__sectionTitle">{t('admin.quickActions')}</h2>
           <QuickActions actions={quickActions} />
         </section>
       </section>

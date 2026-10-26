@@ -94,7 +94,7 @@ export default {
   },
 
 
-  common: { showPassword: 'Show password', hidePassword: 'Hide password', clear: 'Clear', noResults: 'Nothing matches your search' },
+  common: { showPassword: 'Show password', hidePassword: 'Hide password', clear: 'Clear', noResults: 'Nothing matches your search', username: 'Username' },
 
   cases: {
     title: 'Member cases',
@@ -761,6 +761,7 @@ export default {
     totalUsers: 'Total users', activeUsers: 'Active users', inactiveUsers: 'Inactive users',
     totalMembers: 'Total members', committeeMembers: 'Committee members', sysAdmins: 'System administrators',
     pendingConfigChanges: 'Pending config changes',
+    quickActions: 'Quick Actions', usersTitle: 'Users', count: 'Count',
     qaTitle: 'Quick actions', qaManageUsers: 'Manage users', qaManageRoles: 'Manage roles',
     qaAuditTrail: 'View audit trail', qaSystemActivity: 'View system activity',
     qaPendingChanges: 'Review settings requests', qaSystemSettings: 'System settings',
