@@ -279,6 +279,7 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .notice p:last-child { margin-bottom: 0; }
 
 .row-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
+.row-actions--nowrap { flex-wrap: nowrap; }
 
 .vcell { display: inline-flex; align-items: center; gap: 0.55rem; min-width: 0; }
 .vcell__name { font-weight: 600; overflow-wrap: anywhere; }
