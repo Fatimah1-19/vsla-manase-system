@@ -16,7 +16,7 @@ import Fines from './pages/Fines.jsx';
 import ShareOut from './pages/ShareOut.jsx';
 import JoinRequests from './pages/JoinRequests.jsx';
 import Cases from './pages/Cases.jsx';
-import Leadership from './pages/Leadership.jsx';
+import Receipts from './pages/Receipts.jsx';
 import Messages from './pages/Messages.jsx';
 import Cycles from './pages/Cycles.jsx';
 import Activity from './pages/Activity.jsx';
@@ -70,6 +70,7 @@ export default function App() {
         <Route path="requests" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><JoinRequests /></ProtectedRoute>} />
         <Route path="cases"    element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Cases /></ProtectedRoute>} />
         <Route path="leadership" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Leadership /></ProtectedRoute>} />
+        <Route path="receipts" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Receipts /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
         <Route path="activity" element={<ProtectedRoute roles={['system_admin']}><Activity /></ProtectedRoute>} />

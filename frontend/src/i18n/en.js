@@ -10,7 +10,8 @@ const base = {
   nav: {
     dashboard: 'Dashboard', savings: 'Savings', loans: 'Loans', members: 'Members',
     people: 'People', meetings: 'Meetings', welfare: 'Welfare fund', fines: 'Fines',
-    shareout: 'Share-out', requests: 'Join requests', messages: 'Messages',
+    shareout: 'Share-out', requests: 'Join requests',     messages: 'Messages',
+    receipts: 'Receipts',
     activity: 'Group Activity', settings: 'Settings', profile: 'My account',
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
     savingsManagement: 'Savings management', loanManagement: 'Loan management',
