@@ -7,12 +7,54 @@ const { getActiveCycle, getSetting } = require('../utils/helpers');
 
 const getFee = async () => Number(await getSetting('registration_fee', '1000')) || 0;
 
-// GET /api/registration-fees — every active member and whether the fee is in
+// GET /api/registration-fees - every active member and whether the fee is in
 const listFees = wrap(async (req, res) => {
   const fee = await getFee();
 
+  if (req.user && req.user.role === 'member') {
+    const member = await one(
+      `SELECT m.id AS member_id, m.membership_number, m.date_joined, u.id AS user_id, u.full_name, u.phone,
+              (m.avatar IS NOT NULL) AS has_avatar,
+              rf.id AS payment_id, rf.amount::float, rf.paid_on, rf.note,
+              r.full_name AS recorded_by_name
+         FROM members m
+         JOIN users u ON u.id = m.user_id
+         LEFT JOIN registration_fees rf ON rf.member_id = m.id
+         LEFT JOIN users r ON r.id = rf.recorded_by
+        WHERE m.status = 'active' AND m.user_id = $1`,
+      [req.user.id]
+    );
+
+    if (!member) {
+      return res.json({ fee, members: [], totals: { expected: 0, collected: 0, outstanding: 0, paid_count: 0, member_count: 0 } });
+    }
+
+    const paid = member.payment_id != null;
+    const members = [{
+      ...member,
+      paid,
+      amount: member.amount || 0,
+      balance: paid ? 0 : fee,
+    }];
+
+    const paidCount = paid ? 1 : 0;
+    const collectedNum = paid ? Number(member.amount || 0) : 0;
+    return res.json({
+      fee,
+      members,
+      totals: {
+        expected: fee,
+        collected: +collectedNum.toFixed(2),
+        outstanding: paid ? 0 : fee,
+        paid_count: paidCount,
+        member_count: 1,
+      },
+    });
+  }
+  }
+
   const rows = await query(
-    `SELECT m.id AS member_id, m.membership_number, m.date_joined, u.full_name, u.phone,
+    `SELECT m.id AS member_id, m.membership_number, m.date_joined, u.id AS user_id, u.full_name, u.phone,
             (m.avatar IS NOT NULL) AS has_avatar,
             rf.id AS payment_id, rf.amount::float, rf.paid_on, rf.note,
             r.full_name AS recorded_by_name
