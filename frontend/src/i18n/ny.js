@@ -14,6 +14,7 @@ const base = {
     people: 'Anthu', meetings: 'Misonkhano', welfare: 'Thumba la chithandizo', fines: 'Zindapusa',
     shareout: 'Kugawana', requests: 'Opempha kulowa',     messages: 'Mauthenga',
     receipts: 'Malisiti',
+    reports: 'Malipoti',
     activity: 'Zomwe zachitika mu gulu', settings: 'Malamulo', profile: 'Akaunti yanga',
     cycles: 'Nyengo zosunga', logout: 'Tulukani', menu: 'Menyu', more: 'Zina',
     savingsManagement: 'Kusamalira zosunga', loanManagement: 'Kusamalira ngongole',

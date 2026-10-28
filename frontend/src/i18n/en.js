@@ -12,6 +12,7 @@ const base = {
     people: 'People', meetings: 'Meetings', welfare: 'Welfare fund', fines: 'Fines',
     shareout: 'Share-out', requests: 'Join requests',     messages: 'Messages',
     receipts: 'Receipts',
+    reports: 'Reports',
     activity: 'Group Activity', settings: 'Settings', profile: 'My account',
     cycles: 'Saving cycles', logout: 'Log out', menu: 'Menu', more: 'More',
     savingsManagement: 'Savings management', loanManagement: 'Loan management',
