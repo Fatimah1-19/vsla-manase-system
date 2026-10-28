@@ -278,7 +278,9 @@ export default function Meetings() {
                 render: (m) => (m.marked_count > 0 ? <AttendanceNames people={attendanceGroups(m).excused} /> : null) },
               { key: 'action', label: '', render: (m) => (isCommittee ? (
                 <button type="button" className="btn btn--ghost btn--small" onClick={() => openDetail(m.id)}>
-                  {isRecorder ? t('meetings.markAttendance') : t('meetings.viewRecord')}
+                  {isRecorder
+                    ? (m.marked_count > 0 ? `✓ ${t('meetings.markedAttendance')}` : t('meetings.markAttendance'))
+                    : (m.marked_count > 0 ? `✓ ${t('meetings.markedAttendance')}` : t('meetings.viewRecord'))}
                 </button>
               ) : null) },
             ]}

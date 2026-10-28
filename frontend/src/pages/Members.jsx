@@ -460,10 +460,10 @@ export default function Members() {
                 render: (p) => (p.is_active
                   ? <span className="tag tag--green">{t('members.active')}</span>
                   : <span className="tag tag--red">{t('members.inactive')}</span>) },
-              { key: 'total_shares', label: t('members.shares'), render: (p) => plainNumber(p.total_shares) },
+              { key: 'total_shares', label: t('shares'), render: (p) => plainNumber(p.total_shares) },
               { key: 'total_savings', label: t('members.savings'), render: (p) => money(p.total_savings) },
               { key: 'active_loans', label: t('dashboard.activeLoans'), render: (p) => plainNumber(p.active_loans) },
-              { key: 'unpaid_fines', label: t('fines.unpaidFines'), render: (p) => money(p.unpaid_fines) },
+              { key: 'unpaid_fines', label: t('fines.unpaidFines') === 'fines.unpaidFines' ? 'Unpaid fines' : t('fines.unpaidFines'), render: (p) => money(p.unpaid_fines) },
             ]}
             rows={records}
             empty={<EmptyState title={t('members.empty')} />}
@@ -800,7 +800,7 @@ export default function Members() {
                   </dd></div>
                   <div><dt>{t('members.savings')}</dt><dd>{money(history?.total_savings ?? detail.total_savings ?? 0)}</dd></div>
                   <div><dt>{t('dashboard.activeLoans')}</dt><dd>{plainNumber(history?.active_loans ?? detail.active_loans ?? 0)}</dd></div>
-                  <div><dt>{t('fines.unpaidFines')}</dt><dd>{money(history?.unpaid_fines ?? detail.unpaid_fines ?? 0)}</dd></div>
+                  <div><dt>{t('fines.unpaidFines') === 'fines.unpaidFines' ? 'Unpaid fines' : t('fines.unpaidFines')}</dt><dd>{money(history?.unpaid_fines ?? detail.unpaid_fines ?? 0)}</dd></div>
                 </dl>
                 {history?.attendance?.length > 0 && (
                   <p className="muted">
