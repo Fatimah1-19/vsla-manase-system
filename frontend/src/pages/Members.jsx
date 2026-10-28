@@ -584,9 +584,9 @@ export default function Members() {
         </div>
       )}
 
-      <div className="toolbar">
+      <div className="toolbar members__toolbar">
         <input
-          className="toolbar__grow"
+          className="toolbar__search"
           type="search"
           placeholder={t('common.search')}
           value={search}
@@ -594,6 +594,7 @@ export default function Members() {
           aria-label={t('common.search')}
         />
         <select
+          className="members__status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           aria-label={t('members.filterLabel')}
@@ -889,7 +890,7 @@ export default function Members() {
                       {feeByMember[detail.member_id].recorded_by_name
                         ? ` · ${t('savings.recordedBy')}: ${feeByMember[detail.member_id].recorded_by_name}` : ''}
                     </p>
-                    <div className="members__rowActs">
+                    <div className="members__rowActs members__rowActs--tight">
                       <button type="button" className="btn btn--small btn--ghost"
                         onClick={() => openFeeReceipt(detail)}>
                         {t('members.feeReceiptButton')}

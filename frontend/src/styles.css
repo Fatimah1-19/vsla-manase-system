@@ -4353,7 +4353,12 @@ section[id] { scroll-margin-top: 4.5rem; }
 .members__feeFor { margin: 0 0 0.9rem; font-weight: 700; }
 .members__regCell { display: inline-flex; align-items: center; gap: 0.45rem; }
 
-/* ---- registration fee receipt ---- */
+/* ---- members toolbar alignment ---- */
+.members__toolbar { align-items: center; gap: 0.5rem; flex-wrap: nowrap; }
+.members__toolbar .toolbar__search { max-width: 18rem; flex: 0 1 18rem; }
+.members__status { max-width: 10rem; }
+.members__rowActs--tight { margin-top: 0.4rem; }
+.members__rowActs--tight .btn { min-height: 32px; }
 .receipt { background: #fff; }
 .receipt__card {
   background: linear-gradient(180deg, #FFFFFF, #F8FAF6);
