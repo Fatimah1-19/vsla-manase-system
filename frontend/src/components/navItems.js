@@ -93,7 +93,7 @@ export const NAV_ITEMS = [
   { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',      roles: ['member'] },
   { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['member'] },
   { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',   roles: ['member'] },
-  { to: '/app/receipts',   key: 'nav.receipts',  label: 'nav.receipts', icon: 'reports',   roles: ['member'] },
+  { to: '/app/receipts',   key: 'nav.receipts',  label: 'nav.receipts', icon: 'reports',   roles: ['member'], phone: true },
   { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['member'], phone: true },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['member'], sub: true },
 

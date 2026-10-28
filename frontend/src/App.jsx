@@ -16,6 +16,7 @@ import Fines from './pages/Fines.jsx';
 import ShareOut from './pages/ShareOut.jsx';
 import JoinRequests from './pages/JoinRequests.jsx';
 import Cases from './pages/Cases.jsx';
+import Leadership from './pages/Leadership.jsx';
 import Receipts from './pages/Receipts.jsx';
 import Messages from './pages/Messages.jsx';
 import Cycles from './pages/Cycles.jsx';

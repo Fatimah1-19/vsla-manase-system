@@ -36,8 +36,9 @@ export default function Receipts() {
   const myFee = fees?.members?.find((m) => {
     if (!user) return false;
     if (m.user_id && user.id && m.user_id === user.id) return true;
-    if (m.phone && user.phone && m.phone === user.phone) return true;
+    if (m.member_id && user.member_id && m.member_id === user.member_id) return true;
     if (m.membership_number && user.membership_number && m.membership_number === user.membership_number) return true;
+    if (m.phone && user.phone && String(m.phone).replace(/\s+/g,'') === String(user.phone).replace(/\s+/g,'')) return true;
     if (m.full_name && user.full_name && m.full_name === user.full_name) return true;
     return false;
   });

@@ -73,7 +73,7 @@ const PERMISSIONS = {
   'welfare.record': ['treasurer'],
 
   // ---- registration fees ----
-  'registration.view': ['admin', 'treasurer', 'secretary', 'member'],
+  'registration.view': ['admin', 'treasurer', 'secretary'],
   'registration.record': ['treasurer', 'secretary'],
   'registration.delete': ['admin'],
 
