@@ -535,7 +535,7 @@ export default function Members() {
         if (f.paid) return (
           <span className="members__regCell">
             <span className="tag tag--green">{t('members.regFeePaidTag')}</span>
-            <button type="button" className="btn btn--small btn--ghost"
+            <button type="button" className="btn btn--small btn--sky"
               onClick={(e) => { e.stopPropagation(); openFeeReceipt(p); }}>
               {t('members.feeReceiptButton')}
             </button>
@@ -891,7 +891,7 @@ export default function Members() {
                         ? ` · ${t('savings.recordedBy')}: ${feeByMember[detail.member_id].recorded_by_name}` : ''}
                     </p>
                     <div className="members__rowActs members__rowActs--tight">
-                      <button type="button" className="btn btn--small btn--ghost"
+                      <button type="button" className="btn btn--small btn--sky"
                         onClick={() => openFeeReceipt(detail)}>
                         {t('members.feeReceiptButton')}
                       </button>
