@@ -352,9 +352,19 @@ export default function Analytics() {
         title={pageTitle}
         subtitle={pageSubtitle}
         action={tab === 'reports' ? (
-          <button type="button" className="btn btn--gold no-print" onClick={exportPdf}>
-            {t('reports.reportExport')}
-          </button>
+          <div className="row-actions">
+            <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
+              <button type="button" role="tab" aria-selected={scope === 'group'}
+                className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+                onClick={() => setScope('group')}>{groupScopeLabel}</button>
+              <button type="button" role="tab" aria-selected={scope === 'member'}
+                className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
+                onClick={() => setScope('member')}>{memberScopeLabel}</button>
+            </div>
+            <button type="button" className="btn btn--gold no-print" onClick={exportPdf}>
+              {t('reports.reportExport')}
+            </button>
+          </div>
         ) : undefined}
       />
 
@@ -368,15 +378,6 @@ export default function Analytics() {
           <button type="button" role="tab" aria-selected={tab === 'reports'}
             className={tab === 'reports' ? 'analytics__tab is-on' : 'analytics__tab'}
             onClick={() => setTab('reports')}>{t('reports.title')}</button>
-        </div>
-
-        <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
-          <button type="button" role="tab" aria-selected={scope === 'group'}
-            className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-            onClick={() => setScope('group')}>{groupScopeLabel}</button>
-          <button type="button" role="tab" aria-selected={scope === 'member'}
-            className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
-            onClick={() => setScope('member')}>{memberScopeLabel}</button>
         </div>
       </div>
 
