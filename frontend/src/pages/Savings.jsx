@@ -37,6 +37,7 @@ export default function Savings() {
   const [memberId, setMemberId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [refresh, setRefresh] = useState(0);
   const [editing, setEditing] = useState(null);   // the entry being corrected
   const [verifying, setVerifying] = useState(null); // the entry the secretary is checking
   const [rejectReason, setRejectReason] = useState('');
@@ -168,7 +169,7 @@ export default function Savings() {
       if (to && day(r) > to) return false;
       return !q || r.full_name.toLowerCase().includes(q);
     });
-  }, [rows, search, memberId, from, to]);
+  }, [rows, search, memberId, from, to, refresh]);
 
   const filteredTotal = useMemo(
     () => filtered.reduce((sum, r) => sum + (r.status === 'verified' ? Number(r.amount) || 0 : 0), 0),
@@ -334,7 +335,7 @@ export default function Savings() {
 
       {showHistory && (
         <>
-          <div className="toolbar toolbar--align-end">
+          <div className="toolbar toolbar--align-end filter-bar">
             <input
               className="toolbar__grow toolbar__grow--fit"
               type="search"
@@ -371,8 +372,15 @@ export default function Savings() {
                 aria-label={t('common.to')}
               />
             </label>
+            <button
+              type="button"
+              className="btn btn--small filter-bar__action filter-bar__apply"
+              onClick={() => setRefresh((n) => n + 1)}
+            >
+              {t('common.filter')}
+            </button>
             {anyFilter && (
-              <button type="button" className="btn btn--ghost" onClick={clearFilters}>
+              <button type="button" className="btn btn--ghost btn--small filter-bar__action" onClick={clearFilters}>
                 {t('common.clear')}
               </button>
             )}

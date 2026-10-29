@@ -44,7 +44,7 @@ const base = {
     confirm: 'Are you sure?', sending: 'Sending…', saving: 'Saving…', all: 'All',
     village: 'Village', role: 'Role', language: 'Language', optional: 'optional', email: 'Email',
     retry: 'Try again', view: 'View', today: 'Today',
-    from: 'From', to: 'To',
+    from: 'From', to: 'To', filter: 'Filter',
   },
 
   login: {

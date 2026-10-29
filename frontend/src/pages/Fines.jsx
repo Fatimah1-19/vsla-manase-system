@@ -49,6 +49,7 @@ export default function Fines() {
   const [typeFilter, setTypeFilter] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [refresh, setRefresh] = useState(0);
 
   // Her menu can open the fines on the unpaid list or on the whole history.
   const [params] = useSearchParams();
@@ -138,7 +139,7 @@ export default function Fines() {
       if (q && !(`${r.full_name} ${r.reason || ''}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [rows, search, memberId, typeFilter, from, to]);
+  }, [rows, search, memberId, typeFilter, from, to, refresh]);
 
   const anyFilter = !!(search.trim() || memberId || typeFilter || from || to);
   const clearFilters = () => {
@@ -272,7 +273,7 @@ export default function Fines() {
 
       {showHistory && (
         <>
-          <div className="toolbar">
+          <div className="toolbar filter-bar">
             <input
               className="toolbar__grow"
               type="search"
@@ -297,8 +298,15 @@ export default function Fines() {
               <span>{t('fines.to')}</span>
               <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('fines.to')} />
             </label>
+            <button
+              type="button"
+              className="btn btn--small filter-bar__action filter-bar__apply"
+              onClick={() => setRefresh((n) => n + 1)}
+            >
+              {t('common.filter')}
+            </button>
             {anyFilter && (
-              <button type="button" className="btn btn--ghost" onClick={clearFilters}>{t('common.clear')}</button>
+              <button type="button" className="btn btn--ghost btn--small filter-bar__action" onClick={clearFilters}>{t('common.clear')}</button>
             )}
           </div>
 

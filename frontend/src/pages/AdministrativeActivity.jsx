@@ -50,6 +50,7 @@ export default function AdministrativeActivity() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [refresh, setRefresh] = useState(0);
 
   const query = useCallback((forPage) => {
     const p = new URLSearchParams({ scope: 'administrative' });
@@ -62,7 +63,7 @@ export default function AdministrativeActivity() {
   useEffect(() => {
     setData(null);
     api.get(`/audit?${query(page)}`).then(setData).catch((e) => toast.error(e.message));
-  }, [query, page, toast]);
+  }, [query, page, refresh, toast]);
 
   const set = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })); };
 
@@ -79,7 +80,7 @@ export default function AdministrativeActivity() {
     <div className="activity">
       <PageHeader title={t('nav.adminActivity')} subtitle={t('activity.adminNote')} />
 
-      <div className="activity__filters">
+      <div className="activity__filters filter-bar">
         <input
           className="activity__search"
           placeholder={t('activity.filterSearch')}
@@ -94,6 +95,13 @@ export default function AdministrativeActivity() {
           <span>{t('activity.filterTo')}</span>
           <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
         </label>
+        <button
+          type="button"
+          className="btn btn--small filter-bar__action filter-bar__apply"
+          onClick={() => { setPage(1); setRefresh((n) => n + 1); }}
+        >
+          {t('common.filter')}
+        </button>
       </div>
 
       <p className="activity__readonly">{t('activity.readOnly')}</p>

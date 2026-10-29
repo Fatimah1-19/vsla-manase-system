@@ -264,6 +264,45 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .toolbar__field > span { font-size: 0.78rem; font-weight: 600; color: var(--slate); }
 .toolbar__field > input, .toolbar__field > select { margin: 0; }
 
+/* Date-filter rows: the Filter and Clear controls sit together, bottom-aligned
+   with the date fields, and keep the same slim shape. */
+.filter-bar { align-items: flex-end; }
+.filter-bar__action {
+  flex: 0 0 6.25rem;
+  width: 6.25rem;
+  min-height: 30px;
+  height: 30px;
+  padding: 0 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+.filter-bar__apply {
+  background: var(--sky);
+  border-color: #224B73;
+  color: #fff;
+}
+.filter-bar__apply:hover:not(:disabled) {
+  background: #224B73;
+  border-color: #1B3A58;
+}
+.filter-bar .filter-bar__action:not(.filter-bar__apply):not(.filter-bar__export) {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--rule-dark);
+}
+.filter-bar .filter-bar__action:not(.filter-bar__apply):not(.filter-bar__export):hover:not(:disabled) {
+  background: var(--leaf-wash);
+  border-color: var(--leaf);
+  color: var(--leaf-dark);
+  filter: none;
+}
+@media (max-width: 560px) {
+  .filter-bar__action { flex: 0 0 auto; width: auto; height: auto; }
+}
+
 .notice {
   padding: 0.7rem 0.9rem;
   border-radius: var(--radius-sm);

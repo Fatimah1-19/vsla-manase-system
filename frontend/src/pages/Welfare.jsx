@@ -41,6 +41,7 @@ export default function Welfare() {
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [refresh, setRefresh] = useState(0);
 
   // Her menu can open the welfare fund on its summary or on its history.
   const [params] = useSearchParams();
@@ -81,7 +82,7 @@ export default function Welfare() {
       if (q && !(`${r.full_name || ''} ${r.notes || ''}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [rows, search, from, to]);
+  }, [rows, search, from, to, refresh]);
 
   const anyFilter = !!(search.trim() || from || to);
   const clearFilters = () => { setSearch(''); setFrom(''); setTo(''); };
@@ -235,7 +236,7 @@ export default function Welfare() {
 
       {showHistory && (
         <>
-          <div className="toolbar toolbar--align-end">
+          <div className="toolbar toolbar--align-end filter-bar">
             <input
               className="toolbar__grow toolbar__grow--fit"
               type="search"
@@ -252,8 +253,15 @@ export default function Welfare() {
               <span>{t('common.to')}</span>
               <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('common.to')} />
             </label>
+            <button
+              type="button"
+              className="btn btn--small filter-bar__action filter-bar__apply"
+              onClick={() => setRefresh((n) => n + 1)}
+            >
+              {t('common.filter')}
+            </button>
             {anyFilter && (
-              <button type="button" className="btn btn--ghost" onClick={clearFilters}>{t('common.clear')}</button>
+              <button type="button" className="btn btn--ghost btn--small filter-bar__action" onClick={clearFilters}>{t('common.clear')}</button>
             )}
           </div>
 

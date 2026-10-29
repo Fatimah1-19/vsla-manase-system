@@ -37,6 +37,7 @@ export default function FinancialActivity() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [refresh, setRefresh] = useState(0);
 
   // The correction dialog: a NEW record that points back at a wrong one.
   const [correcting, setCorrecting] = useState(null);
@@ -57,7 +58,7 @@ export default function FinancialActivity() {
   useEffect(() => {
     setData(null);
     load().catch((e) => toast.error(e.message));
-  }, [load, toast]);
+  }, [load, refresh, toast]);
 
   const set = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })); };
 
@@ -145,7 +146,7 @@ export default function FinancialActivity() {
         <StatCard label={t('finance.entries')} value={total} icon="audit" />
       </div>
 
-      <div className="activity__filters">
+      <div className="activity__filters filter-bar">
         <input
           className="activity__search"
           placeholder={t('common.search')}
@@ -172,8 +173,15 @@ export default function FinancialActivity() {
           <span>{t('finance.to')}</span>
           <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
         </label>
+        <button
+          type="button"
+          className="btn btn--small filter-bar__action filter-bar__apply"
+          onClick={() => { setPage(1); setRefresh((n) => n + 1); }}
+        >
+          {t('common.filter')}
+        </button>
         {anyFilter && (
-          <button type="button" className="btn btn--ghost btn--small" onClick={() => { setPage(1); setFilters(EMPTY); }}>
+          <button type="button" className="btn btn--ghost btn--small filter-bar__action" onClick={() => { setPage(1); setFilters(EMPTY); }}>
             {t('common.clear')}
           </button>
         )}

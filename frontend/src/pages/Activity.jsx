@@ -51,6 +51,7 @@ function LogTab({ t, toast }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [refresh, setRefresh] = useState(0);
 
   const query = useCallback((forPage) => {
     const p = new URLSearchParams();
@@ -63,7 +64,7 @@ function LogTab({ t, toast }) {
   useEffect(() => {
     setData(null);
     api.get(`/audit?${query(page)}`).then(setData).catch((e) => toast.error(e.message));
-  }, [query, page, toast]);
+  }, [query, page, refresh, toast]);
 
   const set = (k, v) => { setPage(1); setFilters((f) => ({ ...f, [k]: v })); };
 
@@ -88,7 +89,7 @@ function LogTab({ t, toast }) {
 
   return (
     <>
-      <div className="activity__filters">
+      <div className="activity__filters filter-bar">
         <input
           className="activity__search"
           placeholder={t('activity.filterSearch')}
@@ -107,7 +108,14 @@ function LogTab({ t, toast }) {
           <span>{t('activity.filterTo')}</span>
           <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
         </label>
-        <button type="button" className="btn btn--ghost btn--small" onClick={exportCsv}>
+        <button
+          type="button"
+          className="btn btn--small filter-bar__action filter-bar__apply"
+          onClick={() => { setPage(1); setRefresh((n) => n + 1); }}
+        >
+          {t('common.filter')}
+        </button>
+        <button type="button" className="btn btn--danger btn--small filter-bar__action filter-bar__export" onClick={exportCsv}>
           {t('activity.export')}
         </button>
       </div>

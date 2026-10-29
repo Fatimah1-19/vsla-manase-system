@@ -37,6 +37,7 @@ export default function SystemActivity() {
   const [data, setData] = useState(null);
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(null);
+  const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     api.get('/admin/members').then((d) => setUsers(d || [])).catch(() => setUsers([]));
@@ -50,7 +51,7 @@ export default function SystemActivity() {
     setData(await api.get(`/audit?${p.toString()}`));
   }, [filters]);
 
-  useEffect(() => { setOpen(null); load(page).catch((e) => toast.error(e.message)); }, [load, page, toast]);
+  useEffect(() => { setOpen(null); load(page).catch((e) => toast.error(e.message)); }, [load, page, refresh, toast]);
 
   const set = (k, v) => { setFilters((f) => ({ ...f, [k]: v })); setPage(1); };
   const clear = () => { setFilters(EMPTY_FILTERS); setPage(1); };
@@ -64,7 +65,7 @@ export default function SystemActivity() {
 
       <BackButton />
 
-      <div className="activity__filters">
+      <div className="activity__filters filter-bar">
         <input
           className="activity__search"
           placeholder={t('admin.actSearch')}
@@ -89,7 +90,14 @@ export default function SystemActivity() {
           <span>{t('activity.filterTo')}</span>
           <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
         </label>
-        <button type="button" className="btn btn--ghost btn--small" onClick={clear}>{t('activity.clear')}</button>
+        <button
+          type="button"
+          className="btn btn--small filter-bar__action filter-bar__apply"
+          onClick={() => { setPage(1); setRefresh((n) => n + 1); }}
+        >
+          {t('common.filter')}
+        </button>
+        <button type="button" className="btn btn--ghost btn--small filter-bar__action" onClick={clear}>{t('activity.clear')}</button>
       </div>
 
       {!data ? (

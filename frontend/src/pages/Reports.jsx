@@ -95,6 +95,7 @@ export default function Reports({
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [rows, setRows] = useState(null);
+  const [refresh, setRefresh] = useState(0);
 
   // Whose report: the whole group, or one member.
   const [scopeState, setScopeState] = useState('group');
@@ -137,7 +138,7 @@ export default function Reports({
     if (scope === 'member' && memberId) q.set('memberId', memberId);
     const path = view === 'register' ? '/reports/absentee-register' : '/reports/absentees';
     setRows(await api.get(`${path}?${q.toString()}`));
-  }, [view, status, from, to, scope, memberId]);
+  }, [view, status, from, to, scope, memberId, refresh]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
   useEffect(() => {
@@ -1221,7 +1222,7 @@ export default function Reports({
               ))}
             </div>
 
-            <div className="toolbar no-print">
+            <div className="toolbar no-print filter-bar">
               <div className="reports__status" role="group" aria-label={t('common.status')}>
                 {STATUSES.map((s) => (
                   <button key={s} type="button"
@@ -1243,8 +1244,15 @@ export default function Reports({
                   onChange={(e) => setTo(e.target.value)} />
               </label>
 
+              <button
+                type="button"
+                className="btn btn--small filter-bar__action filter-bar__apply"
+                onClick={() => setRefresh((n) => n + 1)}
+              >
+                {t('common.filter')}
+              </button>
               {(from || to) && (
-                <button type="button" className="btn btn--ghost btn--small"
+                <button type="button" className="btn btn--ghost btn--small filter-bar__action"
                   onClick={() => { setFrom(''); setTo(''); }}>
                   {t('reports.clear')}
                 </button>

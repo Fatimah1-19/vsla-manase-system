@@ -28,6 +28,7 @@ export default function Wrappers() {
   const toast = useToast();
   const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
+  const [refresh, setRefresh] = useState(0);
   const [view, setView] = useState(null);       // committee: one month
   const [mine, setMine] = useState(null);       // member: her own history
   const [arrears, setArrears] = useState(null);
@@ -46,7 +47,7 @@ export default function Wrappers() {
       setView(v); setArrears(a); setPayments(p);
     }
     setMine(await api.get('/contributions/mine'));
-  }, [isCommittee, month]);
+  }, [isCommittee, month, refresh]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
@@ -150,10 +151,17 @@ export default function Wrappers() {
         action={canRecordMoney && <button type="button" className="btn" onClick={() => startRecord(null)}>{t('wrappers.record')}</button>}
       />
 
-      <div className="toolbar">
+      <div className="toolbar filter-bar">
         <BackButton />
         <label className="field-label wrappers__monthLabel" htmlFor="w-month">{t('wrappers.month')}</label>
         <input id="w-month" type="month" value={month} max={thisMonth()} onChange={(e) => setMonth(e.target.value || thisMonth())} />
+        <button
+          type="button"
+          className="btn btn--small filter-bar__action filter-bar__apply"
+          onClick={() => setRefresh((n) => n + 1)}
+        >
+          {t('common.filter')}
+        </button>
       </div>
 
       <div className="wrappers__top">
