@@ -43,9 +43,8 @@ export const categoryLabel = (id) => CATEGORY_LABELS[id] || 'settings.catGroupIn
 
 export const groupRuleLabel = (key) => GROUP_LABELS[key] || key;
 
-// Which settings page (category) owns which rules, so a proposed change is
-// shown under its category wherever it appears. Shared by the settings page
-// and the approvals queue.
+// Which settings page (category) owns which rules, so a request or value is
+// shown under its category wherever it appears.
 export const SECTION_KEYS = {
   savings: ['weekly_share_value', 'monthly_levy'],
   loans: ['loan_multiplier', 'default_interest_rate'],

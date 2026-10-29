@@ -228,7 +228,7 @@ const getDashboard = wrap(async (req, res) => {
     money, memberStats, loanStats, welfare, fines, pendingJoins, nextMeeting,
     cashNow, outstandingRows, owing, monthPaid,
     recentSavings, pendingLoans, recentMeetings, attendance, system,
-    chairJoins, chairRules, chairVotes,
+    chairJoins, chairVotes,
     monthlyFlow, todayTick, contribMonthly, expectedFines,
     upcomingCount, membershipChanges,
   ] = await Promise.all([
@@ -312,19 +312,11 @@ const getDashboard = wrap(async (req, res) => {
         WHERE jr.status = 'pending'
         ORDER BY jr.created_at LIMIT 6`
     ) : null,
-    isAdmin ? query(
-      `SELECT cr.id, cr.payload, cr.reason, cr.created_at, u.full_name AS requested_by_name
-         FROM change_requests cr
-         LEFT JOIN users u ON u.id = cr.requested_by
-        WHERE cr.kind = 'group_rules' AND cr.status = 'pending'
-        ORDER BY cr.created_at LIMIT 6`
-    ) : null,
     isAdmin ? one(
       `SELECT (SELECT COUNT(*)::int FROM member_cases WHERE status = 'open') AS open_cases,
               (SELECT COUNT(*)::int FROM member_cases WHERE status = 'passed' AND executed_at IS NULL) AS cases_to_carry,
               (SELECT COUNT(*)::int FROM office_votes WHERE status = 'open') AS open_elections,
-              (SELECT COUNT(*)::int FROM office_votes WHERE status IN ('passed','tie') AND executed_at IS NULL) AS elections_to_carry,
-              (SELECT COUNT(*)::int FROM change_requests WHERE kind = 'group_rules' AND status = 'pending') AS rule_changes_waiting`
+              (SELECT COUNT(*)::int FROM office_votes WHERE status IN ('passed','tie') AND executed_at IS NULL) AS elections_to_carry`
     ) : null,
 
     // The money crew charts what has been coming in for the last six months.
@@ -450,8 +442,6 @@ const getDashboard = wrap(async (req, res) => {
     // The chairperson's own work: what she alone (or first of all) must settle.
     payload.chair = {
       pending_joins: chairJoins || [],
-      pending_rule_changes: chairRules || [],
-      rule_changes_waiting: chairVotes ? chairVotes.rule_changes_waiting : 0,
       open_cases: chairVotes ? chairVotes.open_cases : 0,
       cases_to_carry: chairVotes ? chairVotes.cases_to_carry : 0,
       open_elections: chairVotes ? chairVotes.open_elections : 0,

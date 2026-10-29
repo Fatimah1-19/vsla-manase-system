@@ -5,23 +5,16 @@ import { BarChart, Pie } from '../../components/Charts.jsx';
 import ExpectedFines from '../../components/ExpectedFines.jsx';
 import QuickActions from '../../components/QuickActions.jsx';
 import { money, plainNumber, shortDate } from '../../utils/format.js';
-import { groupRuleLabel } from '../../utils/groupRuleLabels.js';
 import '../../styles.css';
 
 const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { month: 'short' });
 
-/** A proposed rule value in plain words, for the queue table. */
-function shown(value, t) {
-  if (value === 'yes' || value === 'no') return value === 'yes' ? t('common.yes') : t('common.no');
-  if (value === true || value === false) return value ? t('common.yes') : t('common.no');
-  return value === undefined || value === null || String(value).trim() === '' ? '—' : String(value);
-}
-
 /**
  * The chairperson's board. She leads the group: she watches the money and the
  * people, and at the top sits the queue of things that are hers to settle —
- * join requests after the members have voted, VSLA rule changes the
- * administrator proposed, and votes that have passed and await carrying out.
+ * join requests after the members have voted, and votes that have passed and
+ * await carrying out. VSLA settings go the other way: she sends them to the
+ * system administrator from the settings tabs.
  * She is not the system administrator: accounts and technical settings are
  * never shown here.
  */
@@ -33,22 +26,19 @@ export default function AdminDashboard({ data }) {
   const chair = data.chair || {};
 
   const joinQueue = chair.pending_joins || [];
-  const ruleQueue = chair.pending_rule_changes || [];
   const carryQueue = [
     { n: chair.cases_to_carry, label: t('chair.casesToCarry'), to: '/app/cases' },
     { n: chair.elections_to_carry, label: t('chair.electionsToCarry'), to: '/app/leadership' },
   ].filter((c) => c.n > 0);
-  const somethingWaiting = joinQueue.length > 0 || ruleQueue.length > 0 || carryQueue.length > 0;
+  const somethingWaiting = joinQueue.length > 0 || carryQueue.length > 0;
 
   // The one thing that most needs her, put where she cannot miss it:
-  // people waiting to join first, then the rules, then the finished votes.
+  // people waiting to join first, then the finished votes.
   const topAlert = joinQueue.length > 0
     ? { label: t('chair.alertJoins'), n: joinQueue.length, to: '/app/requests' }
-    : (chair.rule_changes_waiting || 0) > 0
-      ? { label: t('chair.alertRules'), n: chair.rule_changes_waiting, to: '/app/approvals' }
-      : carryQueue.length > 0
-        ? { label: t('chair.alertCarry'), n: carryQueue.reduce((s, c) => s + c.n, 0), to: carryQueue[0].to }
-        : null;
+    : carryQueue.length > 0
+      ? { label: t('chair.alertCarry'), n: carryQueue.reduce((s, c) => s + c.n, 0), to: carryQueue[0].to }
+      : null;
 
   const monthContribs = data.contributions_by_month || [];
   const contributions = monthContribs.map((c) => ({
@@ -65,13 +55,12 @@ export default function AdminDashboard({ data }) {
     { to: '/app/savings', key: 'chair.qaViewSavings', icon: 'savings', cls: '' },
     { to: '/app/loans?tab=repayments', key: 'chair.qaViewRepayments', icon: 'loans', cls: '' },
     { to: '/app/analytics?tab=reports', key: 'chair.qaViewReports', icon: 'reports', cls: 'btn--sky' },
-    { to: '/app/approvals', key: 'chair.qaReviewSettings', icon: 'settings', cls: 'btn--gold' },
     { to: '/app/meetings', key: 'chair.qaViewMeetings', icon: 'meetings', cls: 'btn--ghost' },
   ];
 
   return (
     <>
-      {/* ---- THE HIGH-LEVEL PICTURE: seven summary cards ----------------- */}
+      {/* ---- THE HIGH-LEVEL PICTURE: six summary cards ------------------- */}
       <div className="page-grid page-grid--stat">
         <StatCard label={t('admin.totalMembers')} value={plainNumber(data.members?.total)} icon="members" big />
         <StatCard label={t('dashboard.activeMembers')} value={plainNumber(data.members?.active)} tone="green" icon="members" />
@@ -84,12 +73,6 @@ export default function AdminDashboard({ data }) {
         <StatCard label={t('dashboard.totalSavings')} value={money(m.total_savings)} tone="green" icon="savings" />
         <StatCard label={t('dashboard.activeLoans')} value={plainNumber(data.loans?.approved)} tone="gold" icon="loans" />
         <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="red" icon="loans" />
-        <StatCard
-          label={t('admin.pendingConfigChanges')}
-          value={plainNumber(chair.rule_changes_waiting)}
-          tone={chair.rule_changes_waiting > 0 ? 'gold' : 'plain'}
-          icon="requests"
-        />
       </div>
 
       {/* ---- THE ONE THING THAT CANNOT WAIT ------------------------------ */}
@@ -128,38 +111,6 @@ export default function AdminDashboard({ data }) {
                           <td>{j.phone || '—'}</td>
                           <td>{t('cases.voteTally', j.yes_votes, j.no_votes)}</td>
                           <td><Link to="/app/requests" className="adash__viewAll">{t('chair.open')}</Link></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {ruleQueue.length > 0 && (
-              <div>
-                <h3 className="chair__sub">{t('chair.rulesTitle')}</h3>
-                <div className="settings__tableWrap">
-                  <table className="sysadmin__table">
-                    <thead>
-                      <tr>
-                        <th>{t('chair.rulesChanged')}</th>
-                        <th>{t('chair.proposedBy')}</th>
-                        <th>{t('chair.open')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ruleQueue.map((c) => (
-                        <tr key={c.id}>
-                          <td>
-                            {Object.entries(c.payload || {}).map(([k, v]) => (
-                              <span key={k} className="chair__rule">
-                                {t(groupRuleLabel(k))}: <strong>{shown(v, t)}</strong>
-                              </span>
-                            ))}
-                          </td>
-                          <td>{c.requested_by_name || '—'}</td>
-                          <td><Link to="/app/approvals" className="adash__viewAll">{t('chair.open')}</Link></td>
                         </tr>
                       ))}
                     </tbody>

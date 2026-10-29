@@ -8,8 +8,8 @@ const { backfillAbsenceFines } = require('./fineController');
 // ---------------------------------------------------------------------------
 // GROUP RULES
 // The rules of the group itself: money amounts, voting, the background
-// questions. The chairperson (role 'admin') proposes a change and the treasurer
-// confirms it before it takes effect.
+// questions. The chairperson sends a settings request and the system
+// administrator applies it from the matching settings tab.
 // ---------------------------------------------------------------------------
 const GROUP_RULES = {
   loan_multiplier: 'How many times their savings a member may borrow',
@@ -89,45 +89,7 @@ function cleanGroupRule(key, value) {
   return v;
 }
 
-// PUT /api/settings/group-rules
-// A group rule is never changed by one person alone. The administrator looks
-// after the settings but proposes the change to the chairperson; the chairperson
-// herself proposes to the treasurer. Either way the rule only changes once the
-// other person confirms it, and nobody may confirm her own proposal.
-const proposeGroupRules = wrap(async (req, res) => {
-  const updates = req.body && typeof req.body === 'object' ? req.body : {};
-  const keys = Object.keys(updates).filter((k) => isGroupRule(k));
-  if (!keys.length) return res.status(400).json({ message: 'Nothing to change.' });
-
-  const payload = {};
-  for (const key of keys) {
-    try {
-      payload[key] = cleanGroupRule(key, updates[key]);
-    } catch (err) {
-      return res.status(400).json({ message: err.message });
-    }
-  }
-
-  const approver = req.user.role === 'system_admin' ? 'admin' : 'treasurer';
-  const who = approver === 'admin' ? 'the chairperson' : 'the treasurer';
-
-  const waiting = await query(`SELECT id FROM change_requests WHERE kind = 'group_rules' AND status = 'pending' LIMIT 1`);
-  if (waiting.length) {
-    return res.status(409).json({ message: `A change to the group rules is already waiting for ${who}.` });
-  }
-
-  const reason = String(req.body?.reason || '').trim() || null;
-  const row = (await query(
-    `INSERT INTO change_requests (kind, requested_by, approver_role, payload, reason)
-     VALUES ('group_rules', $1, $2, $3, $4) RETURNING id`,
-    [req.user.id, approver, JSON.stringify(payload), reason]
-  ))[0];
-
-  await audit(req.user.id, 'PROPOSE_GROUP_RULES', 'change_requests', row.id, Object.keys(payload).join(', '));
-  res.status(201).json({ message: `Sent to ${who} to confirm.`, id: row.id });
-});
-
-/** Apply group-rule changes (used when the treasurer confirms a proposal). */
+/** Apply group-rule changes (used by the system administrator's settings tabs). */
 async function applyGroupRules(payload, userId) {
   const keys = Object.keys(payload || {}).filter((k) => isGroupRule(k));
   const before = {};
@@ -213,7 +175,7 @@ const updateSystemSettings = wrap(async (req, res) => {
 
 module.exports = {
   GROUP_RULES, SYSTEM_SETTINGS,
-  listGroupRules, proposeGroupRules, applyGroupRules, applyGroupRulesDirect,
+  listGroupRules, applyGroupRules, applyGroupRulesDirect,
   cleanGroupRule, isGroupRule,
   listSystemSettings, updateSystemSettings,
 };

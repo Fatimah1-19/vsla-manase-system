@@ -6,7 +6,6 @@ const { build, templates } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
 const { canDecideChange, canRemoveAdministrator, canSetSystemRole } = require('../utils/adminRules');
-const { applyGroupRules } = require('./settingsController');
 const { ROLES, OFFICES, PERMISSIONS } = require('../config/permissions');
 
 // The fields the administrator may ask to change on an account. Never the role:
@@ -235,7 +234,7 @@ const listPending = wrap(async (req, res) => {
        FROM change_requests cr
        LEFT JOIN users r ON r.id = cr.requested_by
        LEFT JOIN users t ON t.id = cr.target_user_id
-      WHERE cr.approver_role = $1 AND cr.status = 'pending'
+      WHERE cr.approver_role = $1 AND cr.status = 'pending' AND cr.kind <> 'group_rules'
       ORDER BY cr.created_at DESC`,
     args
   );
@@ -246,7 +245,7 @@ const listPending = wrap(async (req, res) => {
        LEFT JOIN users r ON r.id = cr.requested_by
        LEFT JOIN users t ON t.id = cr.target_user_id
        LEFT JOIN users d ON d.id = cr.decided_by
-      WHERE cr.approver_role = $1 AND cr.status <> 'pending'
+      WHERE cr.approver_role = $1 AND cr.status <> 'pending' AND cr.kind <> 'group_rules'
       ORDER BY cr.decided_at DESC NULLS LAST LIMIT 30`,
     args
   );
@@ -263,6 +262,11 @@ const decideChangeRequest = wrap(async (req, res) => {
 
   const cr = await one(`SELECT * FROM change_requests WHERE id = $1`, [id]);
   if (!cr) return res.status(404).json({ message: 'That request does not exist.' });
+  if (cr.kind === 'group_rules') {
+    return res.status(400).json({
+      message: 'VSLA settings are now applied by the system administrator from the chairperson\'s settings request.',
+    });
+  }
 
   const verdict = canDecideChange({
     status: cr.status,
@@ -288,43 +292,38 @@ const decideChangeRequest = wrap(async (req, res) => {
 
   const payload = cr.payload || {};
   const targetId = cr.target_user_id;
+  const target = await one(`SELECT id, full_name, role, is_active FROM users WHERE id = $1`, [targetId]);
+  if (!target) {
+    await query(`UPDATE change_requests SET status = 'rejected', decided_by = $2, decided_at = NOW() WHERE id = $1`, [id, req.user.id]);
+    return res.status(400).json({ message: 'That account no longer exists.' });
+  }
+  if (targetId === req.user.id) {
+    return res.status(400).json({ message: 'You cannot confirm a change to your own account.' });
+  }
 
-  if (cr.kind === 'group_rules') {
-    await applyGroupRules(payload, req.user.id);
-  } else {
-    const target = await one(`SELECT id, full_name, role, is_active FROM users WHERE id = $1`, [targetId]);
-    if (!target) {
-      await query(`UPDATE change_requests SET status = 'rejected', decided_by = $2, decided_at = NOW() WHERE id = $1`, [id, req.user.id]);
-      return res.status(400).json({ message: 'That account no longer exists.' });
+  if (cr.kind === 'update_user') {
+    await query(
+      `UPDATE users SET full_name = COALESCE($2, full_name), phone = COALESCE($3, phone),
+                        language = COALESCE($4, language)
+        WHERE id = $1`,
+      [targetId, payload.full_name || null, payload.phone || null, payload.language || null]
+    );
+    if (payload.village) {
+      await query(`UPDATE members SET village = $2 WHERE user_id = $1`, [targetId, payload.village]);
     }
-    if (targetId === req.user.id) {
-      return res.status(400).json({ message: 'You cannot confirm a change to your own account.' });
+  } else if (cr.kind === 'deactivate_user') {
+    const removable = canRemoveAdministrator({
+      targetIsAdmin: target.role === 'system_admin',
+      activeAdministrators: await activeAdministrators(),
+    });
+    if (!removable.ok) {
+      return res.status(400).json({ message: 'This is the only active administrator. Keep at least one.' });
     }
-
-    if (cr.kind === 'update_user') {
-      await query(
-        `UPDATE users SET full_name = COALESCE($2, full_name), phone = COALESCE($3, phone),
-                          language = COALESCE($4, language)
-          WHERE id = $1`,
-        [targetId, payload.full_name || null, payload.phone || null, payload.language || null]
-      );
-      if (payload.village) {
-        await query(`UPDATE members SET village = $2 WHERE user_id = $1`, [targetId, payload.village]);
-      }
-    } else if (cr.kind === 'deactivate_user') {
-      const removable = canRemoveAdministrator({
-        targetIsAdmin: target.role === 'system_admin',
-        activeAdministrators: await activeAdministrators(),
-      });
-      if (!removable.ok) {
-        return res.status(400).json({ message: 'This is the only active administrator. Keep at least one.' });
-      }
-      await query(`UPDATE users SET is_active = FALSE WHERE id = $1`, [targetId]);
-      await query(`UPDATE members SET status = 'inactive' WHERE user_id = $1`, [targetId]);
-    } else if (cr.kind === 'reactivate_user') {
-      await query(`UPDATE users SET is_active = TRUE, failed_attempts = 0, locked_until = NULL WHERE id = $1`, [targetId]);
-      await query(`UPDATE members SET status = 'active' WHERE user_id = $1`, [targetId]);
-    }
+    await query(`UPDATE users SET is_active = FALSE WHERE id = $1`, [targetId]);
+    await query(`UPDATE members SET status = 'inactive' WHERE user_id = $1`, [targetId]);
+  } else if (cr.kind === 'reactivate_user') {
+    await query(`UPDATE users SET is_active = TRUE, failed_attempts = 0, locked_until = NULL WHERE id = $1`, [targetId]);
+    await query(`UPDATE members SET status = 'active' WHERE user_id = $1`, [targetId]);
   }
 
   await query(
@@ -333,21 +332,6 @@ const decideChangeRequest = wrap(async (req, res) => {
   );
   await audit(req.user.id, 'APPROVE_CHANGE_REQUEST', 'change_requests', id, cr.kind);
   res.json({ message: 'Change confirmed.' });
-});
-
-// GET /api/admin/config-changes — VSLA settings the administrator has proposed,
-// waiting for the chairperson, together with what was already decided.
-const listConfigChanges = wrap(async (req, res) => {
-  const rows = await query(
-    `SELECT cr.id, cr.kind, cr.status, cr.payload, cr.reason, cr.created_at, cr.decided_at,
-            r.full_name AS requested_by_name, d.full_name AS decided_by_name
-       FROM change_requests cr
-       LEFT JOIN users r ON r.id = cr.requested_by
-       LEFT JOIN users d ON d.id = cr.decided_by
-      WHERE cr.kind = 'group_rules'
-      ORDER BY (cr.status = 'pending') DESC, cr.created_at DESC LIMIT 50`
-  );
-  res.json(rows);
 });
 
 // GET /api/admin/permissions — who may do what, straight from the one file that
@@ -571,6 +555,6 @@ module.exports = {
   listMembers, getAccount, updateAccount, createAccount, resetAccountPassword,
   deactivateAccount, reactivateAccount,
   listMyChangeRequests, proposeChange, withdrawChangeRequest,
-  listPending, decideChangeRequest, listConfigChanges, listPermissions, setSystemRole,
+  listPending, decideChangeRequest, listPermissions, setSystemRole,
   smsInfo,
 };

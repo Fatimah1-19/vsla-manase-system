@@ -67,6 +67,10 @@ const createRequest = wrap(async (req, res) => {
   if (cleaned.error) return res.status(400).json({ message: cleaned.error });
   const values = cleaned.values;
 
+  if (!(CATEGORY_FIELDS[category] || []).length) {
+    return res.status(400).json({ message: 'Choose a VSLA setting tab that has configurable settings.' });
+  }
+
   const summary = String(description || '').trim();
   const instruction = String(details ?? note ?? '').trim();
   if (!Object.keys(values).length && !summary) {

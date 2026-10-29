@@ -50,9 +50,9 @@ const STATUS_TAG = {
 const MONEY_KEYS = new Set(['weekly_share_value', 'monthly_levy', 'welfare_contribution', 'registration_fee', 'absence_fine']);
 const PERCENT_KEYS = new Set(['default_interest_rate', 'case_quorum_percent', 'case_dismiss_percent', 'office_quorum_percent']);
 /**
- * The VSLA settings, one dedicated page per category. The administrator reads the
- * current value of every rule and proposes a change; the chairperson confirms it.
- * Text messages are her own switch and take effect at once.
+ * The VSLA settings, one dedicated page per category. The chairperson sends the
+ * values her group needs; the system administrator applies them directly in the
+ * matching tab. Text messages are the administrator's own switch.
  */
 export default function VslaSettings({ readOnly = false }) {
   const { t } = useLang();
@@ -130,7 +130,7 @@ export default function VslaSettings({ readOnly = false }) {
 
   // The administrator saves the real value here. There is no second approval:
   // this is the configuration change itself.
-  async function propose(e) {
+  async function saveConfiguration(e) {
     e.preventDefault();
     setBusy(true);
     try {
@@ -208,6 +208,7 @@ export default function VslaSettings({ readOnly = false }) {
   async function markRequestRead(id) {
     try {
       await api.post(`/settings-requests/${id}/read`);
+      setSettingsRequests((rows) => rows.map((r) => (r.id === id ? { ...r, read_by_admin: true } : r)));
     } catch {}
   }
 
@@ -310,7 +311,7 @@ export default function VslaSettings({ readOnly = false }) {
         <p className="settings__note">{t(section.note)}</p>
 
         {/* ---- the chairperson sends the configuration she needs ---- */}
-        {canSend && (
+        {canSend && requestFields.length > 0 && (
           <div className="settings__groupCard settings__requestBox">
             <h3 className="settings__h2">{t('settingsRequests.sendTitle')}</h3>
             <p className="settings__note">{t('settingsRequests.sendNote')}</p>
@@ -711,7 +712,7 @@ export default function VslaSettings({ readOnly = false }) {
 
         {/* ---- configure the setting directly (administrator) ---- */}
         {!readOnly && editable && section.id !== 'sms' && (
-          <form onSubmit={propose} className="settings__form" id="settingsEdit">
+          <form onSubmit={saveConfiguration} className="settings__form" id="settingsEdit">
             <p className="settings__note">{t('settings.adminConfigNote')}</p>
 
             {numFields.map((k) => (

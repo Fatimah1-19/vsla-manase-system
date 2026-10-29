@@ -115,9 +115,9 @@ const PERMISSIONS = {
   'members.documents': ['admin', 'secretary'],
   'approvals.view': ['admin', 'treasurer'],
   'approvals.decide': ['admin', 'treasurer'],
-  // The rules the group lives by: the administrator keeps every one of them now.
+  // The rules the group lives by: the chairperson sends a settings request and
+  // the system administrator applies it directly in the matching settings tab.
   'groupRules.view': ['admin', 'treasurer', 'system_admin'],
-  'groupRules.propose': ['admin', 'system_admin'],
   'groupRules.configure': ['system_admin'],
   // The members vote, then the chairperson settles the request herself. The
   // treasurer records the money, never the final membership decision.

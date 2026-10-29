@@ -19,8 +19,7 @@ router.get('/change-requests', requirePermission('accounts.view'), c.listMyChang
 router.post('/change-requests', requirePermission('accounts.manage'), c.proposeChange);
 router.post('/change-requests/:id/withdraw', requirePermission('accounts.manage'), c.withdrawChangeRequest);
 
-// The VSLA settings she has put to the chairperson, and the rule book itself.
-router.get('/config-changes', requirePermission('accounts.view'), c.listConfigChanges);
+// The rule book the settings tabs show, and the permissions in force.
 router.get('/permissions', requirePermission('accounts.view'), c.listPermissions);
 
 // The technical picture of text messaging — service status, types, templates

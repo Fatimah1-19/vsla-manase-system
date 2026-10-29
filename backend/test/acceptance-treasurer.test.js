@@ -516,15 +516,15 @@ async function check(n, title, fn) {
     assert.ok(!can('treasurer', 'audit.view'), 'the audit trail is kept for the administrator alone');
   });
 
-  await check(24, 'the treasurer cannot change VSLA settings without the approval process', async () => {
-    assert.ok(!can('treasurer', 'groupRules.propose'),
+  await check(24, 'the treasurer cannot change VSLA settings', async () => {
+    assert.ok(!can('treasurer', 'groupRules.configure') && !can('treasurer', 'settingsRequests.create'),
       'she may not write the group rules herself');
-    const propose = await run(requirePermission('groupRules.propose'), { role: 'treasurer' });
-    assert.strictEqual(propose.status, 403, 'the proposal door must be shut to her');
+    const propose = await run(requirePermission('settingsRequests.create'), { role: 'treasurer' });
+    assert.strictEqual(propose.status, 403, 'only the chairperson sends settings requests');
     assert.ok(can('treasurer', 'approvals.view') && can('treasurer', 'approvals.decide'),
-      'she sits in the approval meeting');
+      'she still sits in the account approval meeting');
     assert.ok(settingsCtrl.includes('applyGroupRules') && settingsCtrl.includes('UPDATE_SETTINGS'),
-      'a change only enters force after it is confirmed and recorded');
+      'a change only enters force after the administrator applies it and it is recorded');
   });
 
   await check(25, 'the treasurer cannot act as chairperson', async () => {

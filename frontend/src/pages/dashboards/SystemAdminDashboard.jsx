@@ -27,29 +27,38 @@ export default function SystemAdminDashboard({ data }) {
     return () => { alive = false; };
   }, []);
 
+  const unreadSettingsRequests = settingsRequests.filter((r) => !r.read_by_admin);
+
   const quickActions = [
     { to: '/app/admin/users', key: 'admin.qaManageUsers', icon: 'members', cls: '' },
     { to: '/app/admin/roles', key: 'admin.qaManageRoles', icon: 'leadership', cls: 'btn--sky' },
     { to: '/app/activity', key: 'admin.qaAuditTrail', icon: 'audit', cls: 'btn--gold' },
     { to: '/app/admin/activity', key: 'admin.qaSystemActivity', icon: 'activity', cls: 'btn--ghost' },
-    { to: '/app/admin/settings', key: 'admin.qaPendingChanges', icon: 'requests', cls: 'btn--ghost' },
+    {
+      to: settingsRequests[0]
+        ? `/app/admin/settings/${settingsRequests[0].category}?requestId=${settingsRequests[0].id}`
+        : '/app/admin/settings/general',
+      key: 'admin.qaPendingChanges',
+      icon: 'requests',
+      cls: 'btn--ghost',
+    },
     { to: '/app/admin/system', key: 'admin.qaSystemSettings', icon: 'settings', cls: 'btn--ghost' },
   ];
 
   return (
     <>
       {/* The chairperson's settings requests, straight from the existing tabs */}
-      {settingsRequests.length > 0 && (
+      {unreadSettingsRequests.length > 0 && (
         <section className="dash__card settingsNotify" aria-live="polite">
           <div className="settingsNotify__head">
             <div>
               <h2 className="dash__sectionTitle">{t('settingsRequests.notificationTitle')}</h2>
               <p className="sysadmin__note">{t('settingsRequests.notificationNote')}</p>
             </div>
-            <span className="tag tag--gold">{t('settingsRequests.newCount', settingsRequests.length)}</span>
+            <span className="tag tag--gold">{t('settingsRequests.newCount', unreadSettingsRequests.length)}</span>
           </div>
           <ul className="settingsNotify__list">
-            {settingsRequests.map((r) => (
+            {unreadSettingsRequests.map((r) => (
               <li key={r.id} className="settingsNotify__item">
                 <div>
                   <strong>{t(categoryLabel(r.category))}</strong>

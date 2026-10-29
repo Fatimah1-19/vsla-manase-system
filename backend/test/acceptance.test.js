@@ -212,44 +212,40 @@ async function check(n, title, fn) {
     assert.ok(page('Reports.jsx').includes('Ledger'));
   });
 
-  await check(21, 'the chairperson can review pending setting changes', () => {
-    assert.ok(can('admin', 'approvals.view'));
-    assert.ok(routes('approvalRoutes.js').includes("router.get('/', requirePermission('approvals.view')"));
-    assert.ok(approvalsPage.includes("api.get('/approvals')"));
+  await check(21, 'the chairperson sends VSLA settings to the administrator', () => {
+    assert.ok(can('admin', 'settingsRequests.create'));
+    assert.ok(routes('settingsRequestRoutes.js').includes("router.post('/', requirePermission('settingsRequests.create')"));
+    assert.ok(page('VslaSettings.jsx').includes("api.post('/settings-requests'"));
   });
 
-  await check(22, 'the chairperson can confirm a proposed change', () => {
-    assert.ok(can('admin', 'approvals.decide'));
-    assert.ok(routes('approvalRoutes.js').includes("router.post('/:id/decide', requirePermission('approvals.decide')"));
-    assert.ok(adminCtrl.includes('await applyGroupRules(payload, req.user.id)'),
-      'confirming must put the new value into force');
-    assert.ok(approvalsPage.includes('api.post(`/approvals/${id}/decide`') || approvalsPage.includes('api.post'),
-      'the page must call the decision route');
+  await check(22, 'the request lands in the matching settings tab', () => {
+    assert.ok(can('system_admin', 'settingsRequests.viewAll'));
+    const ctrl = controllers('settingsRequestsController.js');
+    assert.ok(ctrl.includes('GROUP_FIELDS') && ctrl.includes('CATEGORY_FIELDS'));
+    assert.ok(routes('settingsRequestRoutes.js').includes("router.get('/counts'"));
+    assert.ok(dash('SystemAdminDashboard.jsx').includes('/app/admin/settings/${r.category}'));
   });
 
-  await check(23, 'the chairperson can reject a proposed change', () => {
-    assert.ok(adminCtrl.includes("return res.json({ message: 'Request rejected.' })"),
-      'a rejection must be answered without touching the settings');
-    assert.ok(adminCtrl.includes("audit(req.user.id, 'REJECT_CHANGE_REQUEST'"));
+  await check(23, 'the system administrator applies the request in that tab', () => {
+    assert.ok(can('system_admin', 'settingsRequests.manage'));
+    const ctrl = controllers('settingsRequestsController.js');
+    assert.ok(routes('settingsRequestRoutes.js').includes("router.post('/:id/configure'"));
+    assert.ok(ctrl.includes('await applyGroupRules(values, req.user.id)'));
+    assert.ok(page('VslaSettings.jsx').includes('/settings-requests/${request.id}/configure'));
   });
 
-  await check(24, 'a confirmed setting becomes active', () => {
-    const apply = settingsCtrl.indexOf('async function applyGroupRules');
-    assert.ok(apply > 0, 'the rule-applying function must exist');
-    const body = settingsCtrl.slice(apply, apply + 420);
-    assert.ok(body.includes('setSetting(key, payload[key], \'group\')'),
-      'the approved value must be written to the settings table');
-    assert.ok(settingsCtrl.includes("audit(userId, 'UPDATE_SETTINGS'"),
-      'the change must be recorded in the audit trail');
-    assert.ok(adminCtrl.indexOf('await applyGroupRules(payload, req.user.id)') > 0,
-      'the approval path must put the new rules into force');
+  await check(24, 'applying the request clears its tab indicator', () => {
+    const ctrl = controllers('settingsRequestsController.js');
+    assert.ok(ctrl.includes("SET status = 'completed'"));
+    assert.ok(ctrl.includes("WHERE status = 'pending'"), 'the tab counts only pending requests');
+    assert.ok(settingsCtrl.includes("audit(userId, 'UPDATE_SETTINGS'"));
   });
 
-  await check(25, 'a rejected change leaves the active value alone', () => {
-    const rejectAt = adminCtrl.indexOf("return res.json({ message: 'Request rejected.' })");
-    const applyAt = adminCtrl.indexOf('await applyGroupRules(payload, req.user.id)');
-    assert.ok(rejectAt > 0 && applyAt > 0 && rejectAt < applyAt,
-      'the rejection returns before any rule is applied');
+  await check(25, 'there is no reverse VSLA settings confirmation', () => {
+    assert.ok(!can('admin', 'groupRules.propose') && !can('system_admin', 'groupRules.propose'));
+    assert.ok(!routes('settingsRoutes.js').includes("router.put('/group-rules',"));
+    assert.ok(!settingsCtrl.includes('proposeGroupRules'));
+    assert.ok(adminCtrl.includes('VSLA settings are now applied by the system administrator'));
   });
 
   await check(26, 'the chairperson cannot manage System Administrator roles', async () => {

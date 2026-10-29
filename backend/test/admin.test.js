@@ -88,14 +88,15 @@ function run(middleware, user) {
   assert.strictEqual(canSetSystemRole({ targetRole: 'member', makeAdmin: false, activeAdministrators: 1 }).reason, 'not_admin');
   assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: false, activeAdministrators: 1 }).reason, 'last_admin');
 
-  // ---- the administrator never changes the group's rules on her own --------
+  // ---- VSLA settings go one way: chairperson request, administrator applies -
   const settings = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'settingsController.js'), 'utf8');
-  assert.ok(
-    settings.includes("req.user.role === 'system_admin' ? 'admin' : 'treasurer'"),
-    'a VSLA settings change by the administrator must be proposed to the chairperson'
-  );
-  assert.ok(!/if \(req\.user\.role === 'system_admin'\)\s*\{\s*\n\s*await applyGroupRules/.test(settings),
-    'the administrator must not save VSLA rules directly');
+  const settingsRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'settingsRoutes.js'), 'utf8');
+  assert.ok(!settings.includes('proposeGroupRules'),
+    'the old reverse flow that proposed rules to the chairperson must be gone');
+  assert.ok(!settingsRoutes.includes("router.put('/group-rules'"),
+    'there must be no route that sends a VSLA change to the chairperson for confirmation');
+  assert.ok(settingsRoutes.includes("router.put('/group-rules/apply', requirePermission('groupRules.configure')"),
+    'the system administrator applies the configuration directly');
 
   // ---- the office screens never reach the administrator's account -----------
   // The chairperson may not edit, reset, lock or suspend the System
@@ -135,49 +136,53 @@ function run(middleware, user) {
   );
 
   // ---- the chairperson's own module ---------------------------------------
-  // She leads the group: decides joins, carries out votes, confirms rules.
+  // She leads the group: decides joins, carries out votes and sends VSLA
+  // settings to the system administrator.
   for (const perm of ['cases.manage', 'officeVotes.manage', 'joinRequests.decide',
-                      'approvals.decide', 'groupRules.view', 'groupRules.propose',
+                      'approvals.decide', 'groupRules.view',
                       'cycles.manage']) {
     assert.ok(can('admin', perm), `the chairperson must hold ${perm}`);
   }
+  assert.ok(!can('admin', 'groupRules.configure'),
+    'the chairperson no longer confirms proposed VSLA rules');
   // ...and she is never the system administrator.
   for (const perm of ['accounts.view', 'accounts.manage', 'system.settings']) {
     assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
   }
   const chairAccounts = await run(requirePermission('accounts.manage'), { role: 'admin' });
   assert.strictEqual(chairAccounts.status, 403);
-  // Her board carries the queue of what is hers to settle.
+  // Her board carries the queue of what is hers to settle, but no proposed rules.
   const dashCtrl = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'dashboardController.js'), 'utf8');
-  assert.ok(dashCtrl.includes('pending_rule_changes'), 'the chair board must show the rule changes to confirm');
-  assert.ok(dashCtrl.includes("kind = 'group_rules'"), 'the chair queue must ask for the pending group-rule changes');
+  assert.ok(!dashCtrl.includes('pending_rule_changes'), 'the chair board must not show proposed VSLA rules');
+  assert.ok(!dashCtrl.includes('rule_changes_waiting'), 'there is no reverse settings-approval count any more');
   assert.ok(dashCtrl.includes('cases_to_carry'), 'the chair board must show the votes waiting to be carried out');
   const chairDash = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'dashboards', 'AdminDashboard.jsx'), 'utf8');
   assert.ok(chairDash.includes('chair.queueTitle'), 'the chairperson dashboard must open with her decision queue');
 
-  // ---- the seven summary cards, fed by real figures -----------------------
+  // ---- the summary cards read real figures --------------------------------
   assert.ok(dashCtrl.includes('AS total') && dashCtrl.includes('FROM members'),
     'the member count must come from the members table');
-  assert.ok(dashCtrl.includes('rule_changes_waiting'), 'the pending-configuration count must be asked for');
   for (const card of ['admin.totalMembers', 'dashboard.activeMembers', 'dashboard.pendingRequests',
-                      'dashboard.totalSavings', 'dashboard.activeLoans', 'dashboard.groupOutstanding',
-                      'admin.pendingConfigChanges']) {
+                      'dashboard.totalSavings', 'dashboard.activeLoans', 'dashboard.groupOutstanding']) {
     assert.ok(chairDash.includes(card), `the chair board must show the ${card} card`);
   }
+  assert.ok(!chairDash.includes('admin.pendingConfigChanges'),
+    'the reverse settings-approval card must be gone');
   // No card invents a figure: every value reads from the dashboard payload.
   assert.ok(chairDash.includes('data.members?.total'), 'total members must read the real count');
 
   // ---- the highlighted pending action and the quick actions ---------------
   for (const qa of ['chair.qaReviewRequests', 'chair.qaViewMembers', 'chair.qaViewLoans',
                     'chair.qaViewSavings', 'chair.qaViewRepayments', 'chair.qaViewReports',
-                    'chair.qaReviewSettings', 'chair.qaViewMeetings']) {
+                    'chair.qaViewMeetings']) {
     assert.ok(chairDash.includes(qa), `the chair board must offer the ${qa} quick action`);
   }
+  assert.ok(!chairDash.includes('chair.qaReviewSettings'),
+    'the chairperson no longer reviews proposed VSLA settings');
   assert.ok(chairDash.includes('chair__alert'), 'the most important pending action must be highlighted');
   assert.ok(
-    chairDash.indexOf('chair.alertJoins') < chairDash.indexOf('chair.alertRules')
-      && chairDash.indexOf('chair.alertRules') < chairDash.indexOf('chair.alertCarry'),
+    chairDash.indexOf('chair.alertJoins') < chairDash.indexOf('chair.alertCarry'),
     'people waiting to join must be highlighted before anything else'
   );
 
@@ -428,40 +433,41 @@ function run(middleware, user) {
     'a decided or foreign request must be refused');
   const approvalsPage = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Approvals.jsx'), 'utf8');
-  assert.ok(approvalsPage.includes("t('nav.settingsApproval')"),
-    'the section is titled VSLA Settings Approval');
+  assert.ok(approvalsPage.includes("t('nav.approvals')"),
+    'the remaining approval queue is titled plainly, not as VSLA settings approval');
+  assert.ok(!approvalsPage.includes('settingsApproval') && !approvalsPage.includes('group_rules'),
+    'VSLA settings are no longer confirmed from the approval queue');
   assert.ok(approvalsPage.includes("admin.pendingChair"),
-    'a pending request says it awaits the chairperson confirmation');
-  assert.ok(approvalsPage.includes("admin.currentValue") && approvalsPage.includes("admin.proposedValue"),
-    'every setting shows the current and the proposed value');
-  assert.ok(approvalsPage.includes('SECTION_KEYS') && approvalsPage.includes('CATEGORY_ORDER')
-    && approvalsPage.includes('GROUP_LABELS'),
-    'the proposed settings are grouped under their category with real names');
+    'a pending account request says it awaits the chairperson confirmation');
   assert.ok(approvalsPage.includes("admin.requestedBy") && approvalsPage.includes('shortDate(r.created_at)'),
     'the request shows who proposed it and when');
   assert.ok(approvalsPage.includes("t('admin.approve')") && approvalsPage.includes("t('admin.reject')"),
     'the actions are Confirm and Reject');
-  assert.ok(approvalsPage.includes("'/settings/group-rules'"),
-    'the current value comes from the live group rules');
-  const ruleLabels = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'frontend', 'src', 'utils', 'groupRuleLabels.js'), 'utf8');
-  for (const cat of ['savings', 'loans', 'fines', 'welfare', 'shareout', 'membership', 'voting', 'meetings']) {
-    assert.ok(ruleLabels.includes(`'${cat}'`), `the approval categories must include ${cat}`);
-  }
 
-  // ---- the important-setting approval rule --------------------------------
-  const applyCall = 'await applyGroupRules(payload, req.user.id)';
-  const rejectReturn = "return res.json({ message: 'Request rejected.' })";
-  assert.ok(adminCtrl.includes(applyCall), 'a confirmed setting request applies the new rules');
-  assert.ok(adminCtrl.indexOf(rejectReturn) !== -1
-    && adminCtrl.indexOf(rejectReturn) < adminCtrl.indexOf(applyCall),
-    'a rejected request returns before anything is applied, so the old value stands');
-  assert.ok(adminCtrl.indexOf(applyCall) < adminCtrl.indexOf("SET status = 'approved'"),
-    'the new rules are applied before the request is marked in force');
-  assert.ok(adminCtrl.includes("audit(req.user.id, 'REJECT_CHANGE_REQUEST'")
-    && adminCtrl.includes("audit(req.user.id, 'APPROVE_CHANGE_REQUEST'"),
-    'both decisions are written to the audit log');
-  const settingsRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'settingsRoutes.js'), 'utf8');
+  // ---- the one-way VSLA settings request workflow -------------------------
+  const settingsRequestRoutes = fs.readFileSync(
+    path.join(__dirname, '..', 'routes', 'settingsRequestRoutes.js'), 'utf8');
+  const settingsRequestsCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'settingsRequestsController.js'), 'utf8');
+  assert.ok(settingsRequestRoutes.includes("router.post('/', requirePermission('settingsRequests.create')"),
+    'the chairperson sends the settings request');
+  assert.ok(settingsRequestRoutes.includes("router.get('/', requirePermission('settingsRequests.viewAll')"),
+    'the system administrator reads the requests');
+  assert.ok(settingsRequestRoutes.includes("router.get('/counts', requirePermission('settingsRequests.viewAll')"),
+    'each affected settings tab gets a count');
+  assert.ok(settingsRequestRoutes.includes("router.post('/:id/configure', requirePermission('settingsRequests.manage')"),
+    'the system administrator applies the request');
+  assert.ok(settingsRequestsCtrl.includes('GROUP_FIELDS')
+    && settingsRequestsCtrl.includes('requested_values')
+    && settingsRequestsCtrl.includes('applyGroupRules'),
+    'a request only carries the fields of its own settings tab');
+  assert.ok(settingsRequestsCtrl.includes("SET status = 'completed'"),
+    'applying a request clears its tab indicator');
+  assert.ok(adminCtrl.includes("cr.kind === 'group_rules'")
+    && adminCtrl.includes('VSLA settings are now applied by the system administrator'),
+    'the old chairperson confirmation path is refused');
+  assert.ok(!settingsRoutes.includes("router.put('/group-rules',"),
+    'there is no route that proposes VSLA rules to the chairperson');
   assert.ok(settingsRoutes.includes("router.put('/system', requirePermission('system.settings')"),
     'the technical system settings stay behind their own permission');
   assert.ok(routeLine('admin/settings/:section').includes('system_admin')
@@ -599,9 +605,9 @@ function run(middleware, user) {
   assert.ok(can('system_admin', 'accounts.manage') && can('system_admin', 'system.settings'),
     'the administrator keeps the system and the accounts');
   assert.ok(can('admin', 'cases.manage') && can('admin', 'joinRequests.decide')
-    && can('admin', 'approvals.decide') && can('admin', 'groupRules.propose')
+    && can('admin', 'approvals.decide') && !can('admin', 'groupRules.configure')
     && !can('admin', 'accounts.manage'),
-    'the chairperson leads the group and confirms the rules, without the system');
+    'the chairperson leads the group and sends settings to the system administrator');
   assert.ok(can('treasurer', 'savings.record') && can('treasurer', 'loans.record')
     && can('treasurer', 'welfare.record') && !can('treasurer', 'cases.manage'),
     'the treasurer records the money and does not lead');
@@ -765,7 +771,7 @@ function run(middleware, user) {
   // §1 role and separation of powers.
   assert.ok(ROLES.includes('secretary'), 'the secretary role must exist');
   for (const perm of ['accounts.view', 'accounts.manage', 'system.settings', 'users.manage',
-                      'cases.manage', 'cycles.manage', 'approvals.decide', 'groupRules.propose',
+                      'cases.manage', 'cycles.manage', 'approvals.decide', 'groupRules.configure',
                       'joinRequests.decide', 'loans.decide', 'savings.delete', 'fines.delete',
                       'contributions.delete', 'registration.delete']) {
     assert.ok(!can('secretary', perm), `the secretary must not hold ${perm}`);
@@ -1103,7 +1109,7 @@ function run(middleware, user) {
   for (const perm of ['accounts.view', 'accounts.manage', 'system.settings', 'users.manage',
                       'cases.manage', 'cycles.manage', 'approvals.decide', 'joinRequests.decide',
                       'loans.decide', 'savings.delete', 'fines.delete', 'contributions.delete',
-                      'registration.delete', 'groupRules.propose']) {
+                      'registration.delete', 'groupRules.configure']) {
     const gate = await run(requirePermission(perm), { role: 'secretary' });
     assert.strictEqual(gate.status, 403, `the secretary must be refused ${perm}`);
     assert.ok(!can('secretary', perm), `the secretary must not hold ${perm}`);
