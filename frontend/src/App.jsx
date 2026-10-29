@@ -12,6 +12,7 @@ import Members from './pages/Members.jsx';
 import AdministrativeRecords from './pages/AdministrativeRecords.jsx';
 import Meetings from './pages/Meetings.jsx';
 import Welfare from './pages/Welfare.jsx';
+import Contributions from './pages/Contributions.jsx';
 import Fines from './pages/Fines.jsx';
 import ShareOut from './pages/ShareOut.jsx';
 import JoinRequests from './pages/JoinRequests.jsx';
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="members"  element={<ProtectedRoute roles={COMMITTEE}><Members /></ProtectedRoute>} />
         <Route path="records"  element={<ProtectedRoute roles={COMMITTEE}><AdministrativeRecords /></ProtectedRoute>} />
         <Route path="meetings" element={<ProtectedRoute roles={EVERYONE}><Meetings /></ProtectedRoute>} />
+        <Route path="contributions" element={<ProtectedRoute roles={['treasurer']}><Contributions /></ProtectedRoute>} />
         <Route path="welfare"  element={<ProtectedRoute roles={EVERYONE}><Welfare /></ProtectedRoute>} />
         <Route path="fines"    element={<ProtectedRoute roles={EVERYONE}><Fines /></ProtectedRoute>} />
         <Route path="shareout" element={<ProtectedRoute roles={EVERYONE}><ShareOut /></ProtectedRoute>} />

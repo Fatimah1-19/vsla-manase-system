@@ -31,7 +31,7 @@ export default function TreasurerDashboard({ data }) {
     { to: '/app/loans?action=apply', key: 'treas.qaRecordLoan', icon: 'loans', cls: '' },
     { to: '/app/loans?action=record', key: 'treas.qaRecordRepayment', icon: 'loans', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaRecordFine', icon: 'fines', cls: '' },
-    { to: '/app/welfare', key: 'treas.qaRecordWelfare', icon: 'welfare', cls: 'btn--sky' },
+    { to: '/app/contributions', key: 'treas.qaRecordWelfare', icon: 'welfare', cls: 'btn--sky' },
     { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ] : [
@@ -39,7 +39,7 @@ export default function TreasurerDashboard({ data }) {
     { to: '/app/loans', key: 'treas.qaViewLoans', icon: 'loans', cls: '' },
     { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', icon: 'loans', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaViewFines', icon: 'fines', cls: '' },
-    { to: '/app/welfare', key: 'treas.qaViewWelfare', icon: 'welfare', cls: 'btn--sky' },
+    { to: '/app/contributions', key: 'treas.qaViewWelfare', icon: 'welfare', cls: 'btn--sky' },
     { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ];
@@ -79,7 +79,7 @@ export default function TreasurerDashboard({ data }) {
         <StatCard label={t('dashboard.interestEarned')} value={money(m.interest_earned)} tone="gold" icon="shareout" />
         {w && (
           <StatCard
-            label={t('dashboard.wrappersCollected')}
+            label={t('dashboard.groceriesCollected')}
             value={money(w.collected_this_month)}
             tone={w.behind_count > 0 ? 'gold' : 'green'}
             icon="wrappers"

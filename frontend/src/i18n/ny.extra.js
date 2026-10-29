@@ -20,7 +20,7 @@ export default {
     membershipDocuments: 'Zikalata za umembala', adminRecords: 'Zolembedwa za kasamalidwe',
     attendanceReports: 'Malipoti a kupezeka', meetingReports: 'Malipoti a misonkhano', adminActivity: 'Zochitika za kasamalidwe',
     groupActivity: 'Zochitika za gulu', auditHistory: 'Mbiri yofunikira ya kafukufuku',
-    gSavings: 'Kusunga', gLoans: 'Ngongole', gContributions: 'Zopereka', gFines: 'Zilango', gWelfare: 'Chithandizo',
+    gSavings: 'Kusunga', gLoans: 'Ngongole', gContributions: 'Zopereka', contributions: 'Zopereka', gFines: 'Zilango', gWelfare: 'Chithandizo',
     gShareout: 'Kugawana', gFinancialReports: 'Malipoti a Ndalama',
     gShareout: 'Kugawana', gFinancialReports: 'Malipoti a ndalama',
     recordSavings: 'Lembani kusunga', savingsActivity: 'Zochitika za kusunga', savingsReports: 'Malipoti a kusunga', savingsHistory: 'Mbiri ya kusunga', savingsSummary: 'Chidule cha kusunga',

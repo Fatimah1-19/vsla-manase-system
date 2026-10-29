@@ -116,7 +116,7 @@ async function check(n, title, fn) {
       'savings, loans, repayments, fines, welfare, active loans and reports must be one tap away');
     assert.ok(treasurerBoard.includes('/app/savings') && treasurerBoard.includes('/app/loans')
       && treasurerBoard.includes('/app/loans?filter=approved')
-      && treasurerBoard.includes('/app/fines') && treasurerBoard.includes('/app/welfare')
+      && treasurerBoard.includes('/app/fines') && treasurerBoard.includes('/app/contributions')
       && treasurerBoard.includes('/app/analytics'),
       'every shortcut must point at a page she may open');
     const en = read(path.join('frontend', 'src', 'i18n', 'en.extra.js'));
@@ -631,22 +631,23 @@ async function check(n, title, fn) {
         `an administrator's page must not reach the treasurer: ${line.trim()}`);
     }
     const targets = treasLines.join('\n');
-    // The whole money menu: savings, loans, fines, welfare, share-out, reports.
-    for (const pageLink of ['/app/savings', '/app/loans', '/app/fines', '/app/welfare',
-                            '/app/shareout', '/app/financial-activity', '/app/profile']) {
+    // The whole money menu: savings, loans, fines, contributions, share-out, reports.
+    for (const pageLink of ['/app/savings', '/app/loans', '/app/fines', '/app/contributions',
+                            '/app/welfare', '/app/wrappers', '/app/shareout',
+                            '/app/financial-activity', '/app/profile']) {
       assert.ok(targets.includes(`to: '${pageLink}`), `the treasurer menu must include ${pageLink}`);
     }
     assert.ok(targets.includes("to: '/app/loans?tab=repayments'"),
       'the treasurer menu must reach the repayment history');
     // Grouped, with a heading over each section of the menu.
     for (const group of ['nav.gDashboard', 'nav.gSavings', 'nav.gLoans', 'nav.gFines',
-                         'nav.gWelfare', 'nav.gShareout', 'nav.gFinancialReports',
+                         'nav.gContributions', 'nav.gShareout', 'nav.gFinancialReports',
                          'nav.gProfile']) {
       assert.ok(targets.includes(group), `the treasurer menu is missing the ${group} heading`);
     }
     // The administrator's pages and membership approval are not hers.
     for (const forbidden of ['/app/admin/', '/app/approvals', '/app/messages', '/app/members',
-                             '/app/cases', '/app/leadership', '/app/wrappers']) {
+                             '/app/cases', '/app/leadership']) {
       assert.ok(!targets.includes(`to: '${forbidden}`),
         `the treasurer menu must not offer ${forbidden}`);
     }

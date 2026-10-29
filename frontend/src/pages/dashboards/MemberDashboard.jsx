@@ -66,7 +66,7 @@ export default function MemberDashboard({ data }) {
         )}
         {wr && (
           <StatCard
-            label={t('dashboard.wrappersMonth', money(wr.monthly))}
+            label={t('dashboard.groceriesMonth', money(wr.monthly))}
             value={wr.owed > 0 ? money(wr.owed) : t('wrappers.paidUp')}
             hint={wr.owed > 0 ? t('wrappers.stillOwed') : undefined}
             tone={wr.owed > 0 ? 'red' : 'plain'}

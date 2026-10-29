@@ -529,7 +529,7 @@ export default function Profile() {
             </section>
 
             <section className="profile__card">
-              <h2 className="profile__h2">{t('profile.wrappersTitle')}</h2>
+              <h2 className="profile__h2">{t('profile.groceriesTitle')}</h2>
               <Ledger rows={data.months} keyField="id" columns={monthsColumns} />
             </section>
           </div>

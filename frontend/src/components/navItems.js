@@ -63,16 +63,20 @@ export const NAV_ITEMS = [
 // ---- treasurer: the money menu, and only the money menu ----------------
   { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['treasurer'], phone: true, end: true },
 
-  { to: '/app/savings',                key: 'nav.recordSavings',   group: 'nav.gSavings', icon: 'savings', roles: ['treasurer'] },
+  { to: '/app/savings',                key: 'nav.savingsManagement', group: 'nav.gSavings', icon: 'savings', roles: ['treasurer'] },
   { to: '/app/financial-activity?type=savings', key: 'nav.savingsActivity', icon: 'activity', roles: ['treasurer'], sub: true },
   { to: '/app/analytics?tab=reports&report=savings', key: 'nav.savingsReports', icon: 'analytics', roles: ['treasurer'], sub: true },
 
-  { to: '/app/loans?filter=pending',   key: 'nav.loanApplications', group: 'nav.gLoans', icon: 'loans', roles: ['treasurer'] },
+  { to: '/app/loans',                  key: 'nav.loanManagement',   group: 'nav.gLoans', icon: 'loans', roles: ['treasurer'] },
+  { to: '/app/loans?filter=pending',   key: 'nav.loanApplications', icon: 'loans', roles: ['treasurer'], sub: true },
   { to: '/app/loans?tab=repayments',   key: 'nav.repayments',       icon: 'loans', roles: ['treasurer'], sub: true },
   { to: '/app/financial-activity?type=loans', key: 'nav.loanActivity', icon: 'activity', roles: ['treasurer'], sub: true },
 
-  { to: '/app/fines',                  key: 'nav.recordFine',        group: 'nav.gFines', icon: 'fines', roles: ['treasurer'] },
-  { to: '/app/welfare',                key: 'nav.recordWelfare',   group: 'nav.gWelfare', icon: 'welfare', roles: ['treasurer'] },
+  { to: '/app/fines',                  key: 'nav.finesManagement',   group: 'nav.gFines', icon: 'fines', roles: ['treasurer'] },
+
+  { to: '/app/contributions',          key: 'nav.contributions',     group: 'nav.gContributions', icon: 'welfare', roles: ['treasurer'] },
+  { to: '/app/welfare',                key: 'nav.welfare',           group: 'nav.gContributions', icon: 'welfare', roles: ['treasurer'], sub: true },
+  { to: '/app/wrappers',               key: 'nav.groceries',         group: 'nav.gContributions', icon: 'wrappers', roles: ['treasurer'], sub: true },
 
   { to: '/app/shareout',               key: 'nav.currentCycle',    group: 'nav.gShareout', icon: 'shareout', roles: ['treasurer'] },
 

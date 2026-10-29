@@ -161,7 +161,7 @@ export default function AdminDashboard({ data }) {
           <StatCard label={t('dashboard.finesOutstanding')} value={money(m.fines_outstanding)} tone="red" icon="fines" />
           {data.wrappers && (
             <StatCard
-              label={t('dashboard.wrappersCollected')}
+              label={t('dashboard.groceriesCollected')}
               value={money(data.wrappers.collected_this_month)}
               tone={data.wrappers.behind_count > 0 ? 'gold' : 'green'}
               icon="wrappers"

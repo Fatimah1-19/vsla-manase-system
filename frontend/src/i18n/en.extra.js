@@ -21,7 +21,7 @@ export default {
     membershipDocuments: 'Membership Documents', adminRecords: 'Administrative Records',
     attendanceReports: 'Attendance Reports', meetingReports: 'Meeting Reports', adminActivity: 'Administrative Activity',
     groupActivity: 'Group Activity', auditHistory: 'Relevant Audit History',
-    gSavings: 'Savings', gLoans: 'Loans', gContributions: 'Contributions', gFines: 'Fines', gWelfare: 'Welfare',
+    gSavings: 'Savings', gLoans: 'Loans', gContributions: 'Contributions', contributions: 'Contributions', gFines: 'Fines', gWelfare: 'Welfare',
     gShareout: 'Share-Out', gFinancialReports: 'Financial Reports',
     recordSavings: 'Record Savings', savingsActivity: 'Savings Activity', savingsReports: 'Savings Reports', savingsHistory: 'Savings History', savingsSummary: 'Savings Summary',
     loanApplications: 'Loan Applications', repayments: 'Repayments', loanActivity: 'Loan Activity', recordLoan: 'Record Loan', activeLoans: 'Active Loans', overdueLoans: 'Overdue Loans',

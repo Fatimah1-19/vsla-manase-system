@@ -4662,6 +4662,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .section__tab:hover { color: var(--leaf-dark); }
 .section__tab.is-on { color: var(--leaf-dark); border-bottom-color: var(--leaf); }
+.contributions__tabs { margin-bottom: 0.9rem; }
 .profile__tabs { display: flex; gap: 0.35rem; overflow-x: auto; margin-bottom: 1rem; padding-bottom: 2px; border-bottom: 1px solid var(--rule); }
 .profile__tab {
   flex: 0 0 auto; min-height: 42px; padding: 0.4rem 0.95rem; background: none; cursor: pointer;
