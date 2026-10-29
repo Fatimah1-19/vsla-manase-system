@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import LanguageToggle from '../components/LanguageToggle.jsx';
@@ -18,11 +18,10 @@ export default function Login() {
   const { login, user } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    if (user) navigate(location.state?.from || '/app', { replace: true });
-  }, [user, navigate, location.state]);
+    if (user) navigate('/app', { replace: true });
+  }, [user, navigate]);
 
   // Count the lockout down on screen so they know when to try again.
   useEffect(() => {
