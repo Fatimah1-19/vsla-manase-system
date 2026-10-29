@@ -353,9 +353,6 @@ export default function Analytics() {
         subtitle={pageSubtitle}
         action={tab === 'reports' ? (
           <div className="row-actions">
-            <button type="button" className="btn btn--ghost no-print" onClick={exportPdf}>
-              {t('reports.reportExport')}
-            </button>
             <div className="reports__scope" role="tablist" aria-label={t('reports.reportScope')}>
               <button type="button" role="tab" aria-selected={scope === 'group'}
                 className={scope === 'group' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
@@ -364,6 +361,9 @@ export default function Analytics() {
                 className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
                 onClick={() => setScope('member')}>{memberScopeLabel}</button>
             </div>
+            <button type="button" className="btn btn--ghost no-print" onClick={exportPdf}>
+              {t('reports.reportExport')}
+            </button>
           </div>
         ) : undefined}
       />
