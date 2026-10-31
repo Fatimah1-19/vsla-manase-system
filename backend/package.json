@@ -14,7 +14,8 @@
     "test:workflow": "node test/acceptance-workflow.test.js",
     "test:fines-welfare": "node test/acceptance-fines-welfare.test.js",
     "test:roles": "node test/acceptance-roles.test.js",
-    "test": "node test/shareout.test.js && node test/cases.test.js && node test/officeVotes.test.js && node test/admin.test.js && node test/acceptance.test.js && node test/acceptance-secretary.test.js && node test/acceptance-treasurer.test.js && node test/acceptance-workflow.test.js && node test/acceptance-fines-welfare.test.js && node test/acceptance-roles.test.js"
+    "test:member-dashboard": "node test/member-dashboard.test.js",
+    "test": "node test/shareout.test.js && node test/cases.test.js && node test/officeVotes.test.js && node test/admin.test.js && node test/acceptance.test.js && node test/acceptance-secretary.test.js && node test/acceptance-treasurer.test.js && node test/acceptance-workflow.test.js && node test/acceptance-fines-welfare.test.js && node test/acceptance-roles.test.js && node test/member-dashboard.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

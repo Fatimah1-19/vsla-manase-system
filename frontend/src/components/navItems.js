@@ -87,18 +87,20 @@ export const NAV_ITEMS = [
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['treasurer'], sub: true },
 
   // ---- the ordinary member -------------------------------------------------
-  { to: '/app',            key: 'nav.dashboard', icon: 'dashboard', roles: ['member'], phone: true, end: true },
-  { to: '/app/loans',      key: 'nav.loans',     label: 'nav.loanManagement',    icon: 'loans',   roles: ['member'], phone: true },
-  { to: '/app/meetings',   key: 'nav.meetings',  label: 'nav.meetingsManagement', icon: 'meetings', roles: ['member'] },
-  { to: '/app/welfare',    key: 'nav.welfare',   label: 'nav.myWelfare',        icon: 'welfare',  roles: ['member'] },
-  { to: '/app/fines',      key: 'nav.fines',     label: 'nav.finesManagement',  icon: 'fines',    roles: ['member'] },
-  { to: '/app/shareout',   key: 'nav.shareout',  label: 'nav.shareoutManagement', icon: 'shareout', roles: ['member'] },
-  { to: '/app/requests',   key: 'nav.requests',  label: 'nav.requestsManagement', icon: 'requests', roles: ['member'] },
-  { to: '/app/cases',      key: 'nav.cases',     icon: 'cases',      roles: ['member'] },
-  { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['member'] },
-  { to: '/app/wrappers',   key: 'nav.wrappers',  icon: 'wrappers',   roles: ['member'] },
-  { to: '/app/receipts',   key: 'nav.receipts',  label: 'nav.receipts', icon: 'reports',   roles: ['member'], phone: true },
-  { to: '/app/profile',            key: 'nav.profile',        group: 'nav.gProfile', icon: 'profile', roles: ['member'], phone: true },
+  { to: '/app',            key: 'nav.myDashboard', icon: 'dashboard', roles: ['member'], phone: true, end: true },
+  { to: '/app/savings',    key: 'nav.mySavings',   icon: 'savings',   roles: ['member'], phone: true },
+  { to: '/app/loans',      key: 'nav.myLoans',     icon: 'loans',     roles: ['member'], phone: true },
+  { to: '/app/meetings',   key: 'nav.meetings',    icon: 'meetings',  roles: ['member'] },
+  { to: '/app/welfare',    key: 'nav.myWelfare',   icon: 'welfare',   roles: ['member'] },
+  { to: '/app/fines',      key: 'nav.myFines',     icon: 'fines',     roles: ['member'] },
+  { to: '/app/shareout',   key: 'nav.myShareout',  icon: 'shareout',  roles: ['member'] },
+  { to: '/app/requests',   key: 'nav.myRequests',  icon: 'requests',  roles: ['member'] },
+  { to: '/app/cases',      key: 'nav.cases',       icon: 'cases',      roles: ['member'] },
+  { to: '/app/leadership', key: 'nav.leadership',  icon: 'leadership', roles: ['member'] },
+  { to: '/app/wrappers',   key: 'nav.myGroceries', icon: 'wrappers',   roles: ['member'] },
+  { to: '/app/receipts',   key: 'nav.myReceipts',  icon: 'reports',    roles: ['member'], phone: true },
+  { to: '/app/activity',   key: 'nav.activity',    icon: 'audit',      roles: ['member'] },
+  { to: '/app/profile',            key: 'nav.profile',        icon: 'profile', roles: ['member'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['member'], sub: true },
 
   // ---- secretary: records, meetings, reports — never the admin's pages ---
@@ -167,10 +169,41 @@ const CHAIR_SIDEBAR = [
   { to: '/app/profile', key: 'nav.profile', icon: 'profile' },
 ];
 
+/** The ordinary member's compact menu: her money, her group, her account. */
+const MEMBER_SIDEBAR = [
+  { to: '/app', key: 'nav.myDashboard', icon: 'dashboard', end: true },
+  {
+    key: 'nav.gMyFinances',
+    icon: 'savings',
+    children: [
+      { to: '/app/savings', key: 'nav.mySavings', icon: 'savings' },
+      { to: '/app/loans', key: 'nav.myLoans', icon: 'loans' },
+      { to: '/app/welfare', key: 'nav.myWelfare', icon: 'welfare' },
+      { to: '/app/fines', key: 'nav.myFines', icon: 'fines' },
+      { to: '/app/wrappers', key: 'nav.myGroceries', icon: 'wrappers' },
+      { to: '/app/shareout', key: 'nav.myShareout', icon: 'shareout' },
+    ],
+  },
+  {
+    key: 'nav.gCommunity',
+    icon: 'meetings',
+    children: [
+      { to: '/app/meetings', key: 'nav.meetings', icon: 'meetings' },
+      { to: '/app/requests', key: 'nav.myRequests', icon: 'requests' },
+      { to: '/app/cases', key: 'nav.cases', icon: 'cases' },
+      { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership' },
+      { to: '/app/receipts', key: 'nav.myReceipts', icon: 'reports' },
+    ],
+  },
+  { to: '/app/activity', key: 'nav.activity', icon: 'audit', bottom: true },
+];
+
 /** The sidebar menu for a role. Other roles keep their existing flat menu. */
-export const sidebarFor = (role) => (
-  role === 'admin' ? CHAIR_SIDEBAR : navFor(role).filter((i) => !i.sub)
-);
+export const sidebarFor = (role) => {
+  if (role === 'admin') return CHAIR_SIDEBAR;
+  if (role === 'member') return MEMBER_SIDEBAR;
+  return navFor(role).filter((i) => !i.sub);
+};
 
 /** The path part of a nav target, without the query string. */
 const pathOf = (to) => to.split('?')[0];

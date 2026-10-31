@@ -46,8 +46,7 @@ const getDashboard = wrap(async (req, res) => {
     if (!memberId) return res.json({ ...base, member: null });
 
     // Everything the member board needs, asked together instead of one by one.
-    const [savings, loans, fines, finesList, share, nextMeeting, multiplierSetting, levySetting, owing,
-           groupMoney, groupLoans, groupCash, recentContrib] = await Promise.all([
+    const [savings, loans, fines, finesList, share, nextMeeting, multiplierSetting, levySetting, owing] = await Promise.all([
       one(`SELECT COALESCE(SUM(amount) FILTER (WHERE status='verified'),0)::float AS total,
                   COALESCE(SUM(shares) FILTER (WHERE status='verified'),0)::int AS shares,
                   COUNT(*) FILTER (WHERE status='verified')::int AS entries, MAX(date) AS last_date,
@@ -74,19 +73,6 @@ const getDashboard = wrap(async (req, res) => {
       getSetting('loan_multiplier', '2'),
       getSetting('monthly_levy', '3000'),
       arrears(),
-
-      // The whole group's money, so the box is not a mystery to the women who fill it.
-      one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
-                  COALESCE((SELECT SUM(interest_part) FROM loan_repayments WHERE status = 'verified'),0)::float AS interest_earned`,
-        [cycle ? cycle.id : null]),
-      query(`SELECT l.amount::float, l.with_interest, l.interest_rate::float,
-                    COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-               FROM loans l WHERE l.status = 'verified'`),
-      cashInBox(cycle ? cycle.id : null),
-      query(`SELECT s.id, s.amount::float, s.date, u.full_name
-               FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
-              WHERE s.member_id = $1
-              ORDER BY s.id DESC LIMIT 6`, [memberId]),
     ]);
 
     const activeLoan = loans.map((l) => {
@@ -111,17 +97,12 @@ const getDashboard = wrap(async (req, res) => {
       ),
       query(
         `SELECT id, amount::float, shares, note, date FROM savings
-          WHERE member_id = $1 ORDER BY date DESC, id DESC LIMIT 4`,
+          WHERE member_id = $1 AND status='verified' ORDER BY date DESC, id DESC LIMIT 4`,
         [memberId]
       ),
     ]);
     const trend = Object.fromEntries(trendBuckets.map((r) => [r.ym, r.v]));
     const savings_trend = months.map((ym) => ({ month: ym, amount: round(trend[ym]) }));
-
-    const groupOutstanding = groupLoans.reduce((sum, l) => {
-      const { totalDue } = loanTotals(l);
-      return sum + Math.max(0, totalDue - l.total_repaid);
-    }, 0);
 
     return res.json({
       ...base,
@@ -135,13 +116,6 @@ const getDashboard = wrap(async (req, res) => {
       next_meeting: nextMeeting,
       savings_trend,
       recent_savings: recentEntries,
-      money: {
-        total_savings: groupMoney.total_savings,
-        interest_earned: groupMoney.interest_earned,
-        outstanding: +groupOutstanding.toFixed(2),
-        cash_in_box: groupCash,
-      },
-      recent_contributions: recentContrib,
     });
   }
 

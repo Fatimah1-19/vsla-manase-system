@@ -3,6 +3,7 @@ import { useLang } from '../../context/LangContext.jsx';
 import StatCard from '../../components/StatCard.jsx';
 import Icon from '../../components/Icon.jsx';
 import GroupedList from '../../components/GroupedList.jsx';
+import QuickActions from '../../components/QuickActions.jsx';
 import { LineChart, HBars, Ring } from '../../components/Charts.jsx';
 import { money, shortDate, monthLong } from '../../utils/format.js';
 import '../../styles.css';
@@ -13,14 +14,21 @@ const shortMonth = (ym) => new Date(`${ym}-01`).toLocaleDateString(undefined, { 
 export default function MemberDashboard({ data }) {
   const { t } = useLang();
   const { savings, active_loan: loan, unpaid_fines: fines, my_share: share, next_meeting: meeting } = data;
-  const box = data.money || {};
-  const contrib = data.recent_contributions || [];
   const limit = data.loan_limit;
   const wr = data.wrappers;
   const trend = data.savings_trend || [];
   const entries = data.recent_savings || [];
   const hasTrend = trend.some((d) => d.amount > 0);
   const myFines = (data.my_fines || []).filter((f) => !f.paid);
+  const quickActions = [
+    { to: '/app/savings', key: 'nav.mySavings', icon: 'savings' },
+    { to: '/app/loans', key: 'nav.myLoans', icon: 'loans' },
+    { to: '/app/welfare', key: 'nav.myWelfare', icon: 'welfare' },
+    { to: '/app/wrappers', key: 'nav.myGroceries', icon: 'wrappers' },
+    { to: '/app/fines', key: 'nav.myFines', icon: 'fines' },
+    { to: '/app/shareout', key: 'nav.myShareout', icon: 'shareout' },
+    { to: '/app/receipts', key: 'nav.myReceipts', icon: 'reports' },
+  ];
 
   const shares = Number(savings?.shares || 0);
   const shareValue = data.cycle ? Number(data.cycle.share_value) : 0;
@@ -45,6 +53,11 @@ export default function MemberDashboard({ data }) {
           <Link to="/app/shareout" className="btn btn--gold btn--small">{t('common.view')}</Link>
         </section>
       )}
+
+      <section className="dash__card mdash__quick">
+        <h2 className="dash__sectionTitle">{t('dashboard.quickActions')}</h2>
+        <QuickActions actions={quickActions} />
+      </section>
 
       <div className="page-grid page-grid--stat">
         <StatCard
@@ -99,30 +112,6 @@ export default function MemberDashboard({ data }) {
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      {data.money && (
-        <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('dashboard.moneyInBox')}</h2>
-          <dl className="mdash__holdRows">
-            <div>
-              <dt>{t('dashboard.totalSavings')}</dt>
-              <dd className="money">{money(box.total_savings)}</dd>
-            </div>
-            <div>
-              <dt>{t('dashboard.interestEarned')}</dt>
-              <dd className="money">{money(box.interest_earned)}</dd>
-            </div>
-            <div>
-              <dt>{t('dashboard.loansOut')}</dt>
-              <dd className="money">{money(box.outstanding)}</dd>
-            </div>
-            <div className="is-strong">
-              <dt>{t('dashboard.amountInBank')}</dt>
-              <dd className="money">{money(box.cash_in_box)}</dd>
-            </div>
-          </dl>
         </section>
       )}
 
@@ -190,21 +179,6 @@ export default function MemberDashboard({ data }) {
           </section>
         )}
       </div>
-
-      {contrib.length > 0 && (
-        <section className="dash__card">
-          <h2 className="dash__sectionTitle">{t('dashboard.myRecentSavings')}</h2>
-          <GroupedList
-            items={contrib}
-            renderItem={(c) => (
-              <>
-                <span className="dash__who">{c.full_name}</span>
-                <span className="dash__amount money">{money(c.amount)}</span>
-              </>
-            )}
-          />
-        </section>
-      )}
 
       <section className="mdash__loan">
         <h2 className="dash__sectionTitle">{t('dashboard.myLoan')}</h2>

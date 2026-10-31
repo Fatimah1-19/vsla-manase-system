@@ -165,7 +165,8 @@ async function check(n, title, fn) {
   await check(13, 'the chairperson can view savings', () => {
     assert.ok(can('admin', 'savings.view'));
     assert.ok(routes('savingsRoutes.js').includes("router.get('/', requirePermission('savings.view')"));
-    assert.ok(/path="savings"[^\n]*COMMITTEE/.test(app));
+    assert.ok(/path="savings"[^\n]*EVERYONE/.test(app),
+      'the chairperson reaches her view, and a member reaches her own');
   });
 
   await check(14, 'the chairperson can view loans', () => {

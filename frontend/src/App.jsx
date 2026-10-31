@@ -56,7 +56,7 @@ export default function App() {
         element={<ProtectedRoute><Layout /></ProtectedRoute>}
       >
         <Route index element={<Dashboard />} />
-        <Route path="savings"  element={<ProtectedRoute roles={COMMITTEE}><Savings /></ProtectedRoute>} />
+        <Route path="savings"  element={<ProtectedRoute roles={EVERYONE}><Savings /></ProtectedRoute>} />
         <Route path="analytics" element={<ProtectedRoute roles={COMMITTEE}><Analytics /></ProtectedRoute>} />
         <Route path="reports"   element={<Navigate to="/app/analytics?tab=reports" replace />} />
         <Route path="wrappers" element={<ProtectedRoute roles={EVERYONE}><Wrappers /></ProtectedRoute>} />
@@ -76,7 +76,7 @@ export default function App() {
         <Route path="receipts" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Receipts /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
-        <Route path="activity" element={<ProtectedRoute roles={['system_admin']}><Activity /></ProtectedRoute>} />
+        <Route path="activity" element={<ProtectedRoute roles={['system_admin', 'member']}><Activity /></ProtectedRoute>} />
         <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
         <Route path="activity/administrative" element={<ProtectedRoute roles={['system_admin']}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />

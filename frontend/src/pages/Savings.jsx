@@ -23,7 +23,7 @@ const blank = { member_id: '', amount: '', shares: '1', date: inputDate(), note:
 
 export default function Savings() {
   const { t } = useLang();
-  const { canRecordMoney, isAdmin, canVerify } = useAuth();
+  const { canRecordMoney, isAdmin, canVerify, isCommittee } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -49,6 +49,27 @@ export default function Savings() {
   const showHistory = view !== 'summary';
 
   const load = useCallback(async () => {
+    if (!isCommittee) {
+      const me = await api.get('/profile/me');
+      const list = (me.savings || []).map((s) => ({
+        ...s,
+        member_id: me.member?.id,
+        full_name: me.member?.full_name || '',
+        has_avatar: me.member?.has_avatar,
+      }));
+      setRows(list);
+      setSummary({
+        total_savings: me.totals?.savings || 0,
+        shares: me.totals?.shares || 0,
+        entries: list.filter((s) => s.status === 'verified').length,
+        savers: 1,
+        pending_entries: list.filter((s) => s.status === 'pending_verification').length,
+        cycle: me.cycle,
+        per_member: [],
+      });
+      setMembers([]);
+      return;
+    }
     const [list, sum, mem] = await Promise.all([
       api.get('/savings'),
       api.get('/savings/summary'),
@@ -57,7 +78,7 @@ export default function Savings() {
     setRows(list);
     setSummary(sum);
     setMembers(mem);
-  }, []);
+  }, [isCommittee]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
@@ -167,7 +188,7 @@ export default function Savings() {
       if (picked && r.member_id !== picked) return false;
       if (from && day(r) < from) return false;
       if (to && day(r) > to) return false;
-      return !q || r.full_name.toLowerCase().includes(q);
+      return !q || String(r.full_name || '').toLowerCase().includes(q);
     });
   }, [rows, search, memberId, from, to, refresh]);
 
@@ -277,7 +298,68 @@ export default function Savings() {
 
   const savers = (summary?.per_member || []).filter((r) => Number(r.total_savings) > 0);
 
+  const memberColumns = [
+    { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
+    { key: 'shares', label: t('savings.shares'), align: 'right', hideOnPhone: true },
+    { key: 'date', label: t('common.date'), render: (r) => shortDate(r.date) },
+    { key: 'status', label: t('common.status'), render: (r) => <StatusTag status={r.status} /> },
+    { key: 'note', label: t('savings.note'), hideOnPhone: true,
+      render: (r) => <span className="muted">{r.note || '—'}</span> },
+  ];
+
   if (!rows) return <Spinner />;
+
+  if (!isCommittee) {
+    return (
+      <div className="savings money-book">
+        <PageHeader title={t('savings.myTitle')} subtitle={t('savings.mySubtitle')} />
+        <BackButton />
+
+        {summary?.cycle && (
+          <div className="savings__cycle">
+            <Icon name="cycles" size={18} />
+            <span className="savings__cycleLabel">{t('savings.cycle')}</span>
+            <strong className="savings__cycleName">{summary.cycle.cycle_name}</strong>
+          </div>
+        )}
+
+        <div className="page-grid page-grid--stat">
+          <StatCard label={t('savings.myTotal')} value={money(summary?.total_savings)} tone="gold" big />
+          <StatCard label={t('savings.shares')} value={`${summary?.shares || 0}`} />
+          {(summary?.pending_entries || 0) > 0 && (
+            <StatCard
+              label={t('status.pending_verification')}
+              value={`${summary.pending_entries}`}
+              tone="gold"
+            />
+          )}
+        </div>
+
+        {(summary?.pending_entries || 0) > 0 && (
+          <p className="notice notice--warn">{t('savings.myPending', summary.pending_entries)}</p>
+        )}
+
+        {groups.length === 0 ? (
+          <EmptyState title={t('savings.myEmpty')} />
+        ) : (
+          groups.map((g) => (
+            <section key={g.key} className="savings__month">
+              <div className="savings__monthHead">
+                <h2 className="savings__monthTitle">{monthLong(g.key)}</h2>
+                <span className="savings__monthTotal money">{money(g.total)}</span>
+              </div>
+              {g.dates.map((d) => (
+                <div key={d.key} className="savings__day">
+                  <h3 className="savings__dayTitle">{shortDate(d.key)}</h3>
+                  <Ledger columns={memberColumns} rows={d.rows} />
+                </div>
+              ))}
+            </section>
+          ))
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="savings money-book">

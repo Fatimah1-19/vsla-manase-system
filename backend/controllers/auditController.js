@@ -18,6 +18,17 @@ const ADMINISTRATIVE_ACTIONS = [
   'UPDATE_MEETING',     // the written-up meeting record was updated
 ];
 
+// Group events that are safe for every member to read. Personal records,
+// account changes and the full audit trail stay behind the administrator gate.
+const GROUP_ACTIONS = [
+  'CREATE_MEETING',
+  'UPDATE_MEETING',
+  'CREATE_CYCLE',
+  'CLOSE_CYCLE',
+  'CONFIRM_SHAREOUT',
+  'DISTRIBUTE_SHAREOUT',
+];
+
 // The account-management actions shown on the System Administrator's overview.
 const ACCOUNT_ACTIONS = [
   'CREATE_USER',
@@ -178,4 +189,20 @@ const listSessions = wrap(async (req, res) => {
   res.json({ sessions, unassigned });
 });
 
-module.exports = { listAudit, exportAudit, listSessions, ADMINISTRATIVE_ACTIONS, ACCOUNT_ACTIONS };
+// GET /api/audit/group — the safe, shared group timeline for members.
+const groupActivity = wrap(async (req, res) => {
+  const rows = await query(
+    `SELECT id, action, details, created_at
+       FROM audit_logs
+      WHERE action = ANY($1)
+      ORDER BY created_at DESC, id DESC
+      LIMIT 60`,
+    [GROUP_ACTIONS]
+  );
+  res.json({ rows });
+});
+
+module.exports = {
+  listAudit, exportAudit, listSessions, groupActivity,
+  ADMINISTRATIVE_ACTIONS, ACCOUNT_ACTIONS, GROUP_ACTIONS,
+};
