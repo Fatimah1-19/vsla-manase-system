@@ -78,7 +78,7 @@ export const NAV_ITEMS = [
   { to: '/app/welfare',                key: 'nav.welfare',           group: 'nav.gContributions', icon: 'welfare', roles: ['treasurer'], sub: true },
   { to: '/app/wrappers',               key: 'nav.groceries',         group: 'nav.gContributions', icon: 'wrappers', roles: ['treasurer'], sub: true },
 
-  { to: '/app/shareout',               key: 'nav.currentCycle',    group: 'nav.gShareout', icon: 'shareout', roles: ['treasurer'] },
+  { to: '/app/shareout',               key: 'nav.shareout',        group: 'nav.gShareout', icon: 'shareout', roles: ['treasurer'] },
 
   { to: '/app/financial-activity',     key: 'nav.financialReports', group: 'nav.gFinancialReports', icon: 'analytics', roles: ['treasurer'] },
   { to: '/app/analytics?tab=reports',  key: 'nav.financialReports', icon: 'analytics', roles: ['treasurer'], sub: true },
