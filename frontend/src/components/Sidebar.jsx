@@ -48,77 +48,6 @@ export default function Sidebar({ open, onNavigate }) {
     setOpenGroups((prev) => ({ ...prev, [item.key]: !expanded(item) }));
   };
 
-  const mainItems = items.filter((i) => !i.bottom);
-  const bottomItems = items.filter((i) => i.bottom);
-
-  const renderItem = (item, i, list) => (
-    <Fragment key={item.children ? item.key : `${item.to}-${i}`}>
-      {item.group && item.group !== list[i - 1]?.group && groupCount[item.group] > 1 && (
-        <li className="sidebar__group">{t(item.group)}</li>
-      )}
-      <li>
-        {item.children ? (
-          <div className="sidebar__groupWrap">
-            <button
-              type="button"
-              className={[
-                'sidebar__groupToggle',
-                groupOn(item) ? 'is-active' : '',
-                expanded(item) ? 'is-open' : '',
-              ].filter(Boolean).join(' ')}
-              onClick={() => toggleGroup(item)}
-              aria-expanded={expanded(item)}
-              aria-controls={`sidebar-${item.key}`}
-            >
-              {icon(item.icon)}
-              <span>{t(item.key)}</span>
-              <Icon name="chevron" size={16} className="sidebar__chevron" />
-            </button>
-            {expanded(item) && (
-              <ul className="sidebar__children" id={`sidebar-${item.key}`}>
-                {item.children.map((child) => {
-                  const current = childOn(child.to);
-                  return (
-                    <li key={`${child.to}-${child.key}`}>
-                      <Link
-                        to={child.to}
-                        onClick={onNavigate}
-                        className={current ? 'sidebar__sublink is-on' : 'sidebar__sublink'}
-                        aria-current={current ? 'page' : undefined}
-                      >
-                        {icon(child.icon, 18)}
-                        <span>{t(child.key)}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        ) : item.to.includes('?') ? (
-          <Link
-            to={item.to}
-            onClick={onNavigate}
-            className={on(item.to) ? 'sidebar__link is-on' : 'sidebar__link'}
-          >
-            {icon(item.icon)}
-            <span>{t(item.key)}</span>
-          </Link>
-        ) : (
-          <NavLink
-            to={item.to}
-            end={item.end}
-            onClick={onNavigate}
-            className={({ isActive }) => (isActive ? 'sidebar__link is-on' : 'sidebar__link')}
-          >
-            {icon(item.icon)}
-            <span>{t(item.key)}</span>
-          </NavLink>
-        )}
-      </li>
-    </Fragment>
-  );
-
   return (
     <nav className={open ? 'sidebar is-open' : 'sidebar'} aria-label={t('nav.menu')}>
       <div className="sidebar__brand">
@@ -126,14 +55,75 @@ export default function Sidebar({ open, onNavigate }) {
       </div>
 
       <ul className="sidebar__list">
-        {mainItems.map(renderItem)}
+        {items.map((item, i) => (
+          <Fragment key={item.children ? item.key : `${item.to}-${i}`}>
+            {item.group && item.group !== items[i - 1]?.group && groupCount[item.group] > 1 && (
+              <li className="sidebar__group">{t(item.group)}</li>
+            )}
+            <li>
+              {item.children ? (
+                <div className="sidebar__groupWrap">
+                  <button
+                    type="button"
+                    className={[
+                      'sidebar__groupToggle',
+                      groupOn(item) ? 'is-active' : '',
+                      expanded(item) ? 'is-open' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => toggleGroup(item)}
+                    aria-expanded={expanded(item)}
+                    aria-controls={`sidebar-${item.key}`}
+                  >
+                    {icon(item.icon)}
+                    <span>{t(item.key)}</span>
+                    <Icon name="chevron" size={16} className="sidebar__chevron" />
+                  </button>
+                  {expanded(item) && (
+                    <ul className="sidebar__children" id={`sidebar-${item.key}`}>
+                      {item.children.map((child) => {
+                        const current = childOn(child.to);
+                        return (
+                          <li key={`${child.to}-${child.key}`}>
+                            <Link
+                              to={child.to}
+                              onClick={onNavigate}
+                              className={current ? 'sidebar__sublink is-on' : 'sidebar__sublink'}
+                              aria-current={current ? 'page' : undefined}
+                            >
+                              {icon(child.icon, 18)}
+                              <span>{t(child.key)}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              ) : item.to.includes('?') ? (
+                /* A link with a tab query is a plain link, but its page still lights up. */
+                <Link
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={on(item.to) ? 'sidebar__link is-on' : 'sidebar__link'}
+                >
+                  {icon(item.icon)}
+                  <span>{t(item.key)}</span>
+                </Link>
+              ) : (
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  onClick={onNavigate}
+                  className={({ isActive }) => (isActive ? 'sidebar__link is-on' : 'sidebar__link')}
+                >
+                  {icon(item.icon)}
+                  <span>{t(item.key)}</span>
+                </NavLink>
+              )}
+            </li>
+          </Fragment>
+        ))}
       </ul>
-
-      {bottomItems.length > 0 && (
-        <ul className="sidebar__list sidebar__list--bottom">
-          {bottomItems.map(renderItem)}
-        </ul>
-      )}
 
       <NavLink to="/app/profile" onClick={onNavigate} className="sidebar__me">
         <Avatar name={user.full_name} size={40} src={avatar || null} />

@@ -1057,12 +1057,6 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 
 .sidebar__list { list-style: none; margin: 0; padding: 0; flex: 1; }
 .sidebar__list li + li { margin-top: 2px; }
-.sidebar__list--bottom {
-  flex: 0 0 auto;
-  margin-top: 0.7rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
 
 .sidebar__link {
   display: flex;

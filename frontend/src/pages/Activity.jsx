@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, fetchFile } from '../api/client.js';
-import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
@@ -13,14 +12,6 @@ import '../styles.css';
 const PAGE_SIZE = 50;
 const EMPTY_FILTERS = { q: '', action: '', from: '', to: '' };
 const FAILED = /FAILED|LOCKED|BLOCKED|DENIED/;
-const GROUP_ACTIONS = {
-  CREATE_MEETING: 'activity.groupCreateMeeting',
-  UPDATE_MEETING: 'activity.groupUpdateMeeting',
-  CREATE_CYCLE: 'activity.groupCreateCycle',
-  CLOSE_CYCLE: 'activity.groupCloseCycle',
-  CONFIRM_SHAREOUT: 'activity.groupConfirmShareout',
-  DISTRIBUTE_SHAREOUT: 'activity.groupDistributeShareout',
-};
 
 // users #16  — the record an event touched.
 const prettyRecord = (type, id) => {
@@ -188,49 +179,8 @@ function LogTab({ t, toast }) {
   );
 }
 
-/** The shared group timeline: meetings, cycles and share-out notices only. */
-function GroupActivity() {
-  const { t } = useLang();
-  const toast = useToast();
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    api.get('/audit/group').then(setData).catch((e) => toast.error(e.message));
-  }, [toast]);
-
-  if (!data) return <Spinner />;
-
-  const rows = data.rows || [];
-
-  return (
-    <div className="activity">
-      <PageHeader title={t('nav.activity')} subtitle={t('activity.groupSubtitle')} />
-      <BackButton />
-
-      {rows.length === 0 ? (
-        <EmptyState title={t('activity.groupEmpty')} />
-      ) : (
-        <ul className="activity__list">
-          {rows.map((event) => (
-            <li key={event.id} className="activity__item">
-              <span className="activity__marker" aria-hidden="true" />
-              <div className="activity__body">
-                <p className="activity__action">
-                  {GROUP_ACTIONS[event.action] ? t(GROUP_ACTIONS[event.action]) : humanAction(event.action)}
-                </p>
-                {event.details && <p className="activity__details">{event.details}</p>}
-                <p className="activity__meta">{dateTime(event.created_at)}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 /** Who signed in, when they left, and everything done in between. */
-function AdminActivity() {
+export default function Activity() {
   const { t } = useLang();
   const toast = useToast();
   const [tab, setTab] = useState('sessions');
@@ -319,9 +269,4 @@ function AdminActivity() {
       )}
     </div>
   );
-}
-
-export default function Activity() {
-  const { user } = useAuth();
-  return user?.role === 'member' ? <GroupActivity /> : <AdminActivity />;
 }

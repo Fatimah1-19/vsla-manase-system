@@ -99,7 +99,6 @@ export const NAV_ITEMS = [
   { to: '/app/leadership', key: 'nav.leadership',  icon: 'leadership', roles: ['member'] },
   { to: '/app/wrappers',   key: 'nav.myGroceries', icon: 'wrappers',   roles: ['member'] },
   { to: '/app/receipts',   key: 'nav.myReceipts',  icon: 'reports',    roles: ['member'], phone: true },
-  { to: '/app/activity',   key: 'nav.activity',    icon: 'audit',      roles: ['member'] },
   { to: '/app/profile',            key: 'nav.profile',        icon: 'profile', roles: ['member'] },
   { to: '/app/profile?tab=account', key: 'nav.changePassword', icon: 'lock', roles: ['member'], sub: true },
 
@@ -195,7 +194,6 @@ const MEMBER_SIDEBAR = [
       { to: '/app/receipts', key: 'nav.myReceipts', icon: 'reports' },
     ],
   },
-  { to: '/app/activity', key: 'nav.activity', icon: 'audit', bottom: true },
 ];
 
 /** The sidebar menu for a role. Other roles keep their existing flat menu. */

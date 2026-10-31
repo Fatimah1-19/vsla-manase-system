@@ -76,7 +76,7 @@ export default function App() {
         <Route path="receipts" element={<ProtectedRoute roles={EVERYONE_AND_ADMIN}><Receipts /></ProtectedRoute>} />
         <Route path="messages" element={<ProtectedRoute roles={COMMITTEE}><Messages /></ProtectedRoute>} />
         <Route path="cycles"   element={<ProtectedRoute roles={['admin']}><Cycles /></ProtectedRoute>} />
-        <Route path="activity" element={<ProtectedRoute roles={['system_admin', 'member']}><Activity /></ProtectedRoute>} />
+        <Route path="activity" element={<ProtectedRoute roles={['system_admin']}><Activity /></ProtectedRoute>} />
         <Route path="financial-activity" element={<ProtectedRoute roles={COMMITTEE}><FinancialActivity /></ProtectedRoute>} />
         <Route path="activity/administrative" element={<ProtectedRoute roles={['system_admin']}><AdministrativeActivity /></ProtectedRoute>} />
         <Route path="approvals" element={<ProtectedRoute roles={['admin', 'treasurer']}><Approvals /></ProtectedRoute>} />

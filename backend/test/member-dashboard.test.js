@@ -1,10 +1,9 @@
 /**
  * ACCEPTANCE TEST - the ordinary member's dashboard and private records.
  *
- * A member may see a small, sanitised group timeline (meetings, cycles and
- * share-out notices) and her own money. She may never read the audit trail,
- * another member's savings, or the group's pooled financial positions. This
- * test reads the files that ship. No database.
+ * A member may see her own money, but never the audit trail, a group activity
+ * feed, another member's savings, or the group's pooled financial positions.
+ * This test reads the files that ship. No database.
  *
  * Run with: node test/member-dashboard.test.js
  */
@@ -25,6 +24,7 @@ const profileCtrl = back(path.join('controllers', 'profileController.js'));
 const savingsCtrl = back(path.join('controllers', 'savingsController.js'));
 const appJsx = front('App.jsx');
 const activityJsx = front('pages/Activity.jsx');
+const navItems = front('components/navItems.js');
 const savingsJsx = front('pages/Savings.jsx');
 const memberDash = front('pages/dashboards/MemberDashboard.jsx');
 
@@ -54,18 +54,17 @@ check(1, 'the full audit trail stays with the system administrator', () => {
   }
 });
 
-check(2, 'the group timeline is protected but not gated by audit.view', () => {
-  const route = "router.get('/group', protect, c.groupActivity);";
-  const guard = 'router.use(protect, requirePermission(\'audit.view\'));';
-  assert.ok(auditRoutes.includes(route), 'the member timeline route must exist');
-  assert.ok(auditRoutes.includes(guard), 'the audit guard must exist');
-  assert.ok(auditRoutes.indexOf(route) < auditRoutes.indexOf(guard),
-    'the group route must be registered before the audit guard');
-  assert.ok(!route.includes('requirePermission'), 'the group route must not require audit.view');
+check(2, 'there is no member-facing audit endpoint', () => {
+  assert.ok(!auditRoutes.includes("'/group'"), 'the group timeline route must not exist');
+  assert.ok(!auditCtrl.includes('groupActivity'), 'the controller must expose no member reader');
+  assert.ok(!auditCtrl.includes('GROUP_ACTIONS'), 'no reduced action whitelist may ship');
 });
 
-check(3, 'the full audit endpoints remain behind the audit guard', () => {
+check(3, 'every audit endpoint remains behind the audit guard', () => {
   const guard = 'router.use(protect, requirePermission(\'audit.view\'));';
+  const before = auditRoutes.slice(0, auditRoutes.indexOf(guard));
+  assert.ok(!/router\.(get|post|put|patch|delete)/.test(before),
+    'no audit route may sit before the administrator guard');
   const after = auditRoutes.slice(auditRoutes.indexOf(guard) + guard.length);
   for (const call of ["router.get('/', c.listAudit)", "router.get('/export', c.exportAudit)",
     "router.get('/sessions', c.listSessions)"]) {
@@ -73,14 +72,11 @@ check(3, 'the full audit endpoints remain behind the audit guard', () => {
   }
 });
 
-check(4, 'the group timeline selects only harmless columns', () => {
-  const fn = between(auditCtrl, 'const groupActivity', 'module.exports');
-  assert.ok(/SELECT id, action, details, created_at/.test(fn), 'only the four group columns are read');
-  for (const leak of ['user_id', 'full_name', 'entity_type', 'entity_id', 'previous_value', 'new_value']) {
-    assert.ok(!new RegExp(`\\b${leak}\\b`).test(fn), `the group timeline must not expose ${leak}`);
-  }
-  assert.ok(/action = ANY\(\$1\)/.test(fn), 'only whitelisted actions are returned');
-  assert.ok(/LIMIT 60/.test(fn), 'the timeline is capped');
+check(4, 'the audit trail is open to the system administrator only', () => {
+  assert.ok(/path="activity"\s+element=\{<ProtectedRoute roles=\{\['system_admin'\]\}/.test(appJsx),
+    'the activity route must be limited to the system administrator');
+  assert.ok(!activityJsx.includes('GroupActivity'), 'no member timeline may be rendered');
+  assert.ok(!activityJsx.includes('/audit/group'), 'the page must not call a member audit endpoint');
 });
 
 check(5, 'the member dashboard reads only her own member record', () => {
@@ -130,11 +126,11 @@ check(10, 'a removed saving cannot remain in any balance', () => {
   assert.ok(/DELETE FROM savings WHERE id = \$1/.test(fn), 'a removed saving is really deleted');
 });
 
-check(11, 'only a member (and the system administrator) may open /app/activity', () => {
-  assert.ok(/path="activity"\s+element=\{<ProtectedRoute roles=\{\['system_admin', 'member'\]\}/.test(appJsx),
-    'the activity route is limited to the system administrator and members');
-  assert.ok(/user\?\.role === 'member' \? <GroupActivity \/> : <AdminActivity \/>/.test(activityJsx),
-    'a member is shown the group timeline, never the audit trail');
+check(11, 'the member navigation offers no group activity link', () => {
+  const flat = between(navItems, '// ---- the ordinary member', '// ---- secretary');
+  assert.ok(!flat.includes('/app/activity'), 'the flat member menu must not link to the audit trail');
+  const sidebar = between(navItems, 'const MEMBER_SIDEBAR', 'export const sidebarFor');
+  assert.ok(!sidebar.includes('/app/activity'), 'the member sidebar must not link to the audit trail');
 });
 
 check(12, 'the member quick actions reach all seven personal pages', () => {
