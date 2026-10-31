@@ -10,7 +10,6 @@ import StatCard from '../components/StatCard.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { BarChart, LineChart, HBars, Ring } from '../components/Charts.jsx';
 import { money, plainNumber, shortDate, monthLabel } from '../utils/format.js';
-import { exportReportAsPdf } from '../utils/reportPdf.js';
 import Reports from './Reports.jsx';
 import '../styles.css';
 
@@ -338,14 +337,6 @@ export default function Analytics() {
     ? (tab === 'reports' ? t('reports.personalSubtitle') : t('analytics.personalNote'))
     : (tab === 'reports' ? t('reports.subtitle') : undefined);
 
-  const exportPdf = () => {
-    const node = document.querySelector('.reports .print-area');
-    const reportTitle = node?.querySelector('.report-head__title')?.textContent;
-    const ok = exportReportAsPdf(node, { title: `${reportTitle || t('reports.title')} - ${t('app.name')}` });
-    if (!ok) toast.error(t('reports.reportExportBlocked'));
-    else toast.info(t('reports.reportPdfHint'));
-  };
-
   return (
     <div className="analytics">
       <PageHeader
@@ -361,9 +352,6 @@ export default function Analytics() {
                 className={scope === 'member' ? 'reports__scopeBtn is-on' : 'reports__scopeBtn'}
                 onClick={() => setScope('member')}>{memberScopeLabel}</button>
             </div>
-            <button type="button" className="btn btn--ghost no-print" onClick={exportPdf}>
-              {t('reports.reportExport')}
-            </button>
           </div>
         ) : undefined}
       />
