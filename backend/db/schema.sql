@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS savings (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at   TIMESTAMPTZ,
   deleted_by   INT REFERENCES users(id),
-  delete_reason TEXT
+  delete_reason TEXT,
+  verified_by  INT REFERENCES users(id),
+  verified_at  TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS loans (
@@ -75,7 +77,9 @@ CREATE TABLE IF NOT EXISTS loans (
   approved_by    INT REFERENCES users(id),
   deleted_at     TIMESTAMPTZ,
   deleted_by     INT REFERENCES users(id),
-  delete_reason  TEXT
+  delete_reason  TEXT,
+  verified_by    INT REFERENCES users(id),
+  verified_at    TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS loan_repayments (
@@ -90,7 +94,9 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at    TIMESTAMPTZ,
   deleted_by    INT REFERENCES users(id),
-  delete_reason TEXT
+  delete_reason TEXT,
+  verified_by   INT REFERENCES users(id),
+  verified_at   TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS fines (
