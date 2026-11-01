@@ -6,10 +6,14 @@ const MEMBER_SUMMARY = `
          m.next_of_kin, m.next_of_kin_phone, m.gender, m.marital_status, m.date_of_birth, m.occupation,
          u.id AS user_id, u.full_name, u.phone, u.username, u.role, u.language, u.is_active,
          (m.avatar IS NOT NULL) AS has_avatar,
-         COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id AND s.status = 'verified'), 0)::float AS total_savings,
-         COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id AND s.status = 'verified'), 0)::int   AS total_shares,
-         COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.member_id = m.id AND f.paid = FALSE), 0)::float AS unpaid_fines,
-         (SELECT COUNT(*)::int FROM loans l WHERE l.member_id = m.id AND l.status = 'verified') AS active_loans
+         COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.member_id = m.id
+                    AND s.status = 'verified' AND s.deleted_at IS NULL), 0)::float AS total_savings,
+         COALESCE((SELECT SUM(s.shares) FROM savings s WHERE s.member_id = m.id
+                    AND s.status = 'verified' AND s.deleted_at IS NULL), 0)::int   AS total_shares,
+         COALESCE((SELECT SUM(f.amount) FROM fines f WHERE f.member_id = m.id
+                    AND f.paid = FALSE AND f.deleted_at IS NULL), 0)::float AS unpaid_fines,
+         (SELECT COUNT(*)::int FROM loans l WHERE l.member_id = m.id
+           AND l.status = 'verified' AND l.deleted_at IS NULL) AS active_loans
     FROM members m
     JOIN users u ON u.id = m.user_id
 `;
@@ -43,18 +47,22 @@ const getMember = wrap(async (req, res) => {
   if (!member) return res.status(404).json({ message: 'That member is not on the list.' });
 
   const [savings, loans, fines, attendance, documents, wrappers] = await Promise.all([
-    query(`SELECT id, amount::float, shares, date, note, status, rejected_reason FROM savings WHERE member_id = $1 ORDER BY date DESC, id DESC`, [id]),
+    query(`SELECT id, amount::float, shares, date, note, status, rejected_reason FROM savings
+            WHERE member_id = $1 AND deleted_at IS NULL ORDER BY date DESC, id DESC`, [id]),
     query(
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'), 0)::float AS total_repaid
-         FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [id]),
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                         WHERE r.loan_id = l.id AND r.status = 'verified'
+                           AND r.deleted_at IS NULL), 0)::float AS total_repaid
+         FROM loans l WHERE l.member_id = $1 AND l.deleted_at IS NULL ORDER BY l.id DESC`, [id]),
     query(
       `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
               to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
          FROM fines f
          LEFT JOIN cycles c ON c.id = f.cycle_id
          LEFT JOIN meetings mt ON mt.id = f.meeting_id
-        WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC`, [id]),
+        WHERE f.member_id = $1 AND f.deleted_at IS NULL
+        ORDER BY f.date DESC, f.id DESC`, [id]),
     query(
       `SELECT a.status, mt.meeting_date FROM attendance a
          JOIN meetings mt ON mt.id = a.meeting_id
@@ -62,7 +70,7 @@ const getMember = wrap(async (req, res) => {
     query(`SELECT id, document_type, original_name, mime_type, size_bytes, uploaded_at
              FROM member_documents WHERE member_id = $1 ORDER BY id DESC`, [id]),
     one(`SELECT COALESCE(SUM(amount),0)::float AS total_paid, COUNT(*)::int AS payments
-           FROM monthly_contributions WHERE member_id = $1`, [id]),
+           FROM monthly_contributions WHERE member_id = $1 AND deleted_at IS NULL`, [id]),
   ]);
 
   const loansWithBalance = loans.map((l) => {

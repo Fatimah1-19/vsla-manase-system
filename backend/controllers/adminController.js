@@ -186,7 +186,8 @@ const proposeChange = wrap(async (req, res) => {
     }
     const openLoan = await one(
       `SELECT l.id FROM loans l JOIN members m ON m.id = l.member_id
-        WHERE m.user_id = $1 AND l.status IN ('pending','approved') LIMIT 1`,
+        WHERE m.user_id = $1 AND l.status IN ('pending','approved')
+          AND l.deleted_at IS NULL LIMIT 1`,
       [targetId]
     );
     if (openLoan) return res.status(400).json({ message: 'That member still has an open loan. It must be settled first.' });
@@ -431,7 +432,7 @@ const deactivateAccount = wrap(async (req, res) => {
 
   const openLoan = await one(
     `SELECT l.id FROM loans l JOIN members m ON m.id = l.member_id
-      WHERE m.user_id = $1 AND l.status IN ('pending','approved') LIMIT 1`,
+      WHERE m.user_id = $1 AND l.status IN ('pending','approved') AND l.deleted_at IS NULL LIMIT 1`,
     [target.id]
   );
   if (openLoan) return res.status(400).json({ message: 'That member still has an open loan. It must be settled first.' });

@@ -28,7 +28,7 @@ const TYPE_LABEL = {
 
 export default function Fines() {
   const { t } = useLang();
-  const { isCommittee, canRecordMoney, isAdmin } = useAuth();
+  const { isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
 
   const [rows, setRows] = useState(null);
@@ -196,7 +196,7 @@ export default function Fines() {
               </button>
             : <StatusTag status="outstanding">{t('fines.unpaid')}</StatusTag>
       ) },
-    ...(isAdmin ? [{ key: 'x', label: '', align: 'right',
+    ...(canRecordMoney ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (
         <button type="button" className="btn btn--small btn--ghost"
           onClick={(e) => { e.stopPropagation(); setRemoveReason(''); setRemoving(r); }}>{t('common.del')}</button>

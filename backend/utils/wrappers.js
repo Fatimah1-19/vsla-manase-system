@@ -49,7 +49,8 @@ async function arrears() {
     ),
     query(
       `SELECT member_id, COALESCE(SUM(amount),0)::float AS paid
-         FROM monthly_contributions WHERE cycle_id = $1 GROUP BY member_id`,
+         FROM monthly_contributions WHERE cycle_id = $1 AND deleted_at IS NULL
+        GROUP BY member_id`,
       [cycle.id]
     ),
   ]);

@@ -58,9 +58,9 @@ const createAbsenceFine = async ({ member_id, reason = null, date = null, record
 
   // One fine per member per meeting, so re-saving attendance never stacks them up.
   const existing = meeting_id
-    ? await one(`SELECT id FROM fines WHERE member_id=$1 AND meeting_id=$2 AND fine_type=$3 LIMIT 1`, [member_id, meeting_id, fine_type])
+    ? await one(`SELECT id FROM fines WHERE member_id=$1 AND meeting_id=$2 AND fine_type=$3 AND deleted_at IS NULL LIMIT 1`, [member_id, meeting_id, fine_type])
     : await one(
-        `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND fine_type=$4 AND paid=FALSE LIMIT 1`,
+        `SELECT id FROM fines WHERE member_id=$1 AND date=$2 AND reason=$3 AND fine_type=$4 AND paid=FALSE AND deleted_at IS NULL LIMIT 1`,
         [member_id, fineDate, fineReason, fine_type]
       );
   if (existing) return existing;
@@ -100,6 +100,7 @@ const backfillAbsenceFines = async ({ recorded_by = null } = {}) => {
       WHERE a.status = 'absent'
         AND NOT EXISTS (
           SELECT 1 FROM fines f WHERE f.member_id = a.member_id AND f.meeting_id = a.meeting_id
+            AND f.deleted_at IS NULL
         )`
   );
 
@@ -207,7 +208,7 @@ const listFineTypes = wrap(async (req, res) => {
 // GET /api/fines
 const listFines = wrap(async (req, res) => {
   const params = [];
-  const where = [];
+  const where = ['f.deleted_at IS NULL'];
   if (req.user.role === 'member') { params.push(req.user.member_id); where.push(`f.member_id = $${params.length}`); }
   else if (req.query.member_id) { params.push(req.query.member_id); where.push(`f.member_id = $${params.length}`); }
   // The paid/unpaid switch and the date window the treasurer filters on.
@@ -235,10 +236,10 @@ const listFines = wrap(async (req, res) => {
 // PATCH /api/fines/:id/pay
 const markPaid = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  let updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 RETURNING id, amount::float`, [id]);
+  let updated = await one(`UPDATE fines SET paid = TRUE WHERE id = $1 AND deleted_at IS NULL RETURNING id, amount::float`, [id]);
   if (!updated) {
     try {
-      updated = await one(`UPDATE fines SET paid = TRUE, amount_paid = amount WHERE id = $1 RETURNING id, amount::float`, [id]);
+      updated = await one(`UPDATE fines SET paid = TRUE, amount_paid = amount WHERE id = $1 AND deleted_at IS NULL RETURNING id, amount::float`, [id]);
     } catch (e) {
       // ignore
     }
@@ -254,12 +255,15 @@ const markPaid = wrap(async (req, res) => {
 const deleteFine = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const reason = String((req.body && req.body.reason) || '').trim().slice(0, 300);
-  const existing = await one(`SELECT * FROM fines WHERE id = $1`, [id]);
+  const existing = await one(`SELECT * FROM fines WHERE id = $1 AND deleted_at IS NULL`, [id]);
   if (!existing) return res.status(404).json({ message: 'That fine is not in the book.' });
-  await query(`DELETE FROM fines WHERE id = $1`, [id]);
+  await query(
+    `UPDATE fines SET deleted_at = NOW(), deleted_by = $2, delete_reason = $3 WHERE id = $1`,
+    [id, req.user.id, reason || null]
+  );
   await audit(req.user.id, 'DELETE_FINE', 'fines', id,
-    `amount ${existing.amount} (${existing.paid ? 'paid' : 'unpaid'}), member ${existing.member_id} -> removed; reason: ${reason || 'not given'}`);
-  res.json({ message: 'Fine removed.' });
+    `amount ${existing.amount} (${existing.paid ? 'paid' : 'unpaid'}), member ${existing.member_id} -> soft-removed; reason: ${reason || 'not given'}`);
+  res.json({ message: 'Fine removed from the live books. It is kept in the record.' });
 });
 
 // GET /api/fines/summary
@@ -269,7 +273,7 @@ const finesSummary = wrap(async (req, res) => {
             COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
             COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding,
             COUNT(*)::int AS count
-       FROM fines`
+       FROM fines WHERE deleted_at IS NULL`
   );
   // One line per kind of fine, so the treasurer sees where the money comes from.
   const byType = await query(
@@ -278,7 +282,7 @@ const finesSummary = wrap(async (req, res) => {
             COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
             COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding,
             COUNT(*)::int AS count
-       FROM fines GROUP BY fine_type ORDER BY total DESC`
+       FROM fines WHERE deleted_at IS NULL GROUP BY fine_type ORDER BY total DESC`
   );
   // Members with outstanding fines (for UI)
   const membersWithFines = await query(
@@ -288,7 +292,7 @@ const finesSummary = wrap(async (req, res) => {
        FROM fines f
        JOIN members m ON m.id = f.member_id
        JOIN users u ON u.id = m.user_id
-      WHERE NOT f.paid
+      WHERE NOT f.paid AND f.deleted_at IS NULL
       GROUP BY f.member_id, u.full_name, m.membership_number
       HAVING COALESCE(SUM(CASE WHEN NOT f.paid THEN f.amount ELSE 0 END),0) > 0
       ORDER BY outstanding DESC`

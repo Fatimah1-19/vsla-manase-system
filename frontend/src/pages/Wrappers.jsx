@@ -24,7 +24,7 @@ import '../styles.css';
  */
 export default function Wrappers() {
   const { t } = useLang();
-  const { isCommittee, canRecordMoney, isAdmin } = useAuth();
+  const { isCommittee, canRecordMoney } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
@@ -206,7 +206,7 @@ export default function Wrappers() {
             { key: 'amount', label: t('common.amount'), align: 'right', money: true, render: (r) => money(r.amount) },
             { key: 'paid_on', label: t('common.date'), render: (r) => shortDate(r.paid_on) },
             { key: 'recorded_by_name', label: t('savings.recordedBy'), hideOnPhone: true, render: (r) => <span className="muted">{r.recorded_by_name || '—'}</span> },
-            ...(isAdmin ? [{ key: 'x', label: '', align: 'right',
+            ...(canRecordMoney ? [{ key: 'x', label: '', align: 'right',
               render: (r) => <button type="button" className="btn btn--small btn--ghost" onClick={() => remove(r)}>{t('common.del')}</button> }] : []),
           ]}
         />

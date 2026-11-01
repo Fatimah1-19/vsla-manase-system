@@ -19,7 +19,7 @@ const listFees = wrap(async (req, res) => {
               r.full_name AS recorded_by_name
          FROM members m
          JOIN users u ON u.id = m.user_id
-         LEFT JOIN registration_fees rf ON rf.member_id = m.id
+         LEFT JOIN registration_fees rf ON rf.member_id = m.id AND rf.deleted_at IS NULL
          LEFT JOIN users r ON r.id = rf.recorded_by
         WHERE m.status = 'active' AND m.user_id = $1`,
       [req.user.id]
@@ -51,7 +51,6 @@ const listFees = wrap(async (req, res) => {
       },
     });
   }
-  }
 
   const rows = await query(
     `SELECT m.id AS member_id, m.membership_number, m.date_joined, u.id AS user_id, u.full_name, u.phone,
@@ -60,7 +59,7 @@ const listFees = wrap(async (req, res) => {
             r.full_name AS recorded_by_name
        FROM members m
        JOIN users u ON u.id = m.user_id
-       LEFT JOIN registration_fees rf ON rf.member_id = m.id
+       LEFT JOIN registration_fees rf ON rf.member_id = m.id AND rf.deleted_at IS NULL
        LEFT JOIN users r ON r.id = rf.recorded_by
       WHERE m.status = 'active'
       ORDER BY (rf.id IS NULL) DESC, m.date_joined DESC, u.full_name`
@@ -107,7 +106,9 @@ const recordFee = wrap(async (req, res) => {
   );
   if (!member) return res.status(404).json({ message: 'That member is not active.' });
 
-  const existing = await one(`SELECT id FROM registration_fees WHERE member_id = $1`, [member_id]);
+  const existing = await one(
+    `SELECT id FROM registration_fees WHERE member_id = $1 AND deleted_at IS NULL`, [member_id]
+  );
   if (existing) {
     return res.status(409).json({ message: 'The registration fee for this member is already recorded.' });
   }
@@ -138,11 +139,16 @@ const recordFee = wrap(async (req, res) => {
 // DELETE /api/registration-fees/:id — admin removes a mistaken entry
 const remove = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const existing = await one(`SELECT * FROM registration_fees WHERE id = $1`, [id]);
+  const reason = String((req.body && req.body.reason) || '').trim().slice(0, 300);
+  const existing = await one(`SELECT * FROM registration_fees WHERE id = $1 AND deleted_at IS NULL`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
-  await query(`DELETE FROM registration_fees WHERE id = $1`, [id]);
-  await audit(req.user.id, 'DELETE_REGISTRATION_FEE', 'registration_fees', id, `Removed ${existing.amount}`);
-  res.json({ message: 'Entry removed.' });
+  await query(
+    `UPDATE registration_fees SET deleted_at = NOW(), deleted_by = $2, delete_reason = $3 WHERE id = $1`,
+    [id, req.user.id, reason || null]
+  );
+  await audit(req.user.id, 'DELETE_REGISTRATION_FEE', 'registration_fees', id,
+    `Soft-removed ${existing.amount}; reason: ${reason || 'not given'}`);
+  res.json({ message: 'Entry removed from the live books. It is kept in the record.' });
 });
 
 module.exports = { listFees, recordFee, remove };

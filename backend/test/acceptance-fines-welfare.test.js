@@ -65,7 +65,7 @@ async function check(n, title, fn) {
   });
 
   await check(4, 'a fine updates the member\u2019s account immediately', () => {
-    assert.ok(/FROM fines WHERE member_id = \$1 AND paid = FALSE/.test(
+    assert.ok(/FROM fines\s+WHERE member_id = \$1 AND paid = FALSE AND deleted_at IS NULL/.test(
       back(path.join('controllers', 'dashboardController.js'))),
       'the member\u2019s unpaid fine total reads every recorded fine at once');
     assert.ok(!/FROM fines[\s\S]{0,200}?status\s*=\s*'verified'/.test(

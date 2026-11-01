@@ -282,8 +282,8 @@ const base = {
 
   messages: {
     title: 'Messages', send: 'Send a message', to: 'Send to',
-    everyone: 'Everyone in the group', byRole: 'Everyone with one role',
-    selected: 'Chosen people', oneNumber: 'One phone number',
+    everyone: 'All members', officials: 'Officials only', byRole: 'Everyone with one role',
+    selected: 'Selected members', oneNumber: 'One phone number',
     broadcast: 'This goes to the whole group', private: 'This goes to one person only',
     message: 'Message', charsLeft: (n) => `${n} characters left`,
     history: 'Messages sent', sent: 'Sent', failed: 'Did not send', skipped: 'Skipped',

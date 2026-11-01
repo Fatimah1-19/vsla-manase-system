@@ -7,7 +7,9 @@ const { getActiveCycle, clearCache } = require('../utils/helpers');
 const listCycles = wrap(async (req, res) => {
   const rows = await query(
     `SELECT c.*, c.share_value::float AS share_value,
-            COALESCE((SELECT SUM(s.amount) FROM savings s WHERE s.cycle_id = c.id AND s.status = 'verified'), 0)::float AS total_savings
+            COALESCE((SELECT SUM(s.amount) FROM savings s
+                       WHERE s.cycle_id = c.id AND s.status = 'verified'
+                         AND s.deleted_at IS NULL), 0)::float AS total_savings
        FROM cycles c ORDER BY c.start_date DESC`
   );
   res.json(rows);
@@ -68,14 +70,16 @@ const closeCycle = wrap(async (req, res) => {
   if (cycle.status === 'completed') return res.status(400).json({ message: 'That cycle is already closed.' });
 
   const openLoans = await one(
-    `SELECT COUNT(*)::int AS c FROM loans WHERE cycle_id = $1 AND status IN ('pending','approved')`, [id]
+    `SELECT COUNT(*)::int AS c FROM loans
+      WHERE cycle_id = $1 AND status IN ('pending','approved') AND deleted_at IS NULL`, [id]
   );
   if (openLoans.c > 0) {
     return res.status(400).json({ message: `${openLoans.c} loan(s) are still open in this cycle. Settle them first.` });
   }
 
   const distributed = await one(
-    `SELECT id FROM share_out WHERE cycle_id = $1 AND status = 'distributed' LIMIT 1`, [id]
+    `SELECT id FROM share_out WHERE cycle_id = $1 AND status = 'distributed'
+      AND deleted_at IS NULL LIMIT 1`, [id]
   );
   if (!distributed) {
     return res.status(400).json({ message: 'Do the share-out before closing the cycle.' });

@@ -262,21 +262,14 @@ export default function Savings() {
           )}
         </span>
       ) }] : []),
-    ...(canRecordMoney || isAdmin ? [{ key: 'x', label: '', align: 'right',
+    ...(canRecordMoney ? [{ key: 'x', label: '', align: 'right',
       render: (r) => (
         <span className="row-actions row-actions--nowrap">
-          {canRecordMoney && (
-            <button type="button" className="btn btn--small"
-              onClick={() => setEditing({ id: r.id, amount: r.amount, shares: r.shares, date: String(r.date).slice(0, 10), note: r.note || '', full_name: r.full_name })}>
-              {t('common.edit')}
-            </button>
-          )}
-          {isAdmin && (
-            <button type="button" className="btn btn--small btn--danger" onClick={() => remove(r)}>{t('common.del')}</button>
-          )}
-          {canRecordMoney && !isAdmin && (
-            <button type="button" className="btn btn--small btn--danger" onClick={() => remove(r)}>{t('common.del')}</button>
-          )}
+          <button type="button" className="btn btn--small"
+            onClick={() => setEditing({ id: r.id, amount: r.amount, shares: r.shares, date: String(r.date).slice(0, 10), note: r.note || '', full_name: r.full_name })}>
+            {t('common.edit')}
+          </button>
+          <button type="button" className="btn btn--small btn--danger" onClick={() => remove(r)}>{t('common.del')}</button>
         </span>
       ) }] : []),
   ];

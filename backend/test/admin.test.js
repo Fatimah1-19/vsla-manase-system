@@ -253,6 +253,7 @@ function run(middleware, user) {
   // ---- the savings book: watched, never quietly rewritten -----------------
   assert.ok(can('admin', 'savings.view'), 'the chairperson may open the savings book');
   assert.ok(!can('admin', 'savings.record'), 'the chairperson does not add or correct entries');
+  assert.ok(!can('admin', 'savings.delete'), 'the chairperson does not remove entries');
   const chairView = await run(requirePermission('savings.view'), { role: 'admin' });
   assert.strictEqual(chairView.passed, true);
   const chairRecord = await run(requirePermission('savings.record'), { role: 'admin' });
@@ -277,14 +278,16 @@ function run(middleware, user) {
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Savings.jsx'), 'utf8');
   assert.ok(savingsPage.includes('canRecordMoney && <button') || savingsPage.includes('action={canRecordMoney &&'),
     'the record button is the treasurer\'s alone');
-  assert.ok(savingsPage.includes('{canRecordMoney && (') && savingsPage.includes("t('common.edit')"),
+  assert.ok(savingsPage.includes("canRecordMoney ? [{ key: 'x'") && savingsPage.includes("t('common.edit')"),
     'the chairperson and the secretary cannot open an entry for editing');
-  assert.ok(savingsPage.includes('{isAdmin && (') && savingsPage.includes("t('common.del')"),
-    'removing an entry stays an explicit, authorised action');
+  assert.ok(savingsPage.includes("t('common.del')") && !savingsPage.includes('{isAdmin && ('),
+    'removing an entry is the treasurer\'s action alone');
 
   // ---- the fines book: watched in full, changed only in the open ----------
   assert.ok(can('admin', 'fines.viewAll'), 'the chairperson may see every fine');
   assert.ok(!can('admin', 'fines.record'), 'the chairperson does not record or settle fines');
+  assert.ok(!can('admin', 'fines.delete'), 'the chairperson does not remove fines');
+  assert.ok(can('treasurer', 'fines.delete'), 'the treasurer removes a mistaken fine');
   const chairFinesView = await run(requirePermission('fines.viewAll'), { role: 'admin' });
   assert.strictEqual(chairFinesView.passed, true);
   const chairFinesRecord = await run(requirePermission('fines.record'), { role: 'admin' });
@@ -310,7 +313,8 @@ function run(middleware, user) {
   assert.ok(finesPage.includes('outstanding') && finesPage.includes('collected') && finesPage.includes('rows.length'),
     'recorded, paid and outstanding fines must all be shown');
   assert.ok(finesPage.includes(': canRecordMoney'), 'only the treasurer can settle a fine');
-  assert.ok(finesPage.includes('isAdmin ? ['), 'only the chairperson sees the remove button');
+  assert.ok(finesPage.includes("canRecordMoney ? [{ key: 'x'") && !finesPage.includes('isAdmin'),
+    'only the treasurer sees the remove button');
   assert.ok(finesPage.includes('removeReason') && (finesPage.includes('{ reason:') || finesPage.includes('removeReasonOther')),
     'a removal must carry a written reason into the audit trail');
   assert.ok(finesPage.includes("t('fines.removeTitle')"),
@@ -347,6 +351,17 @@ function run(middleware, user) {
   assert.ok(welfarePage.includes("key: 'full_name'") && welfarePage.includes("key: 'type'"),
     'contributions are listed per member with their status');
   assert.ok(welfarePage.includes('action={canRecordMoney &&'), 'the chairperson sees no way to record');
+
+  // The monthly wrappers and the one-off registration fee: only the treasurer
+  // takes a mistaken entry out.
+  for (const perm of ['contributions.delete', 'registration.delete']) {
+    assert.ok(can('treasurer', perm), `the treasurer holds ${perm}`);
+    assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
+  }
+  const wrappersPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Wrappers.jsx'), 'utf8');
+  assert.ok(wrappersPage.includes("canRecordMoney ? [{ key: 'x'") && !wrappersPage.includes('isAdmin'),
+    'only the treasurer sees the wrappers remove button');
 
   // ---- share-out: monitored, confirmed by the chair, calculated by the system
   assert.ok(can('admin', 'shareout.view'), 'the chairperson may watch the share-out');
@@ -575,6 +590,13 @@ function run(middleware, user) {
     const refused = await run(requirePermission(perm), { role: 'admin' });
     assert.strictEqual(refused.status, 403, `the chairperson must be refused ${perm} at the server`);
     assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
+  }
+  // Removing a money entry is the treasurer's work alone.
+  for (const perm of ['savings.delete', 'fines.delete', 'contributions.delete', 'registration.delete']) {
+    const refused = await run(requirePermission(perm), { role: 'admin' });
+    assert.strictEqual(refused.status, 403, `the chairperson must be refused ${perm} at the server`);
+    assert.ok(!can('admin', perm), `the chairperson must not hold ${perm}`);
+    assert.ok(can('treasurer', perm), `the treasurer must hold ${perm}`);
   }
   // The administrator cannot lead the VSLA: no case, no vote, no office, no
   // membership decision, no meeting record, no money.
@@ -1150,14 +1172,14 @@ function run(middleware, user) {
   // Her sidebar is records, meetings, reports and profile — never the
   // administrator's pages, and the full replacement removes the money menu.
   const secLines = navSrc.split('\n').filter((l) => l.includes("roles: ['secretary']"));
-  assert.strictEqual(secLines.length, 15,
-    `the secretary menu must be the fourteen spec links plus the dashboard (found ${secLines.length})`);
+  assert.strictEqual(secLines.length, 16,
+    `the secretary menu must be the fourteen spec links, the dashboard and messages (found ${secLines.length})`);
   const secTargets = secLines.join('\n');
   for (const line of secLines) {
     assert.ok(!line.includes('/app/admin/'),
       `an administrator's page must not reach the secretary: ${line.trim()}`);
     for (const banned of ['/app/savings', '/app/loans', '/app/welfare', '/app/fines',
-                          '/app/shareout', '/app/wrappers', '/app/messages',
+                          '/app/shareout', '/app/wrappers',
                           '/app/cases', '/app/leadership']) {
       assert.ok(!line.includes(`to: '${banned}`),
         `the secretary menu must not offer ${banned}: ${line.trim()}`);
@@ -1167,7 +1189,7 @@ function run(middleware, user) {
                       "to: '/app/members?view=history'", "to: '/app/meetings',",
                       "to: '/app/meetings?tab=attendance'", "to: '/app/meetings?tab=records'",
                       "to: '/app/members?view=details'", "to: '/app/members?view=documents'",
-                      "to: '/app/records',",
+                      "to: '/app/records',", "to: '/app/messages',",
                       "to: '/app/profile',", "to: '/app/profile?tab=account'"]) {
     assert.ok(secTargets.includes(page), `the secretary menu must include ${page}`);
   }

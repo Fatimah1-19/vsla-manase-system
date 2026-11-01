@@ -51,7 +51,10 @@ CREATE TABLE IF NOT EXISTS savings (
   date         DATE NOT NULL DEFAULT CURRENT_DATE,
   note         TEXT,
   recorded_by  INT NOT NULL REFERENCES users(id),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at   TIMESTAMPTZ,
+  deleted_by   INT REFERENCES users(id),
+  delete_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS loans (
@@ -69,7 +72,10 @@ CREATE TABLE IF NOT EXISTS loans (
   decision_note  TEXT,
   applied_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   decided_at     TIMESTAMPTZ,
-  approved_by    INT REFERENCES users(id)
+  approved_by    INT REFERENCES users(id),
+  deleted_at     TIMESTAMPTZ,
+  deleted_by     INT REFERENCES users(id),
+  delete_reason  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS loan_repayments (
@@ -81,7 +87,10 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
   interest_part  NUMERIC(12,2) NOT NULL DEFAULT 0,
   date          DATE NOT NULL DEFAULT CURRENT_DATE,
   recorded_by   INT NOT NULL REFERENCES users(id),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at    TIMESTAMPTZ,
+  deleted_by    INT REFERENCES users(id),
+  delete_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS fines (
@@ -92,7 +101,10 @@ CREATE TABLE IF NOT EXISTS fines (
   reason       TEXT,
   paid         BOOLEAN NOT NULL DEFAULT FALSE,
   date         DATE NOT NULL DEFAULT CURRENT_DATE,
-  recorded_by  INT NOT NULL REFERENCES users(id)
+  recorded_by  INT NOT NULL REFERENCES users(id),
+  deleted_at   TIMESTAMPTZ,
+  deleted_by   INT REFERENCES users(id),
+  delete_reason TEXT
 );
 
 -- Social fund: sickness, funerals, emergencies.
@@ -140,7 +152,10 @@ CREATE TABLE IF NOT EXISTS share_out (
   status            VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','confirmed','distributed')),
   date_distributed  DATE,
   distributed_by    INT REFERENCES users(id),
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at        TIMESTAMPTZ,
+  deleted_by        INT REFERENCES users(id),
+  delete_reason     TEXT
 );
 
 -- One line per member per share-out, so we can show and text each person their own figure.
@@ -302,22 +317,28 @@ CREATE TABLE IF NOT EXISTS monthly_contributions (
   paid_on      DATE NOT NULL DEFAULT CURRENT_DATE,
   note         TEXT,
   recorded_by  INT NOT NULL REFERENCES users(id),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at   TIMESTAMPTZ,
+  deleted_by   INT REFERENCES users(id),
+  delete_reason TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_monthly_member ON monthly_contributions(member_id, period);
 
 -- The one-off fee a new member pays on joining. Recorded by the treasurer or
--- the secretary; not savings and never shared out. One row per member, so the
--- UNIQUE keeps a member from being recorded twice.
+-- the secretary; not savings and never shared out. One live row per member, so
+-- the partial unique index keeps a member from being recorded twice.
 CREATE TABLE IF NOT EXISTS registration_fees (
   id           SERIAL PRIMARY KEY,
-  member_id    INT NOT NULL UNIQUE REFERENCES members(id) ON DELETE CASCADE,
+  member_id    INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   cycle_id     INT REFERENCES cycles(id) ON DELETE SET NULL,
   amount       NUMERIC(12,2) NOT NULL CHECK (amount > 0),
   paid_on      DATE NOT NULL DEFAULT CURRENT_DATE,
   note         TEXT,
   recorded_by  INT NOT NULL REFERENCES users(id),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at   TIMESTAMPTZ,
+  deleted_by   INT REFERENCES users(id),
+  delete_reason TEXT
 );
 
 -- Scanned IDs, membership forms and similar papers, kept inside the database
@@ -743,6 +764,51 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_repay_status ON loan_repayments(status);
+
+-- =====================================================================
+--  SOFT DELETE
+--  A money entry is never cut out of the books. The treasurer removes it
+--  from the live books by stamping these columns; the row stays for the
+--  record, the audit trail and a later look-back. Every money query must
+--  ignore rows where deleted_at is not null.
+-- =====================================================================
+
+ALTER TABLE savings               ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE savings               ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE savings               ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE loans                 ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE loans                 ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE loans                 ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE loan_repayments       ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE loan_repayments       ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE loan_repayments       ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE fines                 ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE fines                 ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE fines                 ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE welfare_fund          ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE welfare_fund          ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE welfare_fund          ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE monthly_contributions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE monthly_contributions ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE monthly_contributions ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE registration_fees     ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE registration_fees     ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE registration_fees     ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+ALTER TABLE share_out             ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE share_out             ADD COLUMN IF NOT EXISTS deleted_by INT REFERENCES users(id);
+ALTER TABLE share_out             ADD COLUMN IF NOT EXISTS delete_reason TEXT;
+
+-- A member may be recorded again after her earlier registration fee was
+-- removed, but never twice at the same time.
+ALTER TABLE registration_fees DROP CONSTRAINT IF EXISTS registration_fees_member_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_registration_fee_live_member
+  ON registration_fees(member_id) WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_savings_live     ON savings(cycle_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_loans_live       ON loans(cycle_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_fines_live       ON fines(cycle_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_contribs_live    ON monthly_contributions(cycle_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_shareout_live    ON share_out(cycle_id) WHERE deleted_at IS NULL;
 
 CREATE OR REPLACE FUNCTION prevent_audit_change() RETURNS trigger AS $$
 BEGIN

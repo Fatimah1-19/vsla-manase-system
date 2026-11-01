@@ -2,12 +2,13 @@ const { query, one } = require('../config/db');
 const { wrap } = require('../middleware/errorHandler');
 const { sendSMS, sendBulk, normalisePhone, DRY_RUN } = require('../utils/sms');
 const { audit } = require('../utils/audit');
+const { OFFICES } = require('../config/permissions');
 
 /**
  * POST /api/sms/send
- * target: 'everyone' | 'role' | 'selected' | 'number'
- * Broadcast means the same words go to the whole group; otherwise it is a
- * private message to one person.
+ * target: 'everyone' | 'officials' | 'role' | 'selected' | 'number'
+ * Broadcast means the same words go to a group; otherwise it is a private
+ * message to one person.
  */
 const sendMessage = wrap(async (req, res) => {
   const { target = 'selected', role, member_ids = [], phone, message } = req.body;
@@ -43,6 +44,13 @@ const sendMessage = wrap(async (req, res) => {
         WHERE u.is_active = TRUE AND m.status = 'active' AND u.phone IS NOT NULL AND u.phone <> ''
         ORDER BY u.full_name`
     );
+  } else if (target === 'officials') {
+    recipients = await query(
+      `SELECT id AS user_id, full_name, phone FROM users
+        WHERE role = ANY($1::text[]) AND is_active = TRUE
+          AND phone IS NOT NULL AND phone <> '' ORDER BY full_name`,
+      [OFFICES]
+    );
   } else if (target === 'role') {
     if (!['admin', 'treasurer', 'secretary', 'member'].includes(role)) {
       return res.status(400).json({ message: 'Choose a valid role.' });
@@ -53,12 +61,14 @@ const sendMessage = wrap(async (req, res) => {
       [role]
     );
   } else {
-    const ids = (Array.isArray(member_ids) ? member_ids : [member_ids]).map(Number).filter(Boolean);
+    const ids = [...new Set((Array.isArray(member_ids) ? member_ids : [member_ids])
+      .map(Number).filter(Boolean))];
     if (!ids.length) return res.status(400).json({ message: 'Choose at least one person.' });
     recipients = await query(
       `SELECT u.id AS user_id, u.full_name, u.phone
          FROM members m JOIN users u ON u.id = m.user_id
-        WHERE m.id = ANY($1::int[]) AND u.phone IS NOT NULL AND u.phone <> ''
+        WHERE m.id = ANY($1::int[]) AND u.is_active = TRUE
+          AND u.phone IS NOT NULL AND u.phone <> ''
         ORDER BY u.full_name`,
       [ids]
     );
@@ -68,7 +78,8 @@ const sendMessage = wrap(async (req, res) => {
     return res.status(400).json({ message: 'Nobody in that group has a phone number saved.' });
   }
 
-  const isBroadcast = target === 'everyone' || target === 'role' || recipients.length > 1;
+  const isBroadcast = target === 'everyone' || target === 'officials'
+    || target === 'role' || recipients.length > 1;
   const result = await sendBulk(recipients, text, {
     category: 'manual', isBroadcast, sentBy: req.user.id,
   });

@@ -30,14 +30,14 @@ const GROUPS = {
 const PERMISSIONS = {
   // ---- savings ----
   // The treasurer alone writes in the books; the secretary alone checks her
-  // work. Nobody may verify her own entry. The chairperson and the treasurer
-  // take an entry out.
+  // work. Nobody may verify her own entry. Only the treasurer takes an entry
+  // out.
   'savings.view': ['admin', 'treasurer', 'secretary'],
   'savings.record': ['treasurer'],
   // The secretary checks a saving against the money actually handed over.
   // A saving only counts toward totals once she has verified it.
   'savings.verify': ['secretary'],
-  'savings.delete': ['admin', 'treasurer'],
+  'savings.delete': ['treasurer'],
 
   // ---- loans ----
   'loans.viewAll': ['admin', 'treasurer', 'secretary'],
@@ -59,12 +59,12 @@ const PERMISSIONS = {
   // ---- fines ----
   'fines.viewAll': ['admin', 'treasurer', 'secretary'],
   'fines.record': ['treasurer'],
-  'fines.delete': ['admin'],
+  'fines.delete': ['treasurer'],
 
   // ---- monthly wrappers (contributions) ----
   'contributions.view': ['admin', 'treasurer', 'secretary'],
   'contributions.record': ['treasurer'],
-  'contributions.delete': ['admin'],
+  'contributions.delete': ['treasurer'],
 
   // ---- welfare ----
   // The treasurer writes the welfare book; the offices read the whole fund. An
@@ -75,7 +75,7 @@ const PERMISSIONS = {
   // ---- registration fees ----
   'registration.view': ['admin', 'treasurer', 'secretary'],
   'registration.record': ['treasurer', 'secretary'],
-  'registration.delete': ['admin'],
+  'registration.delete': ['treasurer'],
 
   // ---- share-out ----
   'shareout.view': ['admin', 'treasurer', 'secretary'],

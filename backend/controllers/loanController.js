@@ -50,11 +50,12 @@ const borrowingLimit = wrap(async (req, res) => {
   const activeCycle = await getActiveCycle();
   const savings = (await one(
     `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
-      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'
+        AND deleted_at IS NULL`,
     [memberId, activeCycle ? activeCycle.id : null]
   )).total;
   const open = await one(
-    `SELECT id, status FROM loans WHERE member_id = $1
+    `SELECT id, status FROM loans WHERE member_id = $1 AND deleted_at IS NULL
       AND status IN ('pending','approved','pending_verification','verified') LIMIT 1`, [memberId]
   );
   res.json({
@@ -83,7 +84,8 @@ const eligibility = wrap(async (req, res) => {
 
   const savings = (activeCycle ? await one(
     `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
-      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'
+        AND deleted_at IS NULL`,
     [memberId, activeCycle.id]
   ) : { total: 0 }).total;
   const maxLoan = +(savings * multiplier).toFixed(2);
@@ -94,8 +96,9 @@ const eligibility = wrap(async (req, res) => {
     `SELECT l.id, l.status, l.amount::float, l.with_interest, l.interest_rate::float, l.due_date,
             l.id_status,
             COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
-                       WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-       FROM loans l WHERE l.member_id = $1
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid
+       FROM loans l WHERE l.member_id = $1 AND l.deleted_at IS NULL
         AND l.status IN ('pending','approved','pending_verification','verified')
       ORDER BY l.id DESC LIMIT 1`,
     [memberId]
@@ -176,7 +179,7 @@ const applyLoan = wrap(async (req, res) => {
   }
 
   const openLoan = await one(
-    `SELECT id, status FROM loans WHERE member_id = $1
+    `SELECT id, status FROM loans WHERE member_id = $1 AND deleted_at IS NULL
       AND status IN ('pending','approved','pending_verification','verified')`,
     [borrowerId]
   );
@@ -194,7 +197,8 @@ const applyLoan = wrap(async (req, res) => {
 
   const savingsRow = await one(
     `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
-      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'
+        AND deleted_at IS NULL`,
     [borrowerId, cycle.id]
   );
   const totalSavings = savingsRow.total;
@@ -281,7 +285,7 @@ const decideLoan = wrap(async (req, res) => {
     const loan = (await run(
       `SELECT l.*, u.full_name, u.phone, u.language
          FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-        WHERE l.id = $1 FOR UPDATE OF l`,
+        WHERE l.id = $1 AND l.deleted_at IS NULL FOR UPDATE OF l`,
       [id]
     ))[0];
     if (!loan) return { code: 404, message: 'That loan request does not exist.' };
@@ -308,7 +312,7 @@ const decideLoan = wrap(async (req, res) => {
 
     await client.query(
       `UPDATE loans SET status = $2, decision_note = $3, decided_at = NOW(), approved_by = $4
-        WHERE id = $1`,
+        WHERE id = $1 AND deleted_at IS NULL`,
       [id, status, note || null, req.user.id]
     );
     return { loan };
@@ -336,7 +340,7 @@ const verifyLoanId = wrap(async (req, res) => {
   const loan = await one(
     `SELECT l.id, l.member_id, l.status, l.id_document_id, l.id_status, u.full_name
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -348,9 +352,9 @@ const verifyLoanId = wrap(async (req, res) => {
   }
 
   await query(
-    `UPDATE loans SET id_status = 'verified', id_verified_by = $2, id_verified_at = NOW(),
+      `UPDATE loans SET id_status = 'verified', id_verified_by = $2, id_verified_at = NOW(),
             id_rejected_reason = NULL
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id]
   );
   await audit(req.user.id, 'VERIFY_ID', 'loans', id,
@@ -367,7 +371,7 @@ const rejectLoanId = wrap(async (req, res) => {
   const loan = await one(
     `SELECT l.id, l.member_id, l.status, l.id_document_id, l.id_status, u.full_name
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -381,9 +385,9 @@ const rejectLoanId = wrap(async (req, res) => {
   }
 
   await query(
-    `UPDATE loans SET id_status = 'rejected', id_verified_by = $2, id_verified_at = NOW(),
+      `UPDATE loans SET id_status = 'rejected', id_verified_by = $2, id_verified_at = NOW(),
             id_rejected_reason = $3
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id, reason]
   );
   await audit(req.user.id, 'REJECT_ID', 'loans', id,
@@ -405,7 +409,7 @@ const recordLoan = wrap(async (req, res) => {
     const loan = (await run(
       `SELECT l.*, u.full_name, u.phone, u.language
          FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-        WHERE l.id = $1 FOR UPDATE OF l`,
+        WHERE l.id = $1 AND l.deleted_at IS NULL FOR UPDATE OF l`,
       [id]
     ))[0];
     if (!loan) return { code: 404, message: 'That loan does not exist.' };
@@ -435,7 +439,7 @@ const recordLoan = wrap(async (req, res) => {
     await client.query(
       `UPDATE loans SET status = 'pending_verification', recorded_by = $2, recorded_at = NOW(),
               due_date = $3
-        WHERE id = $1`,
+        WHERE id = $1 AND deleted_at IS NULL`,
       [id, req.user.id, due]
     );
     return { loan: { ...loan, due_date: due } };
@@ -458,7 +462,7 @@ const verifyLoan = wrap(async (req, res) => {
   const loan = await one(
     `SELECT l.*, u.full_name, u.phone, u.language
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -475,7 +479,7 @@ const verifyLoan = wrap(async (req, res) => {
 
   await query(
     `UPDATE loans SET status = 'verified', verified_by = $2, verified_at = NOW(), rejected_reason = NULL
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id]
   );
 
@@ -502,7 +506,7 @@ const rejectLoanVerification = wrap(async (req, res) => {
   const loan = await one(
     `SELECT l.*, u.full_name, u.phone, u.language
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -517,7 +521,7 @@ const rejectLoanVerification = wrap(async (req, res) => {
 
   await query(
     `UPDATE loans SET status = 'rejected', verified_by = $2, verified_at = NOW(), rejected_reason = $3
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id, reason]
   );
 
@@ -543,7 +547,7 @@ const recordRepayment = wrap(async (req, res) => {
   const loan = await one(
     `SELECT l.*, u.full_name, u.phone, u.language
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [loanId]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -555,7 +559,8 @@ const recordRepayment = wrap(async (req, res) => {
     `SELECT COALESCE(SUM(amount),0)::float AS paid,
             COALESCE(SUM(principal_part),0)::float AS principal_paid,
             COALESCE(SUM(interest_part),0)::float AS interest_paid
-       FROM loan_repayments WHERE loan_id = $1 AND status = 'verified'`,
+       FROM loan_repayments WHERE loan_id = $1 AND status = 'verified'
+         AND deleted_at IS NULL`,
     [loanId]
   );
 
@@ -616,13 +621,14 @@ const verifyRepayment = wrap(async (req, res) => {
 
     const loan = (await run(
       `SELECT l.*, u.full_name FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-        WHERE l.id = $1 FOR UPDATE OF l`,
+        WHERE l.id = $1 AND l.deleted_at IS NULL FOR UPDATE OF l`,
       [loanId]
     ))[0];
     if (!loan) return { code: 404, message: 'That loan does not exist.' };
 
     const repayment = (await run(
-      `SELECT * FROM loan_repayments WHERE id = $1 AND loan_id = $2`, [repaymentId, loanId]
+      `SELECT * FROM loan_repayments WHERE id = $1 AND loan_id = $2 AND deleted_at IS NULL`,
+      [repaymentId, loanId]
     ))[0];
     if (!repayment) return { code: 404, message: 'That repayment is not on this loan.' };
     if (repayment.status === 'verified') return { code: 400, message: 'That repayment is already verified.' };
@@ -635,19 +641,19 @@ const verifyRepayment = wrap(async (req, res) => {
 
     await client.query(
       `UPDATE loan_repayments SET status = 'verified', verified_by = $2, verified_at = NOW(), rejected_reason = NULL
-        WHERE id = $1`,
+        WHERE id = $1 AND deleted_at IS NULL`,
       [repaymentId, req.user.id]
     );
 
     // Now that it counts, does the loan stand fully repaid?
     const [{ paid }] = await run(
       `SELECT COALESCE(SUM(amount),0)::float AS paid FROM loan_repayments
-        WHERE loan_id = $1 AND status = 'verified'`, [loanId]
+        WHERE loan_id = $1 AND status = 'verified' AND deleted_at IS NULL`, [loanId]
     );
     const { totalDue } = loanTotals(loan);
     const cleared = paid >= totalDue - 0.01;
     if (cleared && loan.status === 'verified') {
-      await client.query(`UPDATE loans SET status = 'repaid' WHERE id = $1`, [loanId]);
+      await client.query(`UPDATE loans SET status = 'repaid' WHERE id = $1 AND deleted_at IS NULL`, [loanId]);
     }
     return { loan, repayment, paid, cleared, totalDue };
   });
@@ -681,7 +687,8 @@ const rejectRepayment = wrap(async (req, res) => {
   const repayment = await one(
     `SELECT r.*, u.full_name FROM loan_repayments r
        JOIN loans l ON l.id = r.loan_id JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE r.id = $1 AND r.loan_id = $2`,
+      WHERE r.id = $1 AND r.loan_id = $2
+        AND r.deleted_at IS NULL AND l.deleted_at IS NULL`,
     [repaymentId, loanId]
   );
   if (!repayment) return res.status(404).json({ message: 'That repayment is not on this loan.' });
@@ -694,7 +701,7 @@ const rejectRepayment = wrap(async (req, res) => {
 
   await query(
     `UPDATE loan_repayments SET status = 'rejected', verified_by = $2, verified_at = NOW(), rejected_reason = $3
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [repaymentId, req.user.id, reason]
   );
   await audit(req.user.id, 'REJECT_REPAYMENT', 'loan_repayments', repaymentId,
@@ -718,6 +725,7 @@ const pendingRepayments = wrap(async (req, res) => {
        JOIN users u ON u.id = m.user_id
        LEFT JOIN users ru ON ru.id = r.recorded_by
       WHERE r.status = 'pending_verification'
+        AND r.deleted_at IS NULL AND l.deleted_at IS NULL
       ORDER BY r.date, r.id`,
     []
   );
@@ -727,7 +735,7 @@ const pendingRepayments = wrap(async (req, res) => {
 // GET /api/loans
 const listLoans = wrap(async (req, res) => {
   const { status, member_id } = req.query;
-  const where = [];
+  const where = ['l.deleted_at IS NULL'];
   const params = [];
 
   // A member only ever sees her own loans.
@@ -738,7 +746,9 @@ const listLoans = wrap(async (req, res) => {
   const rows = await query(
     `SELECT l.*, l.applied_at AS loan_date, m.membership_number, u.full_name, u.phone,
             (m.avatar IS NOT NULL) AS has_avatar,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid,
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid,
             a.full_name AS decided_by_name
        FROM loans l
        JOIN members m ON m.id = l.member_id
@@ -763,9 +773,11 @@ const getLoan = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const loan = await one(
     `SELECT l.*, m.membership_number, u.full_name, u.phone,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.id = $1`,
+      WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -780,7 +792,7 @@ const getLoan = wrap(async (req, res) => {
        FROM loan_repayments r
        LEFT JOIN users u ON u.id = r.recorded_by
        LEFT JOIN users vu ON vu.id = r.verified_by
-      WHERE r.loan_id = $1 ORDER BY r.date, r.id`,
+      WHERE r.loan_id = $1 AND r.deleted_at IS NULL ORDER BY r.date, r.id`,
     [id]
   );
   res.json({ loan: withBalance(loan), repayments });
@@ -792,7 +804,7 @@ const getLoan = wrap(async (req, res) => {
 const getIdDocument = wrap(async (req, res) => {
   const id = Number(req.params.id);
   const loan = await one(
-    `SELECT l.id, l.member_id, l.id_document_id FROM loans l WHERE l.id = $1`,
+    `SELECT l.id, l.member_id, l.id_document_id FROM loans l WHERE l.id = $1 AND l.deleted_at IS NULL`,
     [id]
   );
   if (!loan) return res.status(404).json({ message: 'That loan does not exist.' });
@@ -840,7 +852,7 @@ const listRepayments = wrap(async (req, res) => {
     });
   }
 
-  const where = [];
+  const where = ['r.deleted_at IS NULL', 'l.deleted_at IS NULL'];
   const params = [];
   if (memberId) { params.push(memberId); where.push(`l.member_id = $${params.length}`); }
   if (req.query.loan_id) { params.push(Number(req.query.loan_id)); where.push(`r.loan_id = $${params.length}`); }
@@ -896,9 +908,11 @@ const listRepayments = wrap(async (req, res) => {
 const overdueLoans = wrap(async (req, res) => {
   const rows = await query(
     `SELECT l.*, u.full_name, u.phone, u.language, m.membership_number,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.status = 'verified' AND l.due_date < CURRENT_DATE
+      WHERE l.status = 'verified' AND l.deleted_at IS NULL AND l.due_date < CURRENT_DATE
       ORDER BY l.due_date`
   );
   res.json(rows.map(withBalance));
@@ -909,9 +923,12 @@ const sendReminders = wrap(async (req, res) => {
   const days = Number(req.body.within_days || 7);
   const rows = await query(
     `SELECT l.*, u.full_name, u.phone, u.language,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid
        FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-      WHERE l.status = 'verified' AND l.due_date <= CURRENT_DATE + ($1 || ' days')::interval`,
+      WHERE l.status = 'verified' AND l.deleted_at IS NULL
+        AND l.due_date <= CURRENT_DATE + ($1 || ' days')::interval`,
     [String(days)]
   );
 

@@ -136,10 +136,15 @@ async function cashInBox(cycleId, run) {
   const exec = run || query;
   const rows = await exec(
      `SELECT
-       COALESCE((SELECT SUM(amount) FROM savings WHERE cycle_id = $1 AND status = 'verified'),0)
-     + COALESCE((SELECT SUM(r.amount) FROM loan_repayments r JOIN loans l ON l.id = r.loan_id WHERE l.cycle_id = $1 AND r.status = 'verified'),0)
-     + COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE AND cycle_id = $1),0)
-     - COALESCE((SELECT SUM(amount) FROM loans WHERE cycle_id = $1 AND status IN ('verified','repaid','defaulted')),0)
+       COALESCE((SELECT SUM(amount) FROM savings WHERE cycle_id = $1 AND status = 'verified'
+                   AND deleted_at IS NULL),0)
+     + COALESCE((SELECT SUM(r.amount) FROM loan_repayments r JOIN loans l ON l.id = r.loan_id
+                  WHERE l.cycle_id = $1 AND r.status = 'verified'
+                    AND r.deleted_at IS NULL AND l.deleted_at IS NULL),0)
+     + COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE AND cycle_id = $1
+                   AND deleted_at IS NULL),0)
+     - COALESCE((SELECT SUM(amount) FROM loans WHERE cycle_id = $1
+                   AND status IN ('verified','repaid','defaulted') AND deleted_at IS NULL),0)
        AS cash`,
     [cycleId]
   );

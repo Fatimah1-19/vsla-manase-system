@@ -52,22 +52,28 @@ const getDashboard = wrap(async (req, res) => {
                   COUNT(*) FILTER (WHERE status='verified')::int AS entries, MAX(date) AS last_date,
                   COALESCE(SUM(amount) FILTER (WHERE status='pending_verification'),0)::float AS pending,
                   COUNT(*) FILTER (WHERE status='pending_verification')::int AS pending_entries
-             FROM savings WHERE member_id = $1 AND ($2::int IS NULL OR cycle_id = $2)`,
+             FROM savings WHERE member_id = $1 AND deleted_at IS NULL
+               AND ($2::int IS NULL OR cycle_id = $2)`,
           [memberId, cycle ? cycle.id : null]),
-      query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-               FROM loans l WHERE l.member_id = $1 AND l.status IN ('pending','approved','pending_verification','verified') ORDER BY l.id DESC`, [memberId]),
-      one(`SELECT COALESCE(SUM(amount),0)::float AS unpaid FROM fines WHERE member_id = $1 AND paid = FALSE`, [memberId]),
+      query(`SELECT l.*, COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                 WHERE r.loan_id = l.id AND r.status = 'verified' AND r.deleted_at IS NULL),0)::float AS total_repaid
+               FROM loans l WHERE l.member_id = $1 AND l.deleted_at IS NULL
+                 AND l.status IN ('pending','approved','pending_verification','verified') ORDER BY l.id DESC`, [memberId]),
+      one(`SELECT COALESCE(SUM(amount),0)::float AS unpaid FROM fines
+            WHERE member_id = $1 AND paid = FALSE AND deleted_at IS NULL`, [memberId]),
       query(
         `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
                 to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
            FROM fines f
            LEFT JOIN cycles c ON c.id = f.cycle_id
            LEFT JOIN meetings mt ON mt.id = f.meeting_id
-          WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC LIMIT 20`, [memberId]),
+          WHERE f.member_id = $1 AND f.deleted_at IS NULL
+          ORDER BY f.date DESC, f.id DESC LIMIT 20`, [memberId]),
       one(`SELECT d.share_amount::float AS share_amount, d.profit_share::float AS profit_share,
                   d.member_savings::float AS member_savings, so.status, so.date_distributed
-             FROM share_out_details d JOIN share_out so ON so.id = d.share_out_id
-            WHERE d.member_id = $1 ORDER BY so.id DESC LIMIT 1`, [memberId]),
+              FROM share_out_details d JOIN share_out so ON so.id = d.share_out_id
+             WHERE d.member_id = $1 AND so.deleted_at IS NULL
+             ORDER BY so.id DESC LIMIT 1`, [memberId]),
       one(`SELECT meeting_date, meeting_time, location FROM meetings
             WHERE meeting_date >= CURRENT_DATE ORDER BY meeting_date LIMIT 1`),
       getSetting('loan_multiplier', '2'),
@@ -92,12 +98,14 @@ const getDashboard = wrap(async (req, res) => {
     const [trendBuckets, recentEntries] = await Promise.all([
       query(
         `SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v
-           FROM savings WHERE member_id = $1 AND status='verified' AND date >= $2::date GROUP BY 1`,
+           FROM savings WHERE member_id = $1 AND status='verified'
+             AND deleted_at IS NULL AND date >= $2::date GROUP BY 1`,
         [memberId, from]
       ),
       query(
         `SELECT id, amount::float, shares, note, date FROM savings
-          WHERE member_id = $1 AND status='verified' ORDER BY date DESC, id DESC LIMIT 4`,
+          WHERE member_id = $1 AND status='verified' AND deleted_at IS NULL
+          ORDER BY date DESC, id DESC LIMIT 4`,
         [memberId]
       ),
     ]);
@@ -206,10 +214,16 @@ const getDashboard = wrap(async (req, res) => {
     monthlyFlow, todayTick, contribMonthly, expectedFines,
     upcomingCount, membershipChanges,
   ] = await Promise.all([
-    one(`SELECT COALESCE((SELECT SUM(amount) FROM savings WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'),0)::float AS total_savings,
-                COALESCE((SELECT SUM(amount) FROM loans WHERE status IN ('verified','repaid','defaulted')),0)::float AS loans_out,
-                COALESCE((SELECT SUM(amount) FROM loan_repayments WHERE status = 'verified'),0)::float AS repaid,
-                COALESCE((SELECT SUM(interest_part) FROM loan_repayments WHERE status = 'verified'),0)::float AS interest_earned`,
+    one(`SELECT COALESCE((SELECT SUM(amount) FROM savings
+                    WHERE ($1::int IS NULL OR cycle_id = $1) AND status = 'verified'
+                      AND deleted_at IS NULL),0)::float AS total_savings,
+                COALESCE((SELECT SUM(amount) FROM loans
+                    WHERE status IN ('verified','repaid','defaulted')
+                      AND deleted_at IS NULL),0)::float AS loans_out,
+                COALESCE((SELECT SUM(amount) FROM loan_repayments
+                    WHERE status = 'verified' AND deleted_at IS NULL),0)::float AS repaid,
+                COALESCE((SELECT SUM(interest_part) FROM loan_repayments
+                    WHERE status = 'verified' AND deleted_at IS NULL),0)::float AS interest_earned`,
         [cycle ? cycle.id : null]),
     one(`SELECT COUNT(*)::int AS total,
                 COUNT(*) FILTER (WHERE status='active')::int  AS active,
@@ -221,12 +235,13 @@ const getDashboard = wrap(async (req, res) => {
                 COUNT(*) FILTER (WHERE status='repaid')::int   AS repaid,
                 COUNT(*) FILTER (WHERE status='rejected')::int AS rejected,
                 COUNT(*) FILTER (WHERE status='verified' AND due_date < CURRENT_DATE)::int AS overdue
-           FROM loans`),
+           FROM loans WHERE deleted_at IS NULL`),
     one(`SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
                 COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0)::float AS payouts
-           FROM welfare_fund`),
+           FROM welfare_fund WHERE deleted_at IS NULL`),
     one(`SELECT COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
-                COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding FROM fines`),
+                COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding
+           FROM fines WHERE deleted_at IS NULL`),
     one(`SELECT COUNT(*)::int AS c FROM join_requests WHERE status = 'pending'`),
     one(`SELECT meeting_date, meeting_time, location FROM meetings WHERE meeting_date >= CURRENT_DATE ORDER BY meeting_date LIMIT 1`),
 
@@ -234,14 +249,17 @@ const getDashboard = wrap(async (req, res) => {
     cashInBox(cycle ? cycle.id : null),
     query(
       `SELECT l.amount::float, l.with_interest, l.interest_rate::float,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-         FROM loans l WHERE l.status = 'verified'`
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                         WHERE r.loan_id = l.id AND r.status = 'verified'
+                           AND r.deleted_at IS NULL),0)::float AS total_repaid
+         FROM loans l WHERE l.status = 'verified' AND l.deleted_at IS NULL`
     ),
 
     // The monthly wrappers money: collected this month, and who is behind.
     arrears(),
     one(
-      `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions WHERE period = $1::date`,
+      `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions
+        WHERE period = $1::date AND deleted_at IS NULL`,
       [`${currentMonth()}-01`]
     ),
 
@@ -249,12 +267,13 @@ const getDashboard = wrap(async (req, res) => {
     wantsMoney ? query(
       `SELECT s.id, s.amount::float, s.date, u.full_name
          FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
+        WHERE s.deleted_at IS NULL
         ORDER BY s.id DESC LIMIT 8`
     ) : null,
     wantsMoney ? query(
       `SELECT l.id, l.amount::float, l.with_interest, l.purpose, l.applied_at, u.full_name
          FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
-        WHERE l.status = 'pending' ORDER BY l.applied_at LIMIT 8`
+        WHERE l.status = 'pending' AND l.deleted_at IS NULL ORDER BY l.applied_at LIMIT 8`
     ) : null,
 
     // The secretary watches the people and the record of what happened.
@@ -296,25 +315,30 @@ const getDashboard = wrap(async (req, res) => {
     // The money crew charts what has been coming in for the last six months.
     wantsMoney ? Promise.all([
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings
-              WHERE status='verified' AND date >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status='verified' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments
-              WHERE status='verified' AND date >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status='verified' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`, [flowFrom]),
       query(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
-              WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
+              WHERE status IN ('verified','repaid','defaulted') AND deleted_at IS NULL
+                AND decided_at >= $1::date GROUP BY 1`, [flowFrom]),
     ]) : null,
 
     // What moved today, for the treasurer's opening line.
     wantsMoney ? one(
-      `SELECT COALESCE((SELECT SUM(amount)::float FROM savings WHERE status='verified' AND date::date = CURRENT_DATE),0) AS saved,
-              COALESCE((SELECT SUM(amount)::float FROM loan_repayments WHERE status='verified' AND date::date = CURRENT_DATE),0) AS repaid,
-              COALESCE((SELECT SUM(amount)::float FROM fines WHERE paid = TRUE AND date::date = CURRENT_DATE),0) AS fines_paid`
+      `SELECT COALESCE((SELECT SUM(amount)::float FROM savings
+                          WHERE status='verified' AND deleted_at IS NULL AND date::date = CURRENT_DATE),0) AS saved,
+              COALESCE((SELECT SUM(amount)::float FROM loan_repayments
+                          WHERE status='verified' AND deleted_at IS NULL AND date::date = CURRENT_DATE),0) AS repaid,
+              COALESCE((SELECT SUM(amount)::float FROM fines
+                          WHERE paid = TRUE AND deleted_at IS NULL AND date::date = CURRENT_DATE),0) AS fines_paid`
     ) : null,
 
     // This year's monthly levy contributions, one figure per calendar month.
     wantsMoney ? query(
       `SELECT to_char(period,'YYYY-MM') AS ym, SUM(amount)::float AS v
          FROM monthly_contributions
-        WHERE period >= $1::date AND period < ($1::date + interval '1 year')
+        WHERE deleted_at IS NULL
+          AND period >= $1::date AND period < ($1::date + interval '1 year')
         GROUP BY 1`, [`${currentMonth().slice(0, 4)}-01-01`]
     ) : null,
 
@@ -329,7 +353,7 @@ const getDashboard = wrap(async (req, res) => {
          JOIN users u ON u.id = m.user_id
          LEFT JOIN cycles c ON c.id = f.cycle_id
          LEFT JOIN meetings mt ON mt.id = f.meeting_id
-        WHERE f.paid = FALSE
+        WHERE f.paid = FALSE AND f.deleted_at IS NULL
         ORDER BY f.date DESC, f.id DESC LIMIT 25`
     ),
 
@@ -439,7 +463,7 @@ const publicImpact = wrap(async (req, res) => {
     one(
       `SELECT COUNT(*) FILTER (WHERE status='verified')::int AS given,
               COUNT(*) FILTER (WHERE status='repaid')::int   AS repaid,
-              COUNT(*)::int AS total FROM loans`
+              COUNT(*)::int AS total FROM loans WHERE deleted_at IS NULL`
     ),
     one(`SELECT COUNT(*)::int AS c FROM meetings`),
     getActiveCycle(),

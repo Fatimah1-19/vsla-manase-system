@@ -8,7 +8,8 @@ const BALANCE_SQL = `
          COALESCE(SUM(CASE WHEN type='payout'       THEN amount ELSE 0 END),0)::float AS payouts,
          (COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)
         - COALESCE(SUM(CASE WHEN type='payout'       THEN amount ELSE 0 END),0))::float AS balance
-    FROM welfare_fund`;
+    FROM welfare_fund
+   WHERE deleted_at IS NULL`;
 
 // A welfare transaction must carry a real calendar date, never in the future.
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -131,7 +132,7 @@ const myWelfare = wrap(async (req, res) => {
        JOIN members m ON m.id = w.member_id
        JOIN users u ON u.id = m.user_id
        LEFT JOIN users r ON r.id = w.recorded_by
-      WHERE w.member_id = $1
+      WHERE w.member_id = $1 AND w.deleted_at IS NULL
       ORDER BY w.date DESC, w.id DESC`,
     [memberId]
   );
@@ -139,7 +140,7 @@ const myWelfare = wrap(async (req, res) => {
   const totals = await one(
     `SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
             COALESCE(SUM(CASE WHEN type='payout'       THEN amount ELSE 0 END),0)::float AS payouts
-       FROM welfare_fund WHERE member_id = $1`,
+       FROM welfare_fund WHERE member_id = $1 AND deleted_at IS NULL`,
     [memberId]
   );
 
@@ -154,7 +155,7 @@ const myWelfare = wrap(async (req, res) => {
 // GET /api/welfare
 const listWelfare = wrap(async (req, res) => {
   const params = [];
-  const where = [];
+  const where = ['w.deleted_at IS NULL'];
   if (req.query.member_id) { params.push(req.query.member_id); where.push(`w.member_id = $${params.length}`); }
   if (req.query.type) { params.push(req.query.type); where.push(`w.type = $${params.length}`); }
   if (req.query.from) { params.push(req.query.from); where.push(`w.date >= $${params.length}`); }
@@ -189,6 +190,7 @@ const welfareSummary = wrap(async (req, res) => {
        FROM welfare_fund w
        JOIN members m ON m.id = w.member_id
        JOIN users u ON u.id = m.user_id
+      WHERE w.deleted_at IS NULL
       GROUP BY w.member_id, u.full_name, m.membership_number, m.avatar
       HAVING COALESCE(SUM(CASE WHEN w.type='contribution' THEN w.amount ELSE 0 END),0) > 0
           OR COALESCE(SUM(CASE WHEN w.type='payout'       THEN w.amount ELSE 0 END),0) > 0
@@ -200,7 +202,7 @@ const welfareSummary = wrap(async (req, res) => {
     `SELECT type, category,
             COALESCE(SUM(amount),0)::float AS amount,
             COUNT(*)::int AS count
-       FROM welfare_fund GROUP BY type, category ORDER BY type, amount DESC`
+       FROM welfare_fund WHERE deleted_at IS NULL GROUP BY type, category ORDER BY type, amount DESC`
   );
 
   res.json({ ...totals, per_member: perMember, by_type: byType });

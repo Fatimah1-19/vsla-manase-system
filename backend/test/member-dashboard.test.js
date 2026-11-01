@@ -123,7 +123,9 @@ check(9, 'the member savings page uses her profile, not the committee books', ()
 
 check(10, 'a removed saving cannot remain in any balance', () => {
   const fn = between(savingsCtrl, 'const deleteSaving', 'module.exports');
-  assert.ok(/DELETE FROM savings WHERE id = \$1/.test(fn), 'a removed saving is really deleted');
+  assert.ok(/UPDATE savings SET deleted_at = NOW\(\)/.test(fn),
+    'a removed saving is soft-deleted, never erased from the record');
+  assert.ok(/deleted_at IS NULL/.test(fn), 'the removed row is kept out of the live book');
 });
 
 check(11, 'the member navigation offers no group activity link', () => {

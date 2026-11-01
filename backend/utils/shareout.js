@@ -30,7 +30,7 @@ function calcShares(rows) {
       return {
         ...r,
         member_savings: kwacha(savings),
-        profit_share: kwacha(interest),          // interest returned to her
+        profit_share: kwacha(interest),          // interest returned to The member
         loan_deducted: kwacha(Math.min(owedLoan, deducted)),
         fines_deducted: kwacha(deducted - Math.min(owedLoan, deducted)),
         deductions: kwacha(deducted),

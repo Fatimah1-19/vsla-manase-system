@@ -16,7 +16,8 @@ const listMonth = wrap(async (req, res) => {
   const rows = await query(
     `SELECT m.id AS member_id, m.membership_number, u.full_name,
             COALESCE((SELECT SUM(c.amount) FROM monthly_contributions c
-                       WHERE c.member_id = m.id AND c.period = $1::date),0)::float AS paid
+                       WHERE c.member_id = m.id AND c.period = $1::date
+                         AND c.deleted_at IS NULL),0)::float AS paid
        FROM members m JOIN users u ON u.id = m.user_id
       WHERE m.status = 'active' ORDER BY u.full_name`,
     [`${month}-01`]
@@ -41,8 +42,9 @@ const listMonth = wrap(async (req, res) => {
 
 // GET /api/contributions/payments?month=2026-03 — each payment, newest first
 const listPayments = wrap(async (req, res) => {
-  const where = MONTH_RE.test(req.query.month || '') ? `WHERE c.period = $1::date` : '';
-  const params = where ? [`${req.query.month}-01`] : [];
+  const month = MONTH_RE.test(req.query.month || '');
+  const where = month ? `WHERE c.deleted_at IS NULL AND c.period = $1::date` : `WHERE c.deleted_at IS NULL`;
+  const params = month ? [`${req.query.month}-01`] : [];
   const rows = await query(
     `SELECT c.id, c.amount::float, c.paid_on, c.note, to_char(c.period,'YYYY-MM') AS month,
             c.member_id, u.full_name, m.membership_number, r.full_name AS recorded_by_name,
@@ -74,7 +76,8 @@ const mine = wrap(async (req, res) => {
 
   const paidRows = await query(
     `SELECT to_char(period,'YYYY-MM') AS ym, SUM(amount)::float AS paid
-       FROM monthly_contributions WHERE member_id = $1 AND cycle_id = $2 GROUP BY 1`,
+       FROM monthly_contributions WHERE member_id = $1 AND cycle_id = $2
+         AND deleted_at IS NULL GROUP BY 1`,
     [req.user.member_id, cycle.id]
   );
   const paidBy = Object.fromEntries(paidRows.map((r) => [r.ym, r.paid]));
@@ -114,7 +117,7 @@ const record = wrap(async (req, res) => {
   const levy = await getLevy();
   const already = await one(
     `SELECT COALESCE(SUM(amount),0)::float AS paid FROM monthly_contributions
-      WHERE member_id = $1 AND period = $2::date`, [member_id, `${ym}-01`]
+      WHERE member_id = $1 AND period = $2::date AND deleted_at IS NULL`, [member_id, `${ym}-01`]
   );
   if (already.paid + pay > levy + 0.01) {
     return res.status(400).json({
@@ -150,11 +153,16 @@ const record = wrap(async (req, res) => {
 // DELETE /api/contributions/:id — admin removes a mistaken entry
 const remove = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const existing = await one(`SELECT * FROM monthly_contributions WHERE id = $1`, [id]);
+  const reason = String((req.body && req.body.reason) || '').trim().slice(0, 300);
+  const existing = await one(`SELECT * FROM monthly_contributions WHERE id = $1 AND deleted_at IS NULL`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
-  await query(`DELETE FROM monthly_contributions WHERE id = $1`, [id]);
-  await audit(req.user.id, 'DELETE_MONTHLY_CONTRIBUTION', 'monthly_contributions', id, `Removed ${existing.amount}`);
-  res.json({ message: 'Entry removed.' });
+  await query(
+    `UPDATE monthly_contributions SET deleted_at = NOW(), deleted_by = $2, delete_reason = $3 WHERE id = $1`,
+    [id, req.user.id, reason || null]
+  );
+  await audit(req.user.id, 'DELETE_MONTHLY_CONTRIBUTION', 'monthly_contributions', id,
+    `Soft-removed ${existing.amount}; reason: ${reason || 'not given'}`);
+  res.json({ message: 'Entry removed from the live books. It is kept in the record.' });
 });
 
 module.exports = { listMonth, listPayments, mine, behind, record, remove };

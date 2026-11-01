@@ -16,27 +16,31 @@ async function computeShareOut(cycleId) {
     query(
     `SELECT m.id AS member_id, m.membership_number, m.status, u.full_name, u.phone, u.language,
             COALESCE((SELECT SUM(s.amount) FROM savings s
-                       WHERE s.member_id = m.id AND s.cycle_id = $1 AND s.status = 'verified'),0)::float AS member_savings,
+                       WHERE s.member_id = m.id AND s.cycle_id = $1 AND s.status = 'verified'
+                         AND s.deleted_at IS NULL),0)::float AS member_savings,
             -- interest this member actually paid on their own loans in this cycle
             COALESCE((SELECT SUM(r.interest_part) FROM loan_repayments r
                         JOIN loans l ON l.id = r.loan_id
-                       WHERE l.member_id = m.id AND l.cycle_id = $1 AND r.status = 'verified'),0)::float AS interest_paid,
+                       WHERE l.member_id = m.id AND l.cycle_id = $1 AND r.status = 'verified'
+                         AND r.deleted_at IS NULL AND l.deleted_at IS NULL),0)::float AS interest_paid,
             COALESCE((SELECT SUM(f.amount) FROM fines f
-                       WHERE f.member_id = m.id AND f.paid = FALSE),0)::float AS unpaid_fines,
+                       WHERE f.member_id = m.id AND f.paid = FALSE AND f.deleted_at IS NULL),0)::float AS unpaid_fines,
             COALESCE((SELECT SUM(x.due - x.paid) FROM (
                         SELECT l.amount + CASE WHEN l.with_interest THEN l.amount * l.interest_rate / 100 ELSE 0 END AS due,
-                               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0) AS paid
-                          FROM loans l WHERE l.member_id = m.id AND l.status = 'verified') x),0)::float AS unpaid_loan
+                               COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified' AND r.deleted_at IS NULL),0) AS paid
+                          FROM loans l WHERE l.member_id = m.id AND l.status = 'verified' AND l.deleted_at IS NULL) x),0)::float AS unpaid_loan
        FROM members m JOIN users u ON u.id = m.user_id
       ORDER BY u.full_name`,
     [cycleId]),
     // Money that is NOT shared. It stays with the group.
     one(
     `SELECT
-       COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE AND cycle_id = $1),0)::float AS fines_kept,
+       COALESCE((SELECT SUM(amount) FROM fines WHERE paid = TRUE AND cycle_id = $1
+                   AND deleted_at IS NULL),0)::float AS fines_kept,
        COALESCE((SELECT SUM(CASE WHEN type='contribution' THEN amount ELSE -amount END)
-                   FROM welfare_fund),0)::float AS welfare_kept,
-       COALESCE((SELECT SUM(amount) FROM monthly_contributions WHERE cycle_id = $1),0)::float AS wrappers_kept`,
+                   FROM welfare_fund WHERE deleted_at IS NULL),0)::float AS welfare_kept,
+       COALESCE((SELECT SUM(amount) FROM monthly_contributions WHERE cycle_id = $1
+                   AND deleted_at IS NULL),0)::float AS wrappers_kept`,
     [cycleId]),
   ]);
 
@@ -57,10 +61,12 @@ const preview = wrap(async (req, res) => {
 
   const [result, openLoans, eligible] = await Promise.all([
     computeShareOut(cycle.id),
-    one(`SELECT COUNT(*)::int AS c FROM loans WHERE status IN ('pending','approved','pending_verification','verified')`),
+    one(`SELECT COUNT(*)::int AS c FROM loans WHERE status IN ('pending','approved','pending_verification','verified')
+           AND deleted_at IS NULL`),
     // How many members actually saved into this cycle: these are the ones the
     // share-out is worked out for. Read-only; the calculation stays untouched.
-    one(`SELECT COUNT(DISTINCT member_id)::int AS c FROM savings WHERE cycle_id = $1 AND status = 'verified'`, [cycle.id]),
+    one(`SELECT COUNT(DISTINCT member_id)::int AS c FROM savings
+          WHERE cycle_id = $1 AND status = 'verified' AND deleted_at IS NULL`, [cycle.id]),
   ]);
   res.json({
     cycle,
@@ -77,7 +83,8 @@ const createShareOut = wrap(async (req, res) => {
   if (!cycle) return res.status(400).json({ message: 'No saving cycle is running.' });
 
   const existing = await one(
-    `SELECT id, status FROM share_out WHERE cycle_id = $1 ORDER BY id DESC LIMIT 1`, [cycle.id]
+    `SELECT id, status FROM share_out WHERE cycle_id = $1 AND deleted_at IS NULL
+      ORDER BY id DESC LIMIT 1`, [cycle.id]
   );
   if (existing && existing.status === 'distributed') {
     return res.status(400).json({ message: 'This cycle has already been shared out.' });
@@ -90,7 +97,14 @@ const createShareOut = wrap(async (req, res) => {
   }
 
   const saved = await tx(async (client) => {
-    if (existing) await client.query(`DELETE FROM share_out WHERE id = $1`, [existing.id]);
+    if (existing) {
+      await client.query(
+        `UPDATE share_out SET deleted_at = NOW(), deleted_by = $2,
+                delete_reason = 'Replaced by a newer draft'
+          WHERE id = $1 AND deleted_at IS NULL`,
+        [existing.id, req.user.id]
+      );
+    }
 
     const { rows } = await client.query(
       `INSERT INTO share_out (cycle_id, total_savings, total_interest, total_fines, total_welfare,
@@ -125,11 +139,11 @@ const confirmShareOut = wrap(async (req, res) => {
 
   const claimed = await one(
     `UPDATE share_out SET status = 'confirmed', confirmed_by = $2, confirmed_at = NOW()
-      WHERE id = $1 AND status = 'draft' RETURNING id`,
+      WHERE id = $1 AND status = 'draft' AND deleted_at IS NULL RETURNING id`,
     [id, req.user.id]
   );
   if (!claimed) {
-    const exists = await one(`SELECT status FROM share_out WHERE id = $1`, [id]);
+    const exists = await one(`SELECT status FROM share_out WHERE id = $1 AND deleted_at IS NULL`, [id]);
     if (!exists) return res.status(404).json({ message: 'That share-out does not exist.' });
     if (exists.status === 'confirmed') return res.status(400).json({ message: 'These figures are already confirmed.' });
     return res.status(400).json({ message: 'This share-out has already been handed out.' });
@@ -152,11 +166,11 @@ const distribute = wrap(async (req, res) => {
   // been confirmed by a committee member first.
   const claimed = await one(
     `UPDATE share_out SET status = 'distributed', date_distributed = CURRENT_DATE, distributed_by = $2
-      WHERE id = $1 AND status = 'confirmed' RETURNING id`,
+      WHERE id = $1 AND status = 'confirmed' AND deleted_at IS NULL RETURNING id`,
     [id, req.user.id]
   );
   if (!claimed) {
-    const exists = await one(`SELECT status FROM share_out WHERE id = $1`, [id]);
+    const exists = await one(`SELECT status FROM share_out WHERE id = $1 AND deleted_at IS NULL`, [id]);
     if (!exists) return res.status(404).json({ message: 'That share-out does not exist.' });
     if (exists.status === 'draft') {
       return res.status(400).json({ message: 'The figures must be confirmed before the money is handed out.' });
@@ -211,6 +225,7 @@ const listShareOuts = wrap(async (req, res) => {
        LEFT JOIN cycles c ON c.id = so.cycle_id
        LEFT JOIN users u ON u.id = so.distributed_by
        LEFT JOIN users cu ON cu.id = so.confirmed_by
+      WHERE so.deleted_at IS NULL
       ORDER BY so.id DESC`
   );
   res.json(rows);
@@ -227,7 +242,8 @@ const getShareOut = wrap(async (req, res) => {
     `SELECT so.*, c.cycle_name, u.full_name AS distributed_by_name, cu.full_name AS confirmed_by_name
        FROM share_out so LEFT JOIN cycles c ON c.id = so.cycle_id
        LEFT JOIN users u ON u.id = so.distributed_by
-       LEFT JOIN users cu ON cu.id = so.confirmed_by WHERE so.id = $1`, [id]
+       LEFT JOIN users cu ON cu.id = so.confirmed_by
+      WHERE so.id = $1 AND so.deleted_at IS NULL`, [id]
   );
   if (!shareOut) return res.status(404).json({ message: 'That share-out does not exist.' });
 
@@ -256,7 +272,8 @@ const myShare = wrap(async (req, res) => {
        FROM share_out_details d
        JOIN share_out so ON so.id = d.share_out_id
        LEFT JOIN cycles c ON c.id = so.cycle_id
-      WHERE d.member_id = $1 ORDER BY so.id DESC LIMIT 1`,
+      WHERE d.member_id = $1 AND so.deleted_at IS NULL
+      ORDER BY so.id DESC LIMIT 1`,
     [req.user.member_id]
   );
   res.json(row);

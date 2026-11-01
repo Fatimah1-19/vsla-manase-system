@@ -290,8 +290,8 @@ const base = {
 
   messages: {
     title: 'Mauthenga', send: 'Tumizani uthenga', to: 'Tumizani kwa',
-    everyone: 'Aliyense mu gulu', byRole: 'Onse a udindo umodzi',
-    selected: 'Anthu osankhidwa', oneNumber: 'Nambala imodzi',
+    everyone: 'Mamembala onse', officials: 'Komiti yokha', byRole: 'Onse a udindo umodzi',
+    selected: 'Mamembala osankhidwa', oneNumber: 'Nambala imodzi',
     broadcast: 'Izi zipita kwa gulu lonse', private: 'Izi zipita kwa munthu mmodzi yekha',
     message: 'Uthenga', charsLeft: (n) => `Zilembo ${n} zatsala`,
     history: 'Mauthenga otumizidwa', sent: 'Zatumizidwa', failed: 'Sizinatumizidwe',

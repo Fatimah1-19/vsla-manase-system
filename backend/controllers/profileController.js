@@ -28,26 +28,33 @@ const getMyProfile = wrap(async (req, res) => {
   );
 
   const [savings, loanRows, fines, documents, share, welfare, months, shareouts, cycle] = await Promise.all([
-    query(`SELECT id, amount::float, shares, date, note, status FROM savings WHERE member_id = $1
+    query(`SELECT id, amount::float, shares, date, note, status FROM savings
+            WHERE member_id = $1 AND deleted_at IS NULL
             ORDER BY date DESC, id DESC LIMIT 60`, [memberId]),
     query(`SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status, l.due_date, l.purpose,
-                  COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-             FROM loans l WHERE l.member_id = $1 ORDER BY l.id DESC`, [memberId]),
+                  COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                             WHERE r.loan_id = l.id AND r.status = 'verified'
+                               AND r.deleted_at IS NULL),0)::float AS total_repaid
+             FROM loans l WHERE l.member_id = $1 AND l.deleted_at IS NULL
+             ORDER BY l.id DESC`, [memberId]),
     query(
       `SELECT f.id, f.amount::float, f.reason, f.paid, f.date, f.meeting_id,
               to_char(f.date,'YYYY-MM') AS month, c.cycle_name, mt.meeting_date
          FROM fines f
          LEFT JOIN cycles c ON c.id = f.cycle_id
          LEFT JOIN meetings mt ON mt.id = f.meeting_id
-        WHERE f.member_id = $1 ORDER BY f.date DESC, f.id DESC`, [memberId]),
+        WHERE f.member_id = $1 AND f.deleted_at IS NULL
+        ORDER BY f.date DESC, f.id DESC`, [memberId]),
     query(`SELECT id, document_type, original_name, mime_type, size_bytes, uploaded_at
              FROM member_documents WHERE member_id = $1 ORDER BY id DESC`, [memberId]),
     one(`SELECT COALESCE(SUM(amount),0)::float AS total, COALESCE(SUM(shares),0)::int AS shares
-           FROM savings WHERE member_id = $1 AND status = 'verified'`, [memberId]),
+           FROM savings WHERE member_id = $1 AND status = 'verified'
+             AND deleted_at IS NULL`, [memberId]),
     query(`SELECT id, amount::float, type, category, date, notes FROM welfare_fund
-            WHERE member_id = $1 ORDER BY date DESC, id DESC`, [memberId]),
+            WHERE member_id = $1 AND deleted_at IS NULL ORDER BY date DESC, id DESC`, [memberId]),
     query(`SELECT id, TO_CHAR(period, 'YYYY-MM') AS period, amount::float AS amount, paid_on
-             FROM monthly_contributions WHERE member_id = $1 ORDER BY period DESC, id DESC`, [memberId]),
+             FROM monthly_contributions WHERE member_id = $1 AND deleted_at IS NULL
+            ORDER BY period DESC, id DESC`, [memberId]),
     query(`SELECT d.share_out_id, so.status, so.date_distributed, c.cycle_name,
                   d.member_savings::float AS member_savings, d.profit_share::float AS profit_share,
                   d.deductions::float AS deductions, d.unrecovered::float AS unrecovered,
@@ -55,7 +62,8 @@ const getMyProfile = wrap(async (req, res) => {
              FROM share_out_details d
              JOIN share_out so ON so.id = d.share_out_id
              LEFT JOIN cycles c ON c.id = so.cycle_id
-            WHERE d.member_id = $1 ORDER BY so.id DESC`, [memberId]),
+            WHERE d.member_id = $1 AND so.deleted_at IS NULL
+            ORDER BY so.id DESC`, [memberId]),
     getActiveCycle(),
   ]);
 

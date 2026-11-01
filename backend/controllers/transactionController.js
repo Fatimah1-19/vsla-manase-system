@@ -8,7 +8,7 @@ const { audit } = require('../utils/audit');
  * back to the row it came from, who wrote it and where it stands.
  *
  * Nothing here writes to those books. Corrections are separate records that
- * point back at a line; the line itself is never edited or deleted.
+ * point back at a line, and a removed line is soft-deleted rather than erased.
  */
 
 // The kinds of money movement the feed can show, and the table each lives in.
@@ -25,6 +25,7 @@ const FEED_SQL = `
     FROM savings s
     JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
     LEFT JOIN users r ON r.id = s.recorded_by
+   WHERE s.deleted_at IS NULL
 
   UNION ALL
 
@@ -35,6 +36,7 @@ const FEED_SQL = `
     FROM loans l
     JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
     LEFT JOIN users r ON r.id = l.approved_by
+   WHERE l.deleted_at IS NULL
 
   UNION ALL
 
@@ -46,6 +48,7 @@ const FEED_SQL = `
     JOIN loans l ON l.id = rp.loan_id
     JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
     LEFT JOIN users rr ON rr.id = rp.recorded_by
+   WHERE rp.deleted_at IS NULL AND l.deleted_at IS NULL
 
   UNION ALL
 
@@ -56,6 +59,7 @@ const FEED_SQL = `
     FROM fines f
     JOIN members m ON m.id = f.member_id JOIN users u ON u.id = m.user_id
     LEFT JOIN users r ON r.id = f.recorded_by
+   WHERE f.deleted_at IS NULL
 
   UNION ALL
 
@@ -67,6 +71,7 @@ const FEED_SQL = `
     LEFT JOIN members m ON m.id = w.member_id
     LEFT JOIN users u ON u.id = m.user_id
     LEFT JOIN users r ON r.id = w.recorded_by
+   WHERE w.deleted_at IS NULL
 
   UNION ALL
 
@@ -77,6 +82,7 @@ const FEED_SQL = `
     FROM share_out so
     LEFT JOIN users r ON r.id = so.distributed_by
     LEFT JOIN cycles c ON c.id = so.cycle_id
+   WHERE so.deleted_at IS NULL
 
   UNION ALL
 

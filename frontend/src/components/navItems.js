@@ -117,6 +117,8 @@ export const NAV_ITEMS = [
   { to: '/app/members?view=documents', key: 'nav.membershipDocuments', icon: 'members', roles: ['secretary'], sub: true },
   { to: '/app/records',                key: 'nav.adminRecords',        icon: 'audit',   roles: ['secretary'], sub: true },
 
+  { to: '/app/messages',                key: 'nav.messages',            icon: 'messages', roles: ['secretary'] },
+
   { to: '/app/analytics?tab=reports', key: 'nav.reports', group: 'nav.gReports', icon: 'analytics', roles: ['secretary'] },
   { to: '/app/analytics?tab=reports', key: 'nav.attendanceReports', icon: 'analytics', roles: ['secretary'], sub: true },
   { to: '/app/analytics?tab=reports', key: 'nav.meetingReports',    icon: 'analytics', roles: ['secretary'], sub: true },

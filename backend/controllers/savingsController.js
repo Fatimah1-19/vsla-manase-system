@@ -66,7 +66,7 @@ const recordSaving = wrap(async (req, res) => {
   const duplicate = await one(
     `SELECT id FROM savings
       WHERE member_id = $1 AND amount = $2 AND date = $3 AND cycle_id = $4
-        AND status <> 'rejected'`,
+        AND status <> 'rejected' AND deleted_at IS NULL`,
     [member_id, value, theDate, cycle.id]
   );
   if (duplicate) {
@@ -86,7 +86,7 @@ const recordSaving = wrap(async (req, res) => {
   // not yet money. The secretary sees it awaiting her check.
   const totals = await one(
     `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
-      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified' AND deleted_at IS NULL`,
     [member_id, cycle.id]
   );
 
@@ -105,7 +105,7 @@ const recordSaving = wrap(async (req, res) => {
 // GET /api/savings
 const listSavings = wrap(async (req, res) => {
   const { cycle_id, member_id, status, limit = 200 } = req.query;
-  const where = [];
+  const where = ['s.deleted_at IS NULL'];
   const params = [];
 
   if (cycle_id) { params.push(cycle_id); where.push(`s.cycle_id = $${params.length}`); }
@@ -144,7 +144,7 @@ const savingsSummary = wrap(async (req, res) => {
             COALESCE(SUM(amount) FILTER (WHERE status = 'pending_verification'),0)::float AS pending_total,
             COUNT(*) FILTER (WHERE status = 'pending_verification')::int AS pending_entries,
             COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected_entries
-       FROM savings WHERE ($1::int IS NULL OR cycle_id = $1)`,
+       FROM savings WHERE deleted_at IS NULL AND ($1::int IS NULL OR cycle_id = $1)`,
     [cycle ? cycle.id : null]
   );
   const perMember = await query(
@@ -154,7 +154,8 @@ const savingsSummary = wrap(async (req, res) => {
             COALESCE(SUM(s.amount) FILTER (WHERE s.status = 'pending_verification'),0)::float AS pending_savings
        FROM members m
        JOIN users u ON u.id = m.user_id
-       LEFT JOIN savings s ON s.member_id = m.id AND ($1::int IS NULL OR s.cycle_id = $1)
+       LEFT JOIN savings s ON s.member_id = m.id AND s.deleted_at IS NULL
+        AND ($1::int IS NULL OR s.cycle_id = $1)
       WHERE m.status = 'active'
       GROUP BY m.id, u.full_name, m.membership_number
       ORDER BY total_savings DESC`,
@@ -171,7 +172,7 @@ const verifySaving = wrap(async (req, res) => {
   const saving = await one(
     `SELECT s.*, u.full_name, u.phone, u.language
        FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
-      WHERE s.id = $1`,
+      WHERE s.id = $1 AND s.deleted_at IS NULL`,
     [id]
   );
   if (!saving) return res.status(404).json({ message: 'That entry is not in the book.' });
@@ -187,13 +188,13 @@ const verifySaving = wrap(async (req, res) => {
 
   await query(
     `UPDATE savings SET status = 'verified', verified_by = $2, verified_at = NOW(), rejected_reason = NULL
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id]
   );
 
   const totals = await one(
     `SELECT COALESCE(SUM(amount),0)::float AS total FROM savings
-      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified'`,
+      WHERE member_id = $1 AND cycle_id = $2 AND status = 'verified' AND deleted_at IS NULL`,
     [saving.member_id, saving.cycle_id]
   );
 
@@ -222,7 +223,7 @@ const rejectSaving = wrap(async (req, res) => {
   const saving = await one(
     `SELECT s.*, u.full_name, u.phone, u.language
        FROM savings s JOIN members m ON m.id = s.member_id JOIN users u ON u.id = m.user_id
-      WHERE s.id = $1`,
+      WHERE s.id = $1 AND s.deleted_at IS NULL`,
     [id]
   );
   if (!saving) return res.status(404).json({ message: 'That entry is not in the book.' });
@@ -240,7 +241,7 @@ const rejectSaving = wrap(async (req, res) => {
 
   await query(
     `UPDATE savings SET status = 'rejected', verified_by = $2, verified_at = NOW(), rejected_reason = $3
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, req.user.id, reason]
   );
 
@@ -280,7 +281,7 @@ const updateSaving = wrap(async (req, res) => {
     }
   }
 
-  const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
+  const existing = await one(`SELECT * FROM savings WHERE id = $1 AND deleted_at IS NULL`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
   // If the secretary had already verified this saving, changing what it says
@@ -294,7 +295,7 @@ const updateSaving = wrap(async (req, res) => {
             status = CASE WHEN $6 THEN 'pending_verification' ELSE status END,
             verified_by = CASE WHEN $6 THEN NULL ELSE verified_by END,
             verified_at = CASE WHEN $6 THEN NULL ELSE verified_at END
-      WHERE id = $1`,
+      WHERE id = $1 AND deleted_at IS NULL`,
     [id, amount ?? null, date ?? null, note ?? null, shares ?? null, invalidates]
   );
 
@@ -311,13 +312,17 @@ const updateSaving = wrap(async (req, res) => {
 // DELETE /api/savings/:id
 const deleteSaving = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const existing = await one(`SELECT * FROM savings WHERE id = $1`, [id]);
+  const reason = String((req.body && req.body.reason) || '').trim().slice(0, 300);
+  const existing = await one(`SELECT * FROM savings WHERE id = $1 AND deleted_at IS NULL`, [id]);
   if (!existing) return res.status(404).json({ message: 'That entry is not in the book.' });
 
-  await query(`DELETE FROM savings WHERE id = $1`, [id]);
+  await query(
+    `UPDATE savings SET deleted_at = NOW(), deleted_by = $2, delete_reason = $3 WHERE id = $1`,
+    [id, req.user.id, reason || null]
+  );
   await audit(req.user.id, 'DELETE_SAVING', 'savings', id,
-    `Removed ${existing.amount} for member ${existing.member_id}`);
-  res.json({ message: 'Entry removed.' });
+    `Soft-removed ${existing.amount} for member ${existing.member_id}; reason: ${reason || 'not given'}`);
+  res.json({ message: 'Entry removed from the live books. It is kept in the record.' });
 });
 
 module.exports = {

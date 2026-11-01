@@ -3,7 +3,7 @@
  *
  * The secretary keeps the record of people and meetings. She is never a system
  * administrator, never the final decider on membership, and never a writer in
- * the money books. Each of the 32 checks below is asserted against the code that
+ * the money books. Each of the 33 checks below is asserted against the code that
  * ships, in the same style as the chairperson acceptance test: the rules and the
  * wiring are read and checked, no database is needed.
  *
@@ -351,6 +351,25 @@ async function check(n, title, fn) {
       true, 'a member still has her say on membership');
   });
 
+  await check(33, 'the secretary can message the group and read the log', () => {
+    assert.ok(can('secretary', 'messages.view') && can('secretary', 'messages.send'),
+      'both text-message permissions are hers');
+    assert.ok(routes('smsRoutes.js').includes("requirePermission('messages.view')")
+      && routes('smsRoutes.js').includes("requirePermission('messages.send')"),
+      'the message routes stay permission-guarded');
+    const msgCtrl = controllers('smsController.js');
+    const msgPage = page('Messages.jsx');
+    assert.ok(msgCtrl.includes("target === 'officials'") && msgCtrl.includes('OFFICES'),
+      'the backend can send to the elected officials as one group');
+    assert.ok(msgPage.includes("target === 'officials'") && msgPage.includes("t('messages.officials')"),
+      'the composer offers the officials-only choice');
+    assert.ok(msgCtrl.includes('listMessages') && msgCtrl.includes('sent_at DESC'),
+      'the message log is still read newest first');
+    assert.ok(nav.split('\n').some((l) => l.includes("roles: ['secretary']")
+      && l.includes("to: '/app/messages'")),
+      'her menu reaches the messages page');
+  });
+
   // ---- the final requirement, word for word -------------------------------
   for (const role of ['system_admin', 'admin', 'treasurer', 'secretary', 'member']) {
     assert.ok(ROLES.includes(role), `the role ${role} must exist`);
@@ -375,7 +394,7 @@ async function check(n, title, fn) {
   assert.ok(recordsPage.includes('GROUPS') && recordsPage.includes("'/app/members'")
     && recordsPage.includes("'/app/meetings'"),
     'her administrative records page must gather the people and the meetings');
-  console.log('secretary acceptance OK — 32 checks passed');
+  console.log('secretary acceptance OK — 33 checks passed');
 })().catch((err) => {
   console.error(`secretary acceptance FAILED after ${done} checks`);
   console.error(err && err.stack ? err.stack : err);

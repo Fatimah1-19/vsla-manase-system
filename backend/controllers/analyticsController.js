@@ -27,15 +27,23 @@ const analytics = wrap(async (req, res) => {
     Object.fromEntries((await query(sql, [from])).map((r) => [r.ym, r.v]));
 
   const [savingsBy, repaidBy, interestBy, givenBy, finesBy, wrappersBy, welfareInBy, welfareOutBy] = await Promise.all([
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings WHERE status='verified' AND date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments WHERE status='verified' AND date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(interest_part)::float AS v FROM loan_repayments WHERE status='verified' AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM savings
+              WHERE status='verified' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loan_repayments
+              WHERE status='verified' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(interest_part)::float AS v FROM loan_repayments
+              WHERE status='verified' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
     byMonth(`SELECT to_char(decided_at,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM loans
-              WHERE status IN ('verified','repaid','defaulted') AND decided_at >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM fines WHERE paid = TRUE AND date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(paid_on,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM monthly_contributions WHERE paid_on >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM welfare_fund WHERE type = 'contribution' AND date >= $1::date GROUP BY 1`),
-    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM welfare_fund WHERE type = 'payout' AND date >= $1::date GROUP BY 1`),
+              WHERE status IN ('verified','repaid','defaulted') AND deleted_at IS NULL
+                AND decided_at >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM fines
+              WHERE paid = TRUE AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(paid_on,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM monthly_contributions
+              WHERE deleted_at IS NULL AND paid_on >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM welfare_fund
+              WHERE type = 'contribution' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
+    byMonth(`SELECT to_char(date,'YYYY-MM') AS ym, SUM(amount)::float AS v FROM welfare_fund
+              WHERE type = 'payout' AND deleted_at IS NULL AND date >= $1::date GROUP BY 1`),
   ]);
 
   const monthly = months.map((ym) => ({
@@ -49,7 +57,8 @@ const analytics = wrap(async (req, res) => {
   const ranking = await query(
     `SELECT m.id AS member_id, u.full_name, COALESCE(SUM(s.amount),0)::float AS total
        FROM members m JOIN users u ON u.id = m.user_id
-       LEFT JOIN savings s ON s.member_id = m.id AND s.cycle_id = $1 AND s.status = 'verified'
+       LEFT JOIN savings s ON s.member_id = m.id AND s.cycle_id = $1
+        AND s.status = 'verified' AND s.deleted_at IS NULL
       WHERE m.status = 'active' GROUP BY m.id, u.full_name ORDER BY total DESC, u.full_name`,
     [cid]
   );
@@ -68,8 +77,11 @@ const analytics = wrap(async (req, res) => {
   const loanRows = await query(
     `SELECT l.id, l.member_id, l.amount::float, l.with_interest, l.interest_rate::float, l.status,
             to_char(l.due_date,'YYYY-MM-DD') AS due_date, u.full_name,
-            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
-       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id`
+            COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                       WHERE r.loan_id = l.id AND r.status = 'verified'
+                         AND r.deleted_at IS NULL),0)::float AS total_repaid
+       FROM loans l JOIN members m ON m.id = l.member_id JOIN users u ON u.id = m.user_id
+      WHERE l.deleted_at IS NULL`
   );
   const today = new Date().toISOString().slice(0, 10);
   const statusCount = { pending: 0, approved: 0, pending_verification: 0, verified: 0, repaid: 0, rejected: 0, defaulted: 0 };
@@ -93,7 +105,9 @@ const analytics = wrap(async (req, res) => {
 
   const interest = await one(
     `SELECT COALESCE(SUM(r.interest_part),0)::float AS earned
-       FROM loan_repayments r JOIN loans l ON l.id = r.loan_id WHERE l.cycle_id = $1 AND r.status = 'verified'`, [cid]
+       FROM loan_repayments r JOIN loans l ON l.id = r.loan_id
+      WHERE l.cycle_id = $1 AND r.status = 'verified'
+        AND r.deleted_at IS NULL AND l.deleted_at IS NULL`, [cid]
   );
 
   // ---- Meetings ------------------------------------------------------------
@@ -111,25 +125,28 @@ const analytics = wrap(async (req, res) => {
   const fines = await one(
     `SELECT COALESCE(SUM(CASE WHEN paid THEN amount ELSE 0 END),0)::float AS collected,
             COALESCE(SUM(CASE WHEN NOT paid THEN amount ELSE 0 END),0)::float AS outstanding,
-            COUNT(*)::int AS count FROM fines`
+            COUNT(*)::int AS count FROM fines WHERE deleted_at IS NULL`
   );
   const welfare = await one(
     `SELECT COALESCE(SUM(CASE WHEN type='contribution' THEN amount ELSE 0 END),0)::float AS contributions,
-            COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0)::float AS payouts FROM welfare_fund`
+            COALESCE(SUM(CASE WHEN type='payout' THEN amount ELSE 0 END),0)::float AS payouts
+       FROM welfare_fund WHERE deleted_at IS NULL`
   );
   const welfareByCategory = await query(
     `SELECT COALESCE(category,'other') AS category, SUM(amount)::float AS total
-       FROM welfare_fund WHERE type = 'payout' GROUP BY 1 ORDER BY 2 DESC`
+       FROM welfare_fund WHERE type = 'payout' AND deleted_at IS NULL GROUP BY 1 ORDER BY 2 DESC`
   );
 
   const levy = await getLevy();
   const owing = await arrears();
   const monthPaid = await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions WHERE period = $1::date`,
+    `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions
+      WHERE period = $1::date AND deleted_at IS NULL`,
     [`${now}-01`]
   );
   const wrappersTotal = await one(
-    `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions WHERE cycle_id = $1`, [cid]
+    `SELECT COALESCE(SUM(amount),0)::float AS v FROM monthly_contributions
+      WHERE cycle_id = $1 AND deleted_at IS NULL`, [cid]
   );
 
   // ---- If the cycle ended today -------------------------------------------

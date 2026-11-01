@@ -29,7 +29,8 @@ const listAbsentees = wrap(async (req, res) => {
                FROM fines f
               WHERE f.member_id = a.member_id
                 AND f.date = mt.meeting_date
-                AND f.paid = FALSE) AS unpaid_fines_on_date
+                AND f.paid = FALSE
+                AND f.deleted_at IS NULL) AS unpaid_fines_on_date
        FROM attendance a
        JOIN meetings mt ON mt.id = a.meeting_id
        JOIN members  m  ON m.id  = a.member_id
@@ -109,7 +110,7 @@ const memberReport = wrap(async (req, res) => {
   const [savings, contributions, loanRows, fines] = await Promise.all([
     query(
       `SELECT id, amount::float, shares, date, note FROM savings
-        WHERE member_id = $1
+        WHERE member_id = $1 AND deleted_at IS NULL
           AND ($2::date IS NULL OR date >= $2::date)
           AND ($3::date IS NULL OR date < $3::date)
         ORDER BY date DESC, id DESC`,
@@ -118,7 +119,7 @@ const memberReport = wrap(async (req, res) => {
     query(
       `SELECT id, TO_CHAR(period, 'YYYY-MM') AS period, amount::float, paid_on
          FROM monthly_contributions
-        WHERE member_id = $1
+        WHERE member_id = $1 AND deleted_at IS NULL
           AND ($2::date IS NULL OR period >= $2::date)
           AND ($3::date IS NULL OR period < $3::date)
         ORDER BY period DESC, id DESC`,
@@ -127,9 +128,11 @@ const memberReport = wrap(async (req, res) => {
     query(
       `SELECT l.id, l.amount::float, l.with_interest, l.interest_rate::float, l.status,
               l.due_date, l.purpose, l.applied_at,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'), 0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                         WHERE r.loan_id = l.id AND r.status = 'verified'
+                           AND r.deleted_at IS NULL), 0)::float AS total_repaid
          FROM loans l
-        WHERE l.member_id = $1
+        WHERE l.member_id = $1 AND l.deleted_at IS NULL
           AND ($2::date IS NULL OR l.applied_at >= $2::date)
           AND ($3::date IS NULL OR l.applied_at < $3::date)
         ORDER BY l.id DESC`,
@@ -137,7 +140,7 @@ const memberReport = wrap(async (req, res) => {
     ),
     query(
       `SELECT id, amount::float, reason, paid, date FROM fines
-        WHERE member_id = $1
+        WHERE member_id = $1 AND deleted_at IS NULL
           AND ($2::date IS NULL OR date >= $2::date)
           AND ($3::date IS NULL OR date < $3::date)
         ORDER BY date DESC, id DESC`,
@@ -338,18 +341,22 @@ const groupReport = wrap(async (req, res) => {
          FROM monthly_contributions mc
          JOIN members m ON m.id = mc.member_id
          JOIN users u ON u.id = m.user_id
-        WHERE mc.paid_on >= $1::date AND mc.paid_on < $2::date
+        WHERE mc.deleted_at IS NULL
+          AND mc.paid_on >= $1::date AND mc.paid_on < $2::date
         GROUP BY u.full_name ORDER BY total DESC`,
       [from, to]
     ),
     query(
       `SELECT l.id, u.full_name, l.amount::float, l.status, l.with_interest, l.interest_rate::float,
               l.applied_at, to_char(l.due_date,'YYYY-MM-DD') AS due_date,
-              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r WHERE r.loan_id = l.id AND r.status = 'verified'),0)::float AS total_repaid
+              COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                         WHERE r.loan_id = l.id AND r.status = 'verified'
+                           AND r.deleted_at IS NULL),0)::float AS total_repaid
          FROM loans l
          JOIN members m ON m.id = l.member_id
          JOIN users u ON u.id = m.user_id
-        WHERE l.applied_at >= $1::date AND l.applied_at < $2::date
+        WHERE l.deleted_at IS NULL
+          AND l.applied_at >= $1::date AND l.applied_at < $2::date
         ORDER BY l.id DESC`,
       [from, to]
     ),
@@ -359,7 +366,8 @@ const groupReport = wrap(async (req, res) => {
          FROM fines f
          JOIN members m ON m.id = f.member_id
          JOIN users u ON u.id = m.user_id
-        WHERE f.date >= $1::date AND f.date < $2::date
+        WHERE f.deleted_at IS NULL
+          AND f.date >= $1::date AND f.date < $2::date
         ORDER BY f.date DESC, f.id DESC`,
       [from, to]
     ),

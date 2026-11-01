@@ -10,10 +10,11 @@ import { dateTime } from '../utils/format.js';
 import '../styles.css';
 
 const MAX_LEN = 320;
+const OFFICIAL_ROLES = ['admin', 'treasurer', 'secretary'];
 
 /**
- * Send to the whole group, to one role, to a few chosen people, or to a
- * single number. Whether it is a broadcast is shown before she presses send.
+ * Send to all members, the officials alone, one role, a few selected members,
+ * or a single number. Whether it is a broadcast is shown before she sends.
  */
 export default function Messages() {
   const { t } = useLang();
@@ -43,7 +44,8 @@ export default function Messages() {
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
 
-  const isBroadcast = target === 'everyone' || target === 'role' || (target === 'selected' && picked.length > 1);
+  const isBroadcast = target === 'everyone' || target === 'officials' || target === 'role'
+    || (target === 'selected' && picked.length > 1);
   const remaining = MAX_LEN - message.length;
 
   const shownMembers = useMemo(() => {
@@ -53,6 +55,7 @@ export default function Messages() {
 
   const recipientCount = useMemo(() => {
     if (target === 'everyone') return members.length;
+    if (target === 'officials') return members.filter((m) => OFFICIAL_ROLES.includes(m.role)).length;
     if (target === 'role') return members.filter((m) => m.role === role).length;
     if (target === 'selected') return picked.length;
     return phone ? 1 : 0;
@@ -106,6 +109,7 @@ export default function Messages() {
           <div className="msgs__targetBtns">
             {[
               ['everyone', t('messages.everyone')],
+              ['officials', t('messages.officials')],
               ['role', t('messages.byRole')],
               ['selected', t('messages.selected')],
               ['number', t('messages.oneNumber')],

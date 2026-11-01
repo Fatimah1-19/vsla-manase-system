@@ -254,7 +254,8 @@ const deactivateUser = wrap(async (req, res) => {
 
   const openLoan = await one(
     `SELECT l.id FROM loans l JOIN members m ON m.id = l.member_id
-      WHERE m.user_id = $1 AND l.status IN ('pending','approved') LIMIT 1`,
+      WHERE m.user_id = $1 AND l.status IN ('pending','approved')
+        AND l.deleted_at IS NULL LIMIT 1`,
     [id]
   );
   if (openLoan) return res.status(400).json({ message: 'This member still has an open loan. Settle it first.' });

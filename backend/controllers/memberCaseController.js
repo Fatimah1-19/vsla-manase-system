@@ -416,7 +416,7 @@ const execute = wrap(async (req, res) => {
       // A loan request that was still waiting cannot go ahead.
       await client.query(
         `UPDATE loans SET status = 'rejected', decision_note = 'Membership changed by a vote of the group', decided_at = NOW()
-          WHERE member_id = $1 AND status = 'pending'`,
+          WHERE member_id = $1 AND status = 'pending' AND deleted_at IS NULL`,
         [c.member_id]
       );
     }
