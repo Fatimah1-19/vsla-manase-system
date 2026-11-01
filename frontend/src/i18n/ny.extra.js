@@ -33,7 +33,7 @@ export default {
 
   roles: { system_admin: 'Woyang\'anira dongosolo' },
 
-  // Mabaji a mkhalidwe (Â§24). Liwu limodzi pa tag iliyonse.
+  // Mabaji a mkhalidwe (§24). Liwu limodzi pa tag iliyonse.
   status: {
     active: 'Akugwira', paid: 'Zalipidwa', completed: 'Zatha', pending: 'Zodikira',
     outstanding: 'Zotsala', overdue: 'Zapitirira nthawi', cancelled: 'Zathetsedwa',
@@ -120,7 +120,7 @@ export default {
     writeReply: 'Lembani yankho lanu',
     finishHint: 'Voti imatseka yokha pamene nthawi yatha kapena onse avota. Kenako mtsogoleri akwaniritsa chotsatira.',
     passed: 'Zapambana', rejected: 'Zakanidwa', lapsed: 'Palibe quorum', withdrawn: 'Kwachotsedwa',
-    voteTally: (y, n) => `${y} inde Â· ${n} ayi`,
+    voteTally: (y, n) => `${y} inde · ${n} ayi`,
     decidedTitle: 'Milandu yagamulidwa',
     settlement: 'Zobweza', unrecovered: 'Zotsala ngongole',
     status: { active: 'Wogwira', inactive: 'Woyimitsidwa', suspended: 'Woyimitsidwa', dismissed: 'Wochotsedwa' },
@@ -152,7 +152,7 @@ export default {
     canBorrowHint: (m) => `kuwirikiza ${m} zomwe mwasunga`,
     groceriesMonth: (levy) => `Zakudya (${levy})`,
     groceriesCollected: 'Zovala zolandiridwa mwezi uno',
-    groceriesOf: (expected, behind) => `pa ${expected} Â· ${behind} atsalira`,
+    groceriesOf: (expected, behind) => `pa ${expected} · ${behind} atsalira`,
     nothingPending: 'Palibe chodikira chigamulo.',
     system: 'Dongosolo', accountsInUse: 'maakaunti ogwira ntchito', smsFailed: 'mauthenga omwe sanatumizidwe',
     lockedNote: (n) => `Maakaunti ${n} atsekedwa chifukwa cha achinsinsi olakwika. Mutha kuwatsegula.`,
@@ -211,7 +211,7 @@ export default {
   loans: {
     withInterestHelp:
       'Chiwongola dzanja chimabwezedwa kwa inu pa kugawana. Chiwongola dzanja chomwe mwalipira chokha ndi chimene chimabwerera kwa inu; sichigawidwa kwa ena.',
-    limitLine: (m, saved, max) => `Zosunga ${saved} Ã— ${m} = mungakongole mpaka ${max}.`,
+    limitLine: (m, saved, max) => `Zosunga ${saved} × ${m} = mungakongole mpaka ${max}.`,
     rateLine: (r) => `Chiwongola dzanja ndi ${r}% ya ndalama.`,
     dueHint: 'Ayenera kukhala pa tsiku nyengo isanathe kapena pa tsiku lomwelo.',
     nothingRepaid: 'Palibe chobwezedwa panobe.',
@@ -222,7 +222,7 @@ export default {
     noRunningLoan: 'Membala uyu alibe ngongole yomwe ikubwezedwa.', noMemberFound: 'Palibe membala wopezeka.',
     date: 'Tsiku la kubweza', changeMember: 'Sinthani membala',
     interestFirstNote: 'Kubweza kulikonse kumalipira chiwongola dzanja choyamba; zotsala zimapita ku ndalama zazikulu.',
-    searchMember: 'Fufuzani membala', searchPlaceholder: 'Lembani dzina la membalaâ€¦',
+    searchMember: 'Fufuzani membala', searchPlaceholder: 'Lembani dzina la membala…',
     everyone: 'Alionse', showRepayments: 'Onetsani',
     totalRepaid: 'Zonse zobwezedwa', principalPaid: 'Ndalama zazikulu zolipidwa', interestPaid: 'Chiwongola dzanja cholipidwa',
     paymentCount: 'Malipiro', noRepayments: 'Palibe zobweza zopezeka.',
@@ -440,7 +440,7 @@ export default {
     saveConfiguration: 'Sungani zoikamo',
     readOnlyTitle: 'Zokhudza ndalama',
     readOnlySubtitle: 'Malamulo amene malonda anu amatsatira. Woyang\'anira dongosolo yekha ndiye amasintha izi.',
-    readOnlyNote: 'Awa ndi malamulo amene akugwira ntchito. Lembani malonda anu mwa iwo â€” simungasinthe lamulo kuno.',
+    readOnlyNote: 'Awa ndi malamulo amene akugwira ntchito. Lembani malonda anu mwa iwo — simungasinthe lamulo kuno.',
     proposeToChair: 'Tumizani kwa mtsogoleri',
     proposedToChair: 'Zatumizidwa kwa mtsogoleri kuti zitsimikizidwe.',
     proposedToChairNote: 'Mukasunga, zosinthazo zimatumizidwa kwa mtsogoleri. Zimagwira ntchito mtsogoleri akatsimikizira.',
@@ -519,7 +519,7 @@ export default {
     meetingsNoSettings: 'Misonkhano ilibe zokhazikika zake; masiku ndi kupezekapo zimangolembedwa pa tsamba la Misonkhano.',
     meetingsFineRef: 'Lamulo lokhalo lokhudza msonkhano ndi chindapusa chosowa popanda chifukwa, chimasinthidwa mu',
     meetingFrequency: 'Mafupipafupi a misonkhano',
-    meetingFrequencyValue: 'Palibe ndandanda yokhazikika â€” komiti imayitana msonkhano uliwonse',
+    meetingFrequencyValue: 'Palibe ndandanda yokhazikika — komiti imayitana msonkhano uliwonse',
     meetingDay: 'Tsiku la msonkhano', meetingDayValue: 'Amasankha msonkhano ukayitanidwa',
     meetingTime: 'Nthawi ya msonkhano', meetingTimeValue: 'Amakhazikitsa pa msonkhano uliwonse',
     meetingLocation: 'Malo a msonkhano', meetingLocationValue: 'Amakhazikitsa pa msonkhano uliwonse',
@@ -602,7 +602,7 @@ export default {
 
   reports: {
     title: 'Malipoti',
-    subtitle: 'Malipoti a gulu ndi a membala aliyense â€” zolipira, ngongole, zindapusa, zosunga, kupezeka ndi mamembala, sabata, mwezi kapena chaka.',
+    subtitle: 'Malipoti a gulu ndi a membala aliyense — zolipira, ngongole, zindapusa, zosunga, kupezeka ndi mamembala, sabata, mwezi kapena chaka.',
     tab_list: 'Msonkhano ndi msonkhano',
     tab_register: 'Membala ndi membala',
     from: 'Kuyambira', to: 'Kufika', clear: 'Chotsani masiku',
@@ -651,8 +651,8 @@ export default {
     reportAllTime: 'Nthawi yonse yolembedwa',
     totalContribution: 'Zolipira zonse', totalLoans: 'Ngongole zonse',
     totalFines: 'Zindapusa zonse', totalWelfare: 'Thumba la chithandizo',
-    finTitle: (label) => `Chithunzi cha ndalama â€” ${label}`,
-    finNote: 'Ndalama zolowa ndi zotuluka mwezi uliwonse mâ€™chaka.',
+    finTitle: (label) => `Chithunzi cha ndalama — ${label}`,
+    finNote: 'Ndalama zolowa ndi zotuluka mwezi uliwonse m’chaka.',
     serContributions: 'Zolipira', serLoans: 'Ngongole', serFines: 'Zindapusa',
     serWelfare: 'Chithandizo', serSavings: 'Zosunga', serRepayments: 'Kubweza',
     groupBy: 'Gawani ndi', gran_week: 'Sabata', gran_month: 'Mwezi', gran_year: 'Chaka',
@@ -680,7 +680,7 @@ export default {
 
   home: {
     navAbout: 'Za ife', navRules: 'Malamulo athu', navFeatures: 'Zomwe mungachite', navFaq: 'Mafunso', navJoin: 'Lowani',
-    eyebrow: 'Gulu losunga ndi kukongozana Â· Manase, Blantyre',
+    eyebrow: 'Gulu losunga ndi kukongozana · Manase, Blantyre',
     heroBody:
       'Pulogalamu yotetezeka ya digito yoyang\u2019anira zosunga, ngongole, kubweza, zopereka za chithandizo, zindapusa, misonkhano ndi zolemba za mamembala a Manase VSLA. Dongosolo limasunga zochitika za gulu mwadongosolo, limapereka zolemba za ndalama zomveka bwino ndipo limatumiza uthenga wotsimikizira kwa mamembala.',
     photoAlt: 'Mamembala a gulu atakhala mozungulira bokosi losungira pa msonkhano',
@@ -698,10 +698,10 @@ export default {
     rulesTitle: 'Malamulo athu',
     rulesSub: 'Awa ndi malamulo omwe gulu linagwirizana. Ali mu dongosolo, kotero amatsatiridwa chimodzimodzi nthawi zonse.',
     rules: (m, r, levy) => [
-      { big: `${m}Ã—`, title: 'Malire okongola', body: `Mungakongole mpaka kuwirikiza ${m} zosunga zanu, ngongole imodzi nthawi imodzi, kubweza nyengo isanathe.` },
+      { big: `${m}×`, title: 'Malire okongola', body: `Mungakongole mpaka kuwirikiza ${m} zosunga zanu, ngongole imodzi nthawi imodzi, kubweza nyengo isanathe.` },
       { big: `${r}%`, title: 'Chiwongola dzanja', body: `Chiwongola dzanja ndi ${r}% ya ndalama zokongola. Mutha kusankha kukongola popanda chiwongola dzanja.` },
-      { big: 'â†©', title: 'Chiwongola dzanja chanu chimabwerera kwa inu', body: 'Kumapeto kwa nyengo chiwongola dzanja sichigawidwa kwa onse. Chimabwerera kwa membala amene analipira yekha.' },
-      { big: 'âœ•', title: 'Zindapusa ndi chithandizo zimatsala', body: 'Zindapusa ndi thumba la chithandizo sizigawidwa. Zimatsala ku gulu.' },
+      { big: '↩', title: 'Chiwongola dzanja chanu chimabwerera kwa inu', body: 'Kumapeto kwa nyengo chiwongola dzanja sichigawidwa kwa onse. Chimabwerera kwa membala amene analipira yekha.' },
+      { big: '✕', title: 'Zindapusa ndi chithandizo zimatsala', body: 'Zindapusa ndi thumba la chithandizo sizigawidwa. Zimatsala ku gulu.' },
       { big: levy, icon: 'welfare', title: 'Zakudya', body: `Membala aliyense amalipira ndalama ya mwezi pa zakudya za gulu. Si zosunga ndipo sizigawidwa.` },
       { big: '2', title: 'Akuluakulu awiri amasunga mabuku', body: 'Mlembi ndi wosunga ndalama amalemba chilichonse. Mtsogoleri amatsogolera gulu, amagamula ngongole ndi komiti, ndi kusamalira mamembala.' },
     ],
@@ -783,7 +783,7 @@ export default {
     qaAuditTrail: 'Onani mbiri ya kafukufuku', qaSystemActivity: 'Onani zochitika za dongosolo',
     qaPendingChanges: 'Onani zopempha za zoikamo', qaSystemSettings: 'Zokhazikika za dongosolo',
     pendingConfigTitle: 'Zosintha za zoikamo zodikira',
-    pendingConfigNote: 'Zokhazikika za gulu zomwe mwapempha. Mtsogoleri amazitsimikizira â€” simungatsimikizire zanu nokha.',
+    pendingConfigNote: 'Zokhazikika za gulu zomwe mwapempha. Mtsogoleri amazitsimikizira — simungatsimikizire zanu nokha.',
     noPendingConfig: 'Palibe zosintha za zoikamo zodikira.',
     proposedBy: 'Zapemphedwa ndi', proposedOn: 'Tsiku', currentValue: 'Zomwe zilipo', proposedValue: 'Zopemphedwa',
     cannotConfirmOwn: 'Mtsogoleri yekha ndiye angatsimikizire izi.',
@@ -793,7 +793,7 @@ export default {
     viewFullAudit: 'Onani mbiri yonse ya kafukufuku',
     systemActivitySubtitle: 'Zochita zonse zolembedwa pa dongosolo, ndi nthawi komanso ngati zapambana.',
     rolesTitle: 'Maudindo ndi zoletsedwa', rolesSubtitle: 'Zomwe udindo uliwonse m\'gulu umaloledwa kuchita, ndi amene amayang\'anira dongosolo.',
-    rolesNote: 'Maudindo a komiti amasankhidwa ndi voti ya mamembala. Kuyambira pano mutha kungoonjeza kapena kuchotsa woyang\'anira dongosolo â€” simungamupange kukhala mtsogoleri.',
+    rolesNote: 'Maudindo a komiti amasankhidwa ndi voti ya mamembala. Kuyambira pano mutha kungoonjeza kapena kuchotsa woyang\'anira dongosolo — simungamupange kukhala mtsogoleri.',
     permMatrix: 'Yemwe angachite chiyani', permColumn: 'Ntchito', roleColumn: 'Udindo',
     systemAdministrators: 'Oyanganira dongosolo', makeAdmin: 'Pangani woyang\'anira',
     removeAdmin: 'Chotsani woyang\'anira', officeLocked: 'Amasankha ndi voti',

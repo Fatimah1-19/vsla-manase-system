@@ -34,7 +34,7 @@ export default {
 
   roles: { system_admin: 'Administrator' },
 
-  // The group's status badges (Â§24). One word each, shown on a coloured tag.
+  // The group's status badges (§24). One word each, shown on a coloured tag.
   status: {
     active: 'Active', paid: 'Paid', completed: 'Completed', pending: 'Pending',
     outstanding: 'Outstanding', overdue: 'Overdue', cancelled: 'Cancelled',
@@ -117,11 +117,11 @@ export default {
     yourVote: 'Your vote',
     voteYes: 'Agree', voteNo: 'Do not agree',
     cannotVote: 'You cannot vote on this case.',
-    answered: 'The memberâ€™s answer',
+    answered: 'The member’s answer',
     writeReply: 'Write your reply',
     finishHint: 'The vote closes by itself when the time is up or everyone has voted. The chairperson then carries out the result.',
     passed: 'Carried', rejected: 'Turned down', lapsed: 'No quorum', withdrawn: 'Withdrawn',
-    voteTally: (y, n) => `${y} yes Â· ${n} no`,
+    voteTally: (y, n) => `${y} yes · ${n} no`,
     decidedTitle: 'Decided cases',
     settlement: 'To settle back', unrecovered: 'Still owing',
     status: { active: 'Active', inactive: 'Deactivated', suspended: 'Deactivated', dismissed: 'Dismissed' },
@@ -153,7 +153,7 @@ export default {
     canBorrowHint: (m) => `${m} times what you have saved`,
     groceriesMonth: (levy) => `Groceries (${levy})`,
     groceriesCollected: 'Groceries collected this month',
-    groceriesOf: (expected, behind) => `of ${expected} Â· ${behind} behind`,
+    groceriesOf: (expected, behind) => `of ${expected} · ${behind} behind`,
     nothingPending: 'Nothing is waiting for a decision.',
     system: 'System', accountsInUse: 'accounts in use', smsFailed: 'texts that failed',
     lockedNote: (n) => `${n} account(s) are locked after wrong passwords. You can unlock them.`,
@@ -211,7 +211,7 @@ export default {
   loans: {
     withInterestHelp:
       'Interest is paid back to you at the share-out. Only the interest you paid comes back to you; it is not shared with other members.',
-    limitLine: (m, saved, max) => `Savings ${saved} Ã— ${m} = you can borrow up to ${max}.`,
+    limitLine: (m, saved, max) => `Savings ${saved} × ${m} = you can borrow up to ${max}.`,
     rateLine: (r) => `Interest is ${r}% of the amount.`,
     dueHint: 'Must be on or before the day the cycle ends.',
     nothingRepaid: 'Nothing repaid yet.',
@@ -222,7 +222,7 @@ export default {
     noRunningLoan: 'This member has no running loan.', noMemberFound: 'No member found.',
     date: 'Date of payment', changeMember: 'Change member',
     interestFirstNote: 'Every repayment pays off the interest first; whatever is left goes to the principal.',
-    searchMember: 'Find a member', searchPlaceholder: 'Type a member nameâ€¦',
+    searchMember: 'Find a member', searchPlaceholder: 'Type a member name…',
     everyone: 'Everyone', showRepayments: 'Show',
     totalRepaid: 'Total repaid', principalPaid: 'Principal paid', interestPaid: 'Interest paid',
     paymentCount: 'Payments', noRepayments: 'No repayments found.',
@@ -441,7 +441,7 @@ export default {
     saveConfiguration: 'Save configuration',
     readOnlyTitle: 'Financial settings',
     readOnlySubtitle: 'The rules your transactions follow. Only the administrator may change these.',
-    readOnlyNote: 'These are the active rules. Record your transactions using them â€” you cannot change a rule here.',
+    readOnlyNote: 'These are the active rules. Record your transactions using them — you cannot change a rule here.',
     proposeToChair: 'Send to the chairperson',
     proposedToChair: 'Sent to the chairperson to confirm.',
     proposedToChairNote: 'When you save, the change is sent to the chairperson. It takes effect once the chairperson confirms it.',
@@ -520,7 +520,7 @@ export default {
       meetingsNoSettings: 'Meetings have no settings of their own; the dates and attendance are simply recorded on the Meetings page.',
       meetingsFineRef: 'The only rule that touches a meeting is the fine for an unexcused absence, changed under',
       meetingFrequency: 'Meeting frequency',
-      meetingFrequencyValue: 'No fixed schedule â€” the committee calls each meeting',
+      meetingFrequencyValue: 'No fixed schedule — the committee calls each meeting',
       meetingDay: 'Meeting day', meetingDayValue: 'Chosen when a meeting is called',
       meetingTime: 'Meeting time', meetingTimeValue: 'Set for each meeting',
       meetingLocation: 'Meeting location', meetingLocationValue: 'Set for each meeting',
@@ -604,7 +604,7 @@ export default {
 
   reports: {
     title: 'Reports',
-    subtitle: 'Group and per-member reports â€” contributions, loans, fines, savings, attendance and membership, by week, month or year.',
+    subtitle: 'Group and per-member reports — contributions, loans, fines, savings, attendance and membership, by week, month or year.',
     tab_list: 'By meeting',
     tab_register: 'By member',
     from: 'From', to: 'To', clear: 'Clear dates',
@@ -653,7 +653,7 @@ export default {
     reportAllTime: 'All time on record',
     totalContribution: 'Total contributions', totalLoans: 'Total loans',
     totalFines: 'Total fines', totalWelfare: 'Total welfare fund',
-    finTitle: (label) => `Financial overview â€” ${label}`,
+    finTitle: (label) => `Financial overview — ${label}`,
     finNote: 'Money coming in and going out each month of the year.',
     serContributions: 'Contributions', serLoans: 'Loans', serFines: 'Fines',
     serWelfare: 'Welfare', serSavings: 'Savings', serRepayments: 'Repayments',
@@ -682,7 +682,7 @@ export default {
 
   home: {
     navAbout: 'About', navRules: 'Our rules', navFeatures: 'What you can do', navFaq: 'Questions', navJoin: 'Join',
-    eyebrow: 'Village savings and loan group Â· Manase, Blantyre',
+    eyebrow: 'Village savings and loan group · Manase, Blantyre',
     heroBody:
       'A secure digital platform for managing Manase VSLA\'s savings, loans, repayments, welfare contribution, fines, meetings and member records. The system keeps group transactions organized, provides clear financial records and sends SMS confirmation to members.',
     photoAlt: 'Members of the group sitting around the savings box at a meeting',
@@ -700,10 +700,10 @@ export default {
     rulesTitle: 'Our rules',
     rulesSub: 'These are the rules the group agreed. They are set in the system, so they are applied the same way every time.',
     rules: (m, r, levy) => [
-      { big: `${m}Ã—`, title: 'Borrowing limit', body: `You can borrow up to ${m} times your savings, one loan at a time, repaid before the cycle ends.` },
+      { big: `${m}×`, title: 'Borrowing limit', body: `You can borrow up to ${m} times your savings, one loan at a time, repaid before the cycle ends.` },
       { big: `${r}%`, title: 'Interest on loans', body: `Interest is ${r}% of the amount borrowed. You may choose to borrow without interest.` },
-      { big: 'â†©', title: 'Loan interest and share-out', body: 'At the end of the cycle the interest is not shared among everyone. It goes back only to the member who paid it.' },
-      { big: 'âœ•', title: 'Fines and welfare fund', body: 'Fines and the welfare fund are not shared out. They stay with the group.' },
+      { big: '↩', title: 'Loan interest and share-out', body: 'At the end of the cycle the interest is not shared among everyone. It goes back only to the member who paid it.' },
+      { big: '✕', title: 'Fines and welfare fund', body: 'Fines and the welfare fund are not shared out. They stay with the group.' },
       { big: levy, icon: 'welfare', title: 'Monthly welfare contribution', body: `Every member pays a monthly contribution for the group's groceries. It is not savings and is not shared out.` },
       { big: '2', title: 'Committee manages the records', body: 'The secretary and the treasurer record everything. The chairperson leads the group, decides loans with the committee and manages members.' },
     ],
@@ -786,7 +786,7 @@ export default {
     qaAuditTrail: 'View audit trail', qaSystemActivity: 'View system activity',
     qaPendingChanges: 'Review settings requests', qaSystemSettings: 'System settings',
     pendingConfigTitle: 'Pending configuration changes',
-    pendingConfigNote: 'VSLA settings you have proposed. The chairperson confirms them â€” you cannot confirm your own change.',
+    pendingConfigNote: 'VSLA settings you have proposed. The chairperson confirms them — you cannot confirm your own change.',
     noPendingConfig: 'No configuration changes are waiting.',
     proposedBy: 'Proposed by', proposedOn: 'Date', currentValue: 'Current', proposedValue: 'Proposed',
     cannotConfirmOwn: 'Only the chairperson can confirm this.',
@@ -797,7 +797,7 @@ export default {
     systemActivitySubtitle: 'Every recorded action on the system, with the time and whether it succeeded.',
     // Roles and permissions
     rolesTitle: 'Roles & permissions', rolesSubtitle: 'What each role in the group may do, and who administers the system.',
-    rolesNote: 'Committee offices are decided by a vote of the members. From here you may only add or remove a system administrator â€” never make one of them the chairperson.',
+    rolesNote: 'Committee offices are decided by a vote of the members. From here you may only add or remove a system administrator — never make one of them the chairperson.',
     permMatrix: 'Who may do what', permColumn: 'Task', roleColumn: 'Role',
     systemAdministrators: 'System administrators', makeAdmin: 'Make administrator',
     removeAdmin: 'Remove administrator', officeLocked: 'Decided by vote',
