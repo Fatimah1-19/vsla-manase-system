@@ -294,7 +294,6 @@ export default function Home() {
           <img className="home__joinPhoto" src="/images/join-request.jpg" alt="" loading="lazy" width="1168" height="784" />
           <div className="home__joinInner">
             <h2 className="home__h2">{t('home.joinTitle')}</h2>
-            <p className="home__joinLead">{t('home.joinBody')}</p>
             <p className="home__joinFee">{t('home.joinFeeNote', fee)}</p>
 
             {sent ? (
