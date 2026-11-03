@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   id                SERIAL PRIMARY KEY,
   username          VARCHAR(50) UNIQUE NOT NULL,
   password          VARCHAR(255) NOT NULL,
-  role              VARCHAR(20) NOT NULL CHECK (role IN ('admin','treasurer','secretary','member')),
+  role              VARCHAR(20) NOT NULL CHECK (role IN ('admin','treasurer','secretary','member','system_admin')),
   full_name         VARCHAR(120) NOT NULL,
   phone             VARCHAR(20),
   email             VARCHAR(160),
@@ -24,12 +24,34 @@ CREATE TABLE IF NOT EXISTS members (
   user_id            INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   membership_number  VARCHAR(20) UNIQUE NOT NULL,
   date_joined        DATE NOT NULL DEFAULT CURRENT_DATE,
-  status             VARCHAR(10) NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
+  status             VARCHAR(10) NOT NULL DEFAULT 'active'
+                     CHECK (status IN ('active','inactive','suspended','dismissed')),
   village            VARCHAR(120),
   address            TEXT,
   next_of_kin        VARCHAR(120),
-  next_of_kin_phone  VARCHAR(20)
+  next_of_kin_phone  VARCHAR(20),
+  gender             VARCHAR(10),
+  marital_status     VARCHAR(15),
+  date_of_birth      DATE,
+  occupation         VARCHAR(80),
+  avatar             BYTEA,
+  avatar_mime        VARCHAR(12)
 );
+
+-- Scanned IDs, membership forms and similar papers, kept inside the database
+-- so they are never exposed by a public web address.
+CREATE TABLE IF NOT EXISTS member_documents (
+  id             SERIAL PRIMARY KEY,
+  member_id      INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  document_type  VARCHAR(30) NOT NULL,
+  original_name  VARCHAR(200) NOT NULL,
+  mime_type      VARCHAR(80) NOT NULL,
+  size_bytes     INT NOT NULL,
+  data           BYTEA NOT NULL,
+  uploaded_by    INT REFERENCES users(id),
+  uploaded_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_documents_member ON member_documents(member_id);
 
 -- A cycle is one saving period. The group runs a one-year cycle by default.
 CREATE TABLE IF NOT EXISTS cycles (
@@ -52,11 +74,14 @@ CREATE TABLE IF NOT EXISTS savings (
   note         TEXT,
   recorded_by  INT NOT NULL REFERENCES users(id),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status       VARCHAR(20) NOT NULL DEFAULT 'pending_verification'
+               CHECK (status IN ('pending_verification','verified','rejected')),
   deleted_at   TIMESTAMPTZ,
   deleted_by   INT REFERENCES users(id),
   delete_reason TEXT,
   verified_by  INT REFERENCES users(id),
-  verified_at  TIMESTAMPTZ
+  verified_at  TIMESTAMPTZ,
+  rejected_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS loans (
@@ -68,18 +93,26 @@ CREATE TABLE IF NOT EXISTS loans (
   with_interest  BOOLEAN NOT NULL DEFAULT TRUE,
   interest_rate  NUMERIC(5,2) NOT NULL DEFAULT 10.00,
   purpose        TEXT,
-  status         VARCHAR(12) NOT NULL DEFAULT 'pending'
-                 CHECK (status IN ('pending','approved','rejected','repaid','defaulted')),
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','approved','pending_verification','verified','rejected','repaid','defaulted')),
   due_date       DATE,
   decision_note  TEXT,
   applied_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   decided_at     TIMESTAMPTZ,
   approved_by    INT REFERENCES users(id),
+  recorded_by    INT REFERENCES users(id),
+  recorded_at    TIMESTAMPTZ,
+  verified_by    INT REFERENCES users(id),
+  verified_at    TIMESTAMPTZ,
+  rejected_reason TEXT,
+  id_document_id INT REFERENCES member_documents(id) ON DELETE SET NULL,
+  id_status      VARCHAR(12) NOT NULL DEFAULT 'not_uploaded',
+  id_verified_by INT REFERENCES users(id),
+  id_verified_at TIMESTAMPTZ,
+  id_rejected_reason TEXT,
   deleted_at     TIMESTAMPTZ,
   deleted_by     INT REFERENCES users(id),
-  delete_reason  TEXT,
-  verified_by    INT REFERENCES users(id),
-  verified_at    TIMESTAMPTZ
+  delete_reason  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS loan_repayments (
@@ -92,11 +125,26 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
   date          DATE NOT NULL DEFAULT CURRENT_DATE,
   recorded_by   INT NOT NULL REFERENCES users(id),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status        VARCHAR(20) NOT NULL DEFAULT 'pending_verification'
+                CHECK (status IN ('pending_verification','verified','rejected')),
   deleted_at    TIMESTAMPTZ,
   deleted_by    INT REFERENCES users(id),
   delete_reason TEXT,
   verified_by   INT REFERENCES users(id),
-  verified_at   TIMESTAMPTZ
+  verified_at   TIMESTAMPTZ,
+  rejected_reason TEXT
+);
+
+CREATE TABLE IF NOT EXISTS meetings (
+  id            SERIAL PRIMARY KEY,
+  cycle_id      INT REFERENCES cycles(id) ON DELETE SET NULL,
+  meeting_date  DATE NOT NULL,
+  meeting_time  VARCHAR(10),
+  location      VARCHAR(160),
+  agenda        TEXT,
+  notes         TEXT,
+  recorded_by   INT NOT NULL REFERENCES users(id),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS fines (
@@ -108,6 +156,8 @@ CREATE TABLE IF NOT EXISTS fines (
   paid         BOOLEAN NOT NULL DEFAULT FALSE,
   date         DATE NOT NULL DEFAULT CURRENT_DATE,
   recorded_by  INT NOT NULL REFERENCES users(id),
+  meeting_id   INT REFERENCES meetings(id) ON DELETE SET NULL,
+  fine_type    VARCHAR(20) NOT NULL DEFAULT 'other',
   deleted_at   TIMESTAMPTZ,
   deleted_by   INT REFERENCES users(id),
   delete_reason TEXT
@@ -123,19 +173,10 @@ CREATE TABLE IF NOT EXISTS welfare_fund (
   category     VARCHAR(20) CHECK (category IN ('sickness','funeral','emergency','other')),
   notes        TEXT,
   date         DATE NOT NULL DEFAULT CURRENT_DATE,
-  recorded_by  INT NOT NULL REFERENCES users(id)
-);
-
-CREATE TABLE IF NOT EXISTS meetings (
-  id            SERIAL PRIMARY KEY,
-  cycle_id      INT REFERENCES cycles(id) ON DELETE SET NULL,
-  meeting_date  DATE NOT NULL,
-  meeting_time  VARCHAR(10),
-  location      VARCHAR(160),
-  agenda        TEXT,
-  notes         TEXT,
-  recorded_by   INT NOT NULL REFERENCES users(id),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  recorded_by  INT NOT NULL REFERENCES users(id),
+  deleted_at   TIMESTAMPTZ,
+  deleted_by   INT REFERENCES users(id),
+  delete_reason TEXT
 );
 
 CREATE TABLE IF NOT EXISTS attendance (
@@ -159,6 +200,8 @@ CREATE TABLE IF NOT EXISTS share_out (
   date_distributed  DATE,
   distributed_by    INT REFERENCES users(id),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  confirmed_by      INT REFERENCES users(id),
+  confirmed_at      TIMESTAMPTZ,
   deleted_at        TIMESTAMPTZ,
   deleted_by        INT REFERENCES users(id),
   delete_reason     TEXT
@@ -174,6 +217,7 @@ CREATE TABLE IF NOT EXISTS share_out_details (
   deductions      NUMERIC(12,2) NOT NULL DEFAULT 0,
   share_amount    NUMERIC(12,2) NOT NULL DEFAULT 0,
   notified        BOOLEAN NOT NULL DEFAULT FALSE,
+  unrecovered     NUMERIC(12,2) NOT NULL DEFAULT 0,
   UNIQUE (share_out_id, member_id)
 );
 
@@ -193,7 +237,8 @@ CREATE TABLE IF NOT EXISTS join_requests (
   national_id   VARCHAR(80),
   id_provided   BOOLEAN DEFAULT FALSE,
   eligibility   JSONB DEFAULT '{}'::jsonb,
-  eligibility_checked_at TIMESTAMPTZ
+  eligibility_checked_at TIMESTAMPTZ,
+  occupation    VARCHAR(120)
 );
 
 ALTER TABLE join_requests ADD COLUMN IF NOT EXISTS date_of_birth DATE;
@@ -244,7 +289,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   entity_type  VARCHAR(40),
   entity_id    INT,
   details      TEXT,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  previous_value TEXT,
+  new_value      TEXT
 );
 
 -- A correction is a NEW record that points back at a money row that was wrong.
@@ -266,7 +313,8 @@ CREATE TABLE IF NOT EXISTS transaction_corrections (
 CREATE TABLE IF NOT EXISTS settings (
   setting_key    VARCHAR(60) PRIMARY KEY,
   setting_value  TEXT NOT NULL,
-  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  setting_group  VARCHAR(12) NOT NULL DEFAULT 'group'
 );
 
 CREATE INDEX IF NOT EXISTS idx_savings_member ON savings(member_id);
@@ -346,21 +394,6 @@ CREATE TABLE IF NOT EXISTS registration_fees (
   deleted_by   INT REFERENCES users(id),
   delete_reason TEXT
 );
-
--- Scanned IDs, membership forms and similar papers, kept inside the database
--- so they are never exposed by a public web address.
-CREATE TABLE IF NOT EXISTS member_documents (
-  id             SERIAL PRIMARY KEY,
-  member_id      INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-  document_type  VARCHAR(30) NOT NULL,
-  original_name  VARCHAR(200) NOT NULL,
-  mime_type      VARCHAR(80) NOT NULL,
-  size_bytes     INT NOT NULL,
-  data           BYTEA NOT NULL,
-  uploaded_by    INT REFERENCES users(id),
-  uploaded_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_documents_member ON member_documents(member_id);
 
 -- Group rules (can be changed on the Settings page).
 INSERT INTO settings (setting_key, setting_value) VALUES
@@ -680,6 +713,10 @@ CREATE INDEX IF NOT EXISTS idx_savings_status ON savings(status);
 --  treasurer records the money leaving the box; the secretary checks it.
 --  Only a verified loan is live and can take repayments.
 -- =====================================================================
+
+-- 'pending_verification' is longer than the original VARCHAR(12); widen it
+-- before the new status is ever written.
+ALTER TABLE loans ALTER COLUMN status TYPE VARCHAR(20);
 
 ALTER TABLE loans DROP CONSTRAINT IF EXISTS loans_status_check;
 ALTER TABLE loans ADD CONSTRAINT loans_status_check
