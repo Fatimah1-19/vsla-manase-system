@@ -4141,6 +4141,7 @@ section[id] { scroll-margin-top: 4.5rem; }
 .meetings__legendDot.is-excused { background: var(--maize); }
 
 .meetings__names { display: flex; flex-wrap: wrap; gap: 0.3rem; max-width: 34rem; }
+@media (min-width: 781px) { .meetings__names { min-width: 18rem; } }
 .meetings__name {
   display: inline-flex;
   align-items: center;
