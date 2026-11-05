@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -32,16 +33,20 @@ function PersonalAnalytics({ members, membersLoading, memberId, onMemberChange }
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const loadReport = useCallback(async (quiet = false) => {
+    if (!memberId) { setReport(null); setLoading(false); return; }
+    if (!quiet) setLoading(true);
+    try {
+      setReport(await api.get(`/reports/member/${memberId}`));
+    } finally {
+      if (!quiet) setLoading(false);
+    }
+  }, [memberId]);
+
   useEffect(() => {
-    if (!memberId) { setReport(null); setLoading(false); return undefined; }
-    let cancelled = false;
-    setLoading(true);
-    api.get(`/reports/member/${memberId}`)
-      .then((d) => { if (!cancelled) setReport(d); })
-      .catch((e) => { if (!cancelled) { toast.error(e.message); setReport(null); } })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [memberId, toast]);
+    loadReport().catch((e) => { toast.error(e.message); setReport(null); });
+  }, [loadReport, toast]);
+  useAutoRefresh(() => loadReport(true));
 
   const flow = useMemo(() => {
     if (!report) return [];
@@ -136,7 +141,10 @@ function AnalyticsView() {
   const toast = useToast();
   const [d, setD] = useState(null);
 
-  useEffect(() => { api.get('/analytics').then(setD).catch((e) => toast.error(e.message)); }, [toast]);
+  const load = useCallback(async () => { setD(await api.get('/analytics')); }, []);
+
+  useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+  useAutoRefresh(load);
 
   if (!d) return <Spinner />;
   if (!d.cycle) return <EmptyState title={t('shareout.noCycle')} />;

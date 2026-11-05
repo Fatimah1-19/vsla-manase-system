@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import Modal from '../components/Modal.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -34,6 +35,7 @@ export default function Cycles() {
 
   const load = useCallback(async () => { setCycles(await api.get('/cycles')); }, []);
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+  useAutoRefresh(load);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import BackButton from '../components/BackButton.jsx';
@@ -81,6 +82,7 @@ export default function Savings() {
   }, [isCommittee]);
 
   useEffect(() => { load().catch((e) => toast.error(e.message)); }, [load, toast]);
+  useAutoRefresh(load);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 

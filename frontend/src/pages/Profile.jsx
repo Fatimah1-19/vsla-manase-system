@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import PersonHeader from '../components/PersonHeader.jsx';
@@ -75,6 +76,7 @@ export default function Profile() {
   }, [user.member_id]);
 
   useEffect(() => { load().catch((e) => { toast.error(e.message); setData(EMPTY_PROFILE); }); }, [load, toast]);
+  useAutoRefresh(load);
 
   const exportReport = () => {
     const ok = exportReportAsPdf(reportRef.current, { title: `${t('profile.tab_report')} - ${t('app.name')}` });

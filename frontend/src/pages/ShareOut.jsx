@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Ledger from '../components/Ledger.jsx';
@@ -39,8 +40,8 @@ export default function ShareOut() {
   const showRecords = view !== 'history';
   const showHistory = view !== 'records';
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       if (isCommittee) {
         const [p, h] = await Promise.all([
@@ -52,11 +53,12 @@ export default function ShareOut() {
       }
       setMine(await api.get('/shareout/mine').catch(() => null));
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   }, [isCommittee]);
 
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(() => load(true));
 
   async function calculate() {
     setBusy(true);

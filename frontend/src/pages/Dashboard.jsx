@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import Spinner from '../components/Spinner.jsx';
 import QuickSearch from '../components/QuickSearch.jsx';
 import LiveClock from '../components/LiveClock.jsx';
@@ -20,13 +21,14 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    api.get('/dashboard')
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((err) => { if (!cancelled) setError(err.message); });
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    const next = await api.get('/dashboard');
+    setData(next);
+    setError('');
   }, []);
+
+  useEffect(() => { load().catch((err) => setError(err.message)); }, [load]);
+  useAutoRefresh(load);
 
   if (error) {
     return (

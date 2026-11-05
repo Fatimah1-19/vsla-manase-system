@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import ReportHeader from '../components/ReportHeader.jsx';
 import Ledger from '../components/Ledger.jsx';
@@ -145,7 +146,9 @@ export default function Reports({
     if (membersProp !== undefined) return;
     api.get('/members').then(setMembersState).catch(() => {});
   }, [membersProp]);
-  useEffect(() => { api.get('/analytics').then(setTotals).catch(() => {}); }, []);
+  const loadTotals = useCallback(() => api.get('/analytics').then(setTotals).catch(() => {}), []);
+  useEffect(() => { loadTotals(); }, [loadTotals]);
+  useAutoRefresh(loadTotals);
 
   // The group and personal views keep separate report lists. Switching scope
   // starts that view at its own home report instead of carrying a report that
@@ -189,27 +192,33 @@ export default function Reports({
   }, [category, allMembers, events, meetingRows, welfareFund, sharePreview, toast]);
 
   const chartYear = year || CURRENT_YEAR;
-  useEffect(() => {
-    setGroup(null);
+  const loadGroup = useCallback(async () => {
     const q = new URLSearchParams({ granularity, year: String(chartYear) });
     if (month) q.set('month', month);
-    api.get(`/reports/group?${q.toString()}`).then(setGroup).catch(() => {});
+    setGroup(await api.get(`/reports/group?${q.toString()}`));
   }, [granularity, chartYear, month]);
 
-  const loadReport = useCallback(() => {
+  useEffect(() => {
+    setGroup(null);
+    loadGroup().catch(() => {});
+  }, [loadGroup]);
+  useAutoRefresh(loadGroup);
+
+  const loadReport = useCallback((quiet = false) => {
     if (!memberId) { setReport(null); setReportLoading(false); return Promise.resolve(false); }
     const q = new URLSearchParams();
     const y = year || (month ? String(CURRENT_YEAR) : '');
     if (y) q.set('year', y);
     if (month) q.set('month', month);
-    setReportLoading(true);
+    if (!quiet) setReportLoading(true);
     return api.get(`/reports/member/${memberId}?${q.toString()}`)
       .then((data) => { setReport(data); return true; })
-      .catch((e) => { toast.error(e.message); setReport(null); return false; })
-      .finally(() => setReportLoading(false));
+      .catch((e) => { if (!quiet) { toast.error(e.message); setReport(null); } return false; })
+      .finally(() => { if (!quiet) setReportLoading(false); });
   }, [memberId, year, month, toast]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
+  useAutoRefresh(() => loadReport(true));
 
   const filterMemberReport = async () => {
     if (!memberId) {

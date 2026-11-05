@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import BackButton from '../components/BackButton.jsx';
 import Ledger from '../components/Ledger.jsx';
@@ -148,12 +149,15 @@ export default function Loans() {
 
   // How much she may borrow: her savings times the group's multiplier.
   const [limit, setLimit] = useState(null);
-  useEffect(() => {
+  const loadLimit = useCallback(async () => {
     if (!applyOpen) return;
     if (isCommittee && !form.member_id) { setLimit(null); return; }
     const q = isCommittee ? `?member_id=${form.member_id}` : '';
-    api.get(`/loans/limit${q}`).then(setLimit).catch(() => setLimit(null));
+    setLimit(await api.get(`/loans/limit${q}`));
   }, [applyOpen, isCommittee, form.member_id]);
+
+  useEffect(() => { loadLimit().catch(() => setLimit(null)); }, [loadLimit]);
+  useAutoRefresh(loadLimit);
 
   const load = useCallback(async () => {
     const list = await api.get('/loans');

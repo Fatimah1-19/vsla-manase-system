@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useConfirm } from '../context/ConfirmContext.jsx';
+import { useAutoRefresh } from '../hooks/useAutoRefresh.js';
 import PageHeader from '../components/PageHeader.jsx';
 import SectionTabs from '../components/SectionTabs.jsx';
 import Icon from '../components/Icon.jsx';
@@ -157,10 +158,15 @@ export default function Members() {
   }, [view, toast]);
 
   // The register with each member's balances, for the records section.
-  useEffect(() => {
+  const loadRecords = useCallback(async () => {
     if (view !== 'details') return;
-    api.get('/members?all=true').then(setRecords).catch((e) => toast.error(e.message));
-  }, [view, toast]);
+    setRecords(await api.get('/members?all=true'));
+  }, [view]);
+
+  useEffect(() => {
+    loadRecords().catch((e) => toast.error(e.message));
+  }, [loadRecords, toast]);
+  useAutoRefresh(loadRecords);
 
   // Is any committee office empty? If so the chairperson (or, if the chairperson
   // seat itself is empty, a treasurer or secretary) can start an election from here.
