@@ -13,6 +13,9 @@ const { audit } = require('../utils/audit');
 
 // The kinds of money movement the feed can show, and the table each lives in.
 const FEED_TYPES = ['savings', 'loan', 'loan_repayment', 'fine', 'welfare', 'share_out', 'correction'];
+// A menu can ask for a family of entries: loan activity means the loans and
+// their repayments, never the rest of the money book.
+const FEED_GROUPS = { loans: ['loan', 'loan_repayment'] };
 
 // Every money row, collected into one shape:
 //   kind, id, date, member_id, full_name, has_avatar, amount, reference,
@@ -100,7 +103,13 @@ const FEED_SQL = `
 function feedFilter(q) {
   const where = [];
   const params = [];
-  if (q.type && FEED_TYPES.includes(q.type)) { params.push(q.type); where.push(`f.kind = $${params.length}`); }
+  if (q.type && FEED_TYPES.includes(q.type)) {
+    params.push(q.type);
+    where.push(`f.kind = $${params.length}`);
+  } else if (q.type && FEED_GROUPS[q.type]) {
+    params.push(FEED_GROUPS[q.type]);
+    where.push(`f.kind = ANY($${params.length}::text[])`);
+  }
   if (q.member_id) { params.push(Number(q.member_id)); where.push(`f.member_id = $${params.length}`); }
   if (q.from) { params.push(q.from); where.push(`f.date >= $${params.length}::date`); }
   if (q.to) { params.push(q.to); where.push(`f.date <= $${params.length}::date`); }

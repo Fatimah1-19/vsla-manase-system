@@ -11,13 +11,8 @@ const { getSetting } = require('./helpers');
  */
 const DEFAULT_QUESTIONS = [
   { id: 'resident', good: 'yes', en: 'Are you a resident of this area?', ny: "Kodi ndinu wokhala m'derali?" },
-  { id: 'goodCharacter', good: 'yes', en: 'Do you have good character?', ny: 'Kodi muli ndi makhalidwe abwino?' },
-  { id: 'trustworthy', good: 'yes', en: 'Are you trustworthy?', ny: 'Kodi ndinu wodalirika?' },
-  { id: 'honest', good: 'yes', en: 'Are you honest in your dealings?', ny: 'Kodi ndinu woona mtima pa zochita zanu?' },
   { id: 'repaysLoans', good: 'yes', en: 'Do you repay loans on time without trouble?', ny: 'Kodi mumabweza ngongole pa nthawi popanda mavuto?' },
-  { id: 'formerMember', good: 'yes', en: 'If you belonged to another group, were you a good member there?', ny: 'Ngati munali mu gulu lina, kodi munali membala wabwino kumeneko?' },
   { id: 'followsRules', good: 'yes', en: "Are you willing to follow the group's rules?", ny: 'Kodi mukufuna kutsatira malamulo a gulu?' },
-  { id: 'reliableIncome', good: 'yes', en: 'Do you have a reliable source of income for regular savings?', ny: 'Kodi muli ndi ndalama zodalirika zosungira nthawi zonse?' },
   { id: 'noDebt', good: 'no', en: 'Do you have any unpaid loan or debt elsewhere?', ny: 'Kodi muli ndi ngongole ina iliyonse yosabwezedwa?' },
   { id: 'notExpelled', good: 'no', en: 'Have you ever been expelled for dishonesty or default?', ny: 'Kodi munachotsedwapo chifukwa cha chinyengo kapena kulephera kubweza ngongole?' },
 ];

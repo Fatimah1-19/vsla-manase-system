@@ -616,10 +616,13 @@ function run(middleware, user) {
     assert.ok(!/req\.body\.(userId|user_id|memberId|member_id)/.test(src),
       `${name} must never take a voter from the request body`);
   }
-  // A membership decision follows the group's vote: quorum first, then a yes
-  // majority to approve. The chairperson records it, she does not bypass it.
+  // A membership decision follows the group's vote: a single vote is enough to
+  // settle it, then a yes majority to approve. The chairperson records it, she
+  // does not bypass it.
   assert.ok(joinCtrl.includes('quorumNeeded') && joinCtrl.includes('still voting'),
     'a join request cannot be decided before the group has voted');
+  assert.ok(/JOIN_QUORUM_PERCENT = 1\b/.test(joinCtrl),
+    'one or two votes must be enough to settle a join request');
   assert.ok(/yes <= votes\.no/.test(joinCtrl),
     'an approval cannot override a vote the group did not carry');
 
@@ -865,17 +868,20 @@ function run(middleware, user) {
     'no chairperson-only decision may sit among her quick actions');
 
   // §6 the member records: she may add one, filter them and read every field.
-  assert.ok(can('secretary', 'members.create') && can('admin', 'members.create')
+  assert.ok(can('secretary', 'members.create') && !can('admin', 'members.create')
     && !can('treasurer', 'members.create'),
-    'the secretary and the chairperson enter new members');
+    'the secretary alone enters new members');
+  const chairCreate = await run(requirePermission('members.create'), { role: 'admin' });
+  assert.strictEqual(chairCreate.status, 403, 'the chairperson cannot add a member directly');
   const userRoutes = fs.readFileSync(path.join(__dirname, '..', 'routes', 'userRoutes.js'), 'utf8');
   assert.ok(userRoutes.includes("router.post('/', requirePermission('members.create'), c.createUser)")
     && !userRoutes.includes("router.post('/', requirePermission('users.manage')"),
     'the member register is open to her, the user administration is not');
   const membersScreen = fs.readFileSync(
     path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Members.jsx'), 'utf8');
-  assert.ok(membersScreen.includes("get('add') === '1'") && membersScreen.includes('canAddMember'),
-    'her dashboard can open the add form when she may add a member');
+  assert.ok(membersScreen.includes("get('add') === '1'") && membersScreen.includes('canAddMember')
+    && /canAddMember\s*=\s*!!user && \['secretary'\]\.includes\(user\.role\)/.test(membersScreen),
+    'only the secretary can open the add form');
   assert.ok(membersScreen.includes('members.filterNew') && membersScreen.includes('members.filterInactive')
     && membersScreen.includes('member_status'),
     'the register can be filtered by membership status and by new members');
@@ -1212,6 +1218,24 @@ function run(middleware, user) {
                        'adminActivity']) {
       assert.ok(new RegExp(`\\b${key}: `).test(dict), `${file} must carry nav.${key}`);
     }
+  }
+
+  // The saving-cycle board shows what each cycle has saved, and what is still
+  // out in loans that have not yet been recovered in that cycle.
+  const cyclesPage = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'frontend', 'src', 'pages', 'Cycles.jsx'), 'utf8');
+  const cycleCtrl = fs.readFileSync(
+    path.join(__dirname, '..', 'controllers', 'cycleController.js'), 'utf8');
+  assert.ok(cycleCtrl.includes('loan_outstanding')
+    && cycleCtrl.includes('l.cycle_id = c.id')
+    && cycleCtrl.includes("r.status = 'verified'"),
+    'the cycle list must total the unrecovered loans of each cycle');
+  assert.ok(cyclesPage.includes('c.loan_outstanding') && cyclesPage.includes('cycles.loanOutstanding'),
+    'the saving cycles page must show the unrecovered loan amount');
+  for (const file of ['en.extra.js', 'ny.extra.js']) {
+    const dict = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'frontend', 'src', 'i18n', file), 'utf8');
+    assert.ok(new RegExp('\\bloanOutstanding: ').test(dict), `${file} must carry cycles.loanOutstanding`);
   }
 
   // ---- reset rules --------------------------------------------------------

@@ -9,6 +9,11 @@ const { generateUsername, nextMembershipNumber, tempPassword } = require('../uti
 const rules = require('../utils/cases');
 const { getScreeningQuestions } = require('../utils/screening');
 
+// A join request may be settled once even a very small turnout has voted: one
+// member in most groups, two only once the group passes a hundred voters. The
+// chairperson records the group's decision; she does not take it alone.
+const JOIN_QUORUM_PERCENT = 1;
+
 function ageFromDob(dob) {
   if (!dob) return null;
   const d = new Date(dob);
@@ -274,8 +279,8 @@ const decideRequest = wrap(async (req, res) => {
   if (!request) return res.status(404).json({ message: 'That request does not exist.' });
   if (request.status !== 'pending') return res.status(400).json({ message: 'That request was already decided.' });
 
-  // The decision follows the group's vote; it never replaces it. Half the
-  // eligible voters must have voted, and an approval needs a yes majority.
+  // The decision follows the group's vote; it never replaces it. One or two
+  // votes are enough to settle it, and an approval needs a yes majority.
   const voters = await one(`SELECT COUNT(*)::int AS c FROM users WHERE is_active = TRUE`);
   const votes = await one(
     `SELECT COUNT(*) FILTER (WHERE vote = 'yes')::int AS yes,
@@ -283,7 +288,7 @@ const decideRequest = wrap(async (req, res) => {
        FROM join_request_votes WHERE request_id = $1`, [id]
   );
   const turnout = votes.yes + votes.no;
-  const needed = rules.quorumNeeded(voters.c, 50);
+  const needed = rules.quorumNeeded(voters.c, JOIN_QUORUM_PERCENT);
   if (turnout < needed) {
     return res.status(400).json({
       message: `The group is still voting: ${turnout} of ${needed} votes needed are in.`,

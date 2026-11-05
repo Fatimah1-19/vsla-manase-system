@@ -770,7 +770,10 @@ export default {
   },
 
   messages: { confirmSend: (n) => `Tumizani izi kwa anthu ${n}?` },
-  cycles: { confirmClose: 'Tseka nyengo iyi? Sizingabwezedwe.' },
+  cycles: {
+    confirmClose: 'Tseka nyengo iyi? Sizingabwezedwe.',
+    loanOutstanding: 'Ngongole zotsala kubweza',
+  },
   requests: { confirmDecide: 'Lembani zomwe gulu lidaganiza? Munthuyo adzauzidwa ndi uthenga.' },
 
   admin: {

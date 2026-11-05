@@ -9,7 +9,15 @@ const listCycles = wrap(async (req, res) => {
     `SELECT c.*, c.share_value::float AS share_value,
             COALESCE((SELECT SUM(s.amount) FROM savings s
                        WHERE s.cycle_id = c.id AND s.status = 'verified'
-                         AND s.deleted_at IS NULL), 0)::float AS total_savings
+                         AND s.deleted_at IS NULL), 0)::float AS total_savings,
+            COALESCE((SELECT SUM(GREATEST(0,
+                       l.amount * (CASE WHEN l.with_interest THEN 1 + l.interest_rate / 100 ELSE 1 END)
+                       - COALESCE((SELECT SUM(r.amount) FROM loan_repayments r
+                                    WHERE r.loan_id = l.id AND r.status = 'verified'
+                                      AND r.deleted_at IS NULL), 0)))
+                      FROM loans l
+                      WHERE l.cycle_id = c.id AND l.deleted_at IS NULL
+                        AND l.status IN ('pending_verification','verified','repaid','defaulted')), 0)::float AS loan_outstanding
        FROM cycles c ORDER BY c.start_date DESC`
   );
   res.json(rows);

@@ -35,7 +35,7 @@ export const NAV_ITEMS = [
   { to: '/app/cases', key: 'nav.cases', group: 'nav.gMembers', icon: 'cases', roles: ['admin'], sub: true },
   { to: '/app/leadership', key: 'nav.leadership', icon: 'leadership', roles: ['admin'], sub: true },
 
-  { to: '/app/savings', key: 'nav.recordSavings', group: 'nav.gSavings', icon: 'savings', roles: ['admin'] },
+  { to: '/app/savings', key: 'nav.savings', group: 'nav.gSavings', icon: 'savings', roles: ['admin'] },
   { to: '/app/financial-activity?type=savings', key: 'nav.savingsActivity', icon: 'activity', roles: ['admin'], sub: true },
   { to: '/app/analytics?tab=reports', key: 'nav.savingsReports', icon: 'analytics', roles: ['admin'], sub: true },
 
@@ -62,6 +62,8 @@ export const NAV_ITEMS = [
 
 // ---- treasurer: the money menu, and only the money menu ----------------
   { to: '/app',            key: 'nav.dashboard', group: 'nav.gDashboard', icon: 'dashboard', roles: ['treasurer'], phone: true, end: true },
+
+  { to: '/app/requests',               key: 'nav.requests',            group: 'nav.gMembership', icon: 'requests', roles: ['treasurer'] },
 
   { to: '/app/savings',                key: 'nav.savingsManagement', group: 'nav.gSavings', icon: 'savings', roles: ['treasurer'] },
   { to: '/app/financial-activity?type=savings', key: 'nav.savingsActivity', icon: 'activity', roles: ['treasurer'], sub: true },
@@ -138,11 +140,12 @@ const CHAIR_SIDEBAR = [
   { to: '/app', key: 'nav.dashboard', icon: 'dashboard', end: true },
   { to: '/app/approvals', key: 'nav.approvals', icon: 'requests' },
   { to: '/app/members', key: 'nav.members', icon: 'members' },
+  { to: '/app/requests', key: 'nav.requests', icon: 'requests' },
   {
     key: 'nav.gSavings',
     icon: 'savings',
     children: [
-      { to: '/app/savings', key: 'nav.recordSavings', icon: 'savings' },
+      { to: '/app/savings', key: 'nav.savings', icon: 'savings' },
       { to: '/app/cycles', key: 'nav.currentCycle', icon: 'cycles' },
       { to: '/app/analytics?tab=reports', key: 'nav.savingsReports', icon: 'analytics' },
     ],

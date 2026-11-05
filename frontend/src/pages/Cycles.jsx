@@ -89,6 +89,12 @@ action={<button type="button" className="btn btn--gold" onClick={() => setOpen(t
                 <p className="cycles__saved">
                   {t('shareout.savedByMembers')}: <strong className="money">{money(c.total_savings)}</strong>
                 </p>
+                <p className="cycles__saved">
+                  {t('cycles.loanOutstanding')}:{' '}
+                  <strong className={Number(c.loan_outstanding) > 0 ? 'money money--neg' : 'money'}>
+                    {money(c.loan_outstanding)}
+                  </strong>
+                </p>
               </div>
               <div className="cycles__side">
                 <span className={c.status === 'active' ? 'tag tag--green' : 'tag tag--grey'}>

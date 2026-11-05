@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
@@ -32,12 +33,24 @@ export default function FinancialActivity() {
   const { t } = useLang();
   const { canRecordMoney } = useAuth();
   const toast = useToast();
+  const location = useLocation();
 
-  const [filters, setFilters] = useState(EMPTY);
+  // Links such as "Loan Activity" carry their filter in the address.
+  const urlFilters = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return Object.fromEntries(Object.keys(EMPTY).map((k) => [k, params.get(k) || '']));
+  }, [location.search]);
+
+  const [filters, setFilters] = useState(urlFilters);
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => {
+    setPage(1);
+    setFilters(urlFilters);
+  }, [urlFilters]);
 
   // The correction dialog: a NEW record that points back at a wrong one.
   const [correcting, setCorrecting] = useState(null);
@@ -155,6 +168,7 @@ export default function FinancialActivity() {
         />
         <select value={filters.type} onChange={(e) => set('type', e.target.value)} aria-label={t('finance.type')}>
           <option value="">{t('finance.anyType')}</option>
+          <option value="loans">{t('nav.loans')}</option>
           {data.types.map((k) => <option key={k} value={k}>{t(KIND_LABEL[k] || k)}</option>)}
         </select>
         <select value={filters.member_id} onChange={(e) => set('member_id', e.target.value)} aria-label={t('finance.member')}>

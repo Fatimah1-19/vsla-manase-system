@@ -12,7 +12,7 @@ const PDF_CSS = `
     position: static !important; left: auto !important; top: auto !important;
     width: auto !important; padding: 0 !important;
   }
-  .no-print { display: none !important; }
+  .no-print, .reports__totals { display: none !important; }
   .report-head__logo { display: block !important; }
   .report-head, .panel, .reports__panel, .profile__card, .loans__detail,
   table, tr, .reports__facts > div { break-inside: avoid; }

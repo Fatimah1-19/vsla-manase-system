@@ -331,7 +331,7 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 12mm; }
-  .no-print { display: none !important; }
+  .no-print, .reports__totals { display: none !important; }
   .modal, .modal__panel, .modal__body { position: static !important; overflow: visible !important; max-height: none !important; box-shadow: none !important; }
 }
 .avatar {

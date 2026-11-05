@@ -772,7 +772,10 @@ export default {
   },
 
   messages: { confirmSend: (n) => `Send this to ${n} ${n === 1 ? 'person' : 'people'}?` },
-  cycles: { confirmClose: 'Close this cycle? This cannot be undone.' },
+  cycles: {
+    confirmClose: 'Close this cycle? This cannot be undone.',
+    loanOutstanding: 'Loans not yet recovered',
+  },
   requests: { confirmDecide: 'Record what the group decided? The person will be told by text message.' },
 
   admin: {

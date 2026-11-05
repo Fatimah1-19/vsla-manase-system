@@ -106,7 +106,8 @@ const PERMISSIONS = {
   'users.view': ['admin', 'secretary', 'treasurer'],
   'users.manage': ['admin'],
   // The secretary enters new people into the register; she never manages the users.
-  'members.create': ['admin', 'secretary'],
+  // The chairperson does not add members directly.
+  'members.create': ['secretary'],
   'members.edit': ['admin', 'secretary'],
   // Membership papers (forms, copies of the record) are kept with the register.
   // The committee may read the whole shelf; only the chairperson and the
