@@ -340,7 +340,7 @@ const base = {
     step2Body: "Mamembala akhoza kupempha ngongole malinga ndi malamulo a gulu. Komiti imalemba ngongole, chiwongola dzanja, nthawi yobweza komanso kubweza kwake.",
     step3Title: 'Timagawana kumapeto kwa nyengo',
     step3Body: "Kumapeto kwa nyengo yosunga, ndalama zomwe membala aliyense adzalandire zimawerengedwa malinga ndi malamulo omwe gulu lagwirizana.",
-    joinTitle: 'Perekani pempho lolowa. Komiti ya VSLA ndi mamembala adzawunika pempholo. Kuvomerezedwa kumatengera zinthu monga khalidwe labwino, kukhala nzika yodalirika ya mdera lino, kubweza ngongole mokhazikika, komanso mbiri yabwino ngati kale munali m\'gulu lina. Ngati mwavomerezedwa, muyenera kulipira chindapusa chovomerezedwa cholembetsa komiti isanakuikeni mu dongosolo ndikukupatsani mwayi wopeza akaunti.',
+    joinTitle: 'Kulowa mgulu',
     joinFeeNote: (fee) => `Membala watsopano amalipira ndalama zolembetsa za ${fee}.`,
     joinName: 'Dzina lanu lonse', joinPhone: 'Nambala yanu ya foni',
     joinVillage: 'Mudzi wanu', joinOccupation: 'Ntchito yanu', joinReason: 'Mukufuna kulowa chifukwa chiyani?',

@@ -330,7 +330,7 @@ const base = {
     step2Body: "Members can apply for loans according to the group's rules. The committee records the loan, interest, repayment periods and repayments.",
     step3Title: 'We share out at the end of the cycle',
     step3Body: "At the end of the savings cycle, each member's share-out amount is calculated according to the VSLA's agreed rules.",
-    joinTitle: 'Submit a request to join. The VSLA committee and members will assess the application. Approval is based on factors such as good character, being a trustworthy citizen of the area, repaying loans reliably, and a positive history if previously in another group. If approved, you must pay the agreed registration fee before the committee records you in the system and provides account access.',
+    joinTitle: 'Joining the group',
     joinFeeNote: (fee) => `A one-off registration fee of ${fee} is paid when you join the group.`,
     joinName: 'Your full name', joinPhone: 'Your phone number',
     joinVillage: 'Your village', joinOccupation: 'Your occupation', joinReason: 'Why do you want to join?',
