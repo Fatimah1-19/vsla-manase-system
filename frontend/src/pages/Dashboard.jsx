@@ -48,7 +48,9 @@ export default function Dashboard() {
     ? 'dashboard.greetingMorning'
     : hour >= 12 && hour < 17
       ? 'dashboard.greetingAfternoon'
-      : 'dashboard.greetingEvening';
+      : hour >= 17 && hour < 21
+        ? 'dashboard.greetingEvening'
+        : 'dashboard.greetingNight';
 
   const boards = {
     member: MemberDashboard,
