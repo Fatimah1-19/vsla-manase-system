@@ -80,7 +80,7 @@ const base = {
     greeting: (name) => `Moni, ${name}`,
     greetingMorning: (name) => `M'mawa bwino, ${name}`,
     greetingAfternoon: (name) => `Masana bwino, ${name}`,
-    greetingEvening: (name) => `Madzulo bwino, ${name}`,
+    greetingEvening: (name) => `Madzulo abwino, ${name}`,
     cycleProgress: 'Nyengo yosunga', weeksLeft: (n) => `Masiku ${n} kugawana kutsala`,
     mySavings: 'Zomwe ndasunga', myShares: 'Magawo', myLoan: 'Ngongole yanga',
     outstanding: 'Zotsala kubweza', dueBy: 'Bwezani pofika', noLoan: 'Mulibe ngongole panopa',
