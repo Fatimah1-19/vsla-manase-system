@@ -68,6 +68,7 @@ const base = {
     newPassword: 'Achinsinsi atsopano', confirmPassword: 'Lembaninso achinsinsi atsopano',
     submit: 'Sinthani achinsinsi anga', resend: 'Tumizani nambala inanso',
     backToLogin: 'Bwererani kokalowa', mismatch: 'Achinsinsi awiriwa sakufanana.',
+    passShort: 'Achinsinsi atsopano ayenera kukhala ndi zilembo zosachepera 6.',
   },
 
   idle: {
@@ -354,15 +355,22 @@ const base = {
     joinAnsweredAll: 'Mafunso onse ayankhidwa',
     joinSubmit: 'Tumizani pempho langa',
     joinDone: 'Pempho lanu latumizidwa. Gulu likambirana pa msonkhano wotsatira.',
+    notEligible: 'Simukuyenerera kupempha',
   },
 
   errors: {
     generic: 'Pali cholakwika. Chonde yesaninso.',
-    offline: 'Sitikufika pa seva. Onetsetsani kuti bakendi ikuyenda.',
+    offline: 'Sitikufika pa seva. Onetsetsani kuti intaneti yanu ikugwira ntchito.',
     sessionExpired: 'Nthawi yanu yatha. Chonde lowaninso.',
     notAllowed: 'Udindo wanu sungatsegule tsamba limenelo.',
     notAllowedBody: 'Menyu imangoonetsa masamba amene udindo wanu ungagwiritse ntchito. Ngati mukuganiza kuti muyenera kukhala ndi mwayi, lankhulani ndi mtsogoleri.',
     notFound: 'Tsamba limenelo kulibe.',
+    notFoundRecord: 'Chomwe mukufuna sichipezeka.',
+    request: 'Zomwe mwalemba sizili bwino. Chonde yang\'anani ndi kuyesa kachiwiri.',
+    forbidden: 'Simuloledwa kuchita izi.',
+    alreadyExists: 'Zomwezo zilipo kale.',
+    locked: 'Mwachita zambiri. Chonde dikirani kaye ndi kuyesa kachiwiri.',
+    server: 'Pali vuto pa seva. Chonde yesaninso.',
   },
 }
 

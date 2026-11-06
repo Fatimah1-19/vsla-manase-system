@@ -14,11 +14,12 @@ export default function QuickActions({ actions }) {
     <div className="quick-actions">
       {actions.map((a) => {
         const label = t(a.key);
+        const tone = a.tone ? `quick-actions__btn--${a.tone}` : '';
         return (
           <Link
             key={a.to + a.key}
             to={a.to}
-            className={`btn quick-actions__btn ${a.cls || ''}`.trim()}
+            className={`btn quick-actions__btn ${tone} ${a.cls || ''}`.trim()}
             aria-label={label}
             title={label}
           >

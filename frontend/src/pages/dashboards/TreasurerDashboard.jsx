@@ -32,7 +32,7 @@ export default function TreasurerDashboard({ data }) {
     { to: '/app/loans?action=record', key: 'treas.qaRecordRepayment', icon: 'loans', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaRecordFine', icon: 'fines', cls: '' },
     { to: '/app/contributions', key: 'treas.qaRecordWelfare', icon: 'welfare', cls: 'btn--sky' },
-    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
+    { to: '/app/loans?filter=verified', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ] : [
     { to: '/app/savings', key: 'treas.qaViewSavings', icon: 'savings', cls: 'btn--sky' },
@@ -40,7 +40,7 @@ export default function TreasurerDashboard({ data }) {
     { to: '/app/loans?tab=repayments', key: 'treas.qaViewRepayments', icon: 'loans', cls: 'btn--gold' },
     { to: '/app/fines', key: 'treas.qaViewFines', icon: 'fines', cls: '' },
     { to: '/app/contributions', key: 'treas.qaViewWelfare', icon: 'welfare', cls: 'btn--sky' },
-    { to: '/app/loans?filter=approved', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
+    { to: '/app/loans?filter=verified', key: 'treas.qaViewActiveLoans', icon: 'eye', cls: 'btn--ghost' },
     { to: '/app/analytics?tab=reports', key: 'treas.qaFinancialReports', icon: 'reports', cls: 'btn--ghost' },
   ];
 
@@ -64,7 +64,7 @@ export default function TreasurerDashboard({ data }) {
 
       <div className="page-grid page-grid--stat">
         <StatCard label={t('dashboard.totalSavings')}  value={money(m.total_savings)} tone="green" icon="analytics" big />
-        <StatCard label={t('dashboard.activeLoans')}   value={plainNumber(data.loans?.approved)} tone="green" icon="loans" />
+        <StatCard label={t('dashboard.activeLoans')}   value={plainNumber(data.loans?.verified)} tone="green" icon="loans" />
         <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="blue" icon="loans" />
         <StatCard label={t('analytics.totalRepayments')} value={money(m.repaid)} tone="gold" icon="loans" />
         <StatCard

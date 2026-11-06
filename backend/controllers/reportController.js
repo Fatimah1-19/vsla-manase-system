@@ -157,7 +157,7 @@ const memberReport = wrap(async (req, res) => {
   const sum = (rows, pick) => +rows.reduce((a, r) => a + Number(pick(r) || 0), 0).toFixed(2);
   const savingsTotal = sum(savings, (r) => r.amount);
   const sharesTotal = savings.reduce((a, r) => a + Number(r.shares || 0), 0);
-  const loansOutstanding = +loans.filter((l) => l.status === 'approved')
+  const loansOutstanding = +loans.filter((l) => l.status === 'verified')
     .reduce((a, l) => a + l.outstanding, 0).toFixed(2);
   const finesUnpaid = sum(fines.filter((f) => !f.paid), (r) => r.amount);
 
@@ -267,7 +267,7 @@ const groupReport = wrap(async (req, res) => {
 
   const [contrib, loans, fines, wIn, wOut, savings, repay, meetings, newMembers, att] = await Promise.all([
     series('monthly_contributions', 'paid_on'),
-    series('loans', 'decided_at', "AND status IN ('approved','repaid','defaulted')"),
+    series('loans', 'decided_at', "AND status IN ('verified','repaid','defaulted')"),
     series('fines', 'date'),
     series('welfare_fund', 'date', "AND type = 'contribution'"),
     series('welfare_fund', 'date', "AND type = 'payout'"),

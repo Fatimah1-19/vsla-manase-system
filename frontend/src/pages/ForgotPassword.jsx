@@ -39,7 +39,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError('');
     if (pass1 !== pass2) { setError(t('forgot.mismatch')); return; }
-    if (pass1.length < 6) { setError('The new password needs at least 6 characters.'); return; }
+    if (pass1.length < 6) { setError(t('forgot.passShort')); return; }
 
     setBusy(true);
     try {

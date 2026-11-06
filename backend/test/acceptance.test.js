@@ -261,7 +261,11 @@ async function check(n, title, fn) {
     assert.strictEqual(canSetSystemRole({ targetRole: 'member', makeAdmin: true }).ok, true,
       'a plain member may still be appointed as administrator');
     assert.strictEqual(canSetSystemRole({ targetRole: 'treasurer', makeAdmin: true }).ok, false,
-      'an elected office is never handed out from the account screen');
+      'the legacy administrator toggle never touches an elected office');
+    assert.ok(adminCtrl.includes('canChangeAccountRole')
+      && adminCtrl.includes('REMOVE_OFFICE_ROLE')
+      && adminCtrl.includes('Give a reason for this role change.'),
+      'the full role change must support offices and require a reason');
   });
 
   await check(27, 'the chairperson cannot open administrator-only pages', () => {

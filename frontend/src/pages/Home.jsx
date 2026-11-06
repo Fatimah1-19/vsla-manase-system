@@ -104,7 +104,7 @@ export default function Home() {
     }
     const e2 = runElig();
     if (!e2.allPassed) {
-      setError('Not eligible to apply');
+      setError(t('home.notEligible'));
       return;
     }
     setError(''); setBusy(true);

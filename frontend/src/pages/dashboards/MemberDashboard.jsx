@@ -21,13 +21,13 @@ export default function MemberDashboard({ data }) {
   const hasTrend = trend.some((d) => d.amount > 0);
   const myFines = (data.my_fines || []).filter((f) => !f.paid);
   const quickActions = [
-    { to: '/app/savings', key: 'nav.mySavings', icon: 'savings' },
-    { to: '/app/loans', key: 'nav.myLoans', icon: 'loans' },
-    { to: '/app/welfare', key: 'nav.myWelfare', icon: 'welfare' },
-    { to: '/app/wrappers', key: 'nav.myGroceries', icon: 'wrappers' },
-    { to: '/app/fines', key: 'nav.myFines', icon: 'fines' },
-    { to: '/app/shareout', key: 'nav.myShareout', icon: 'shareout' },
-    { to: '/app/receipts', key: 'nav.myReceipts', icon: 'reports' },
+    { to: '/app/savings', key: 'nav.mySavings', icon: 'savings', tone: 'leaf' },
+    { to: '/app/loans', key: 'nav.myLoans', icon: 'loans', tone: 'sky' },
+    { to: '/app/welfare', key: 'nav.myWelfare', icon: 'welfare', tone: 'purple' },
+    { to: '/app/wrappers', key: 'nav.myGroceries', icon: 'wrappers', tone: 'gold' },
+    { to: '/app/fines', key: 'nav.myFines', icon: 'fines', tone: 'flame' },
+    { to: '/app/shareout', key: 'nav.myShareout', icon: 'shareout', tone: 'teal' },
+    { to: '/app/receipts', key: 'nav.myReceipts', icon: 'reports', tone: 'slate' },
   ];
 
   const shares = Number(savings?.shares || 0);

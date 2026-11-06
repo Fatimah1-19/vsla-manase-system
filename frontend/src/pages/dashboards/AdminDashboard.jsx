@@ -71,7 +71,7 @@ export default function AdminDashboard({ data }) {
           icon="requests"
         />
         <StatCard label={t('dashboard.totalSavings')} value={money(m.total_savings)} tone="green" icon="savings" />
-        <StatCard label={t('dashboard.activeLoans')} value={plainNumber(data.loans?.approved)} tone="gold" icon="loans" />
+        <StatCard label={t('dashboard.activeLoans')} value={plainNumber(data.loans?.verified)} tone="gold" icon="loans" />
         <StatCard label={t('dashboard.groupOutstanding')} value={money(m.outstanding)} tone="red" icon="loans" />
       </div>
 

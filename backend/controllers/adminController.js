@@ -5,13 +5,22 @@ const { sendSMS, DRY_RUN } = require('../utils/sms');
 const { build, templates } = require('../utils/messages');
 const { audit } = require('../utils/audit');
 const { generateUsername, nextMembershipNumber, tempPassword } = require('../utils/helpers');
-const { canDecideChange, canRemoveAdministrator, canSetSystemRole } = require('../utils/adminRules');
+const {
+  canDecideChange, canRemoveAdministrator, canSetSystemRole, canChangeAccountRole,
+} = require('../utils/adminRules');
 const { ROLES, OFFICES, PERMISSIONS } = require('../config/permissions');
 
 // The fields the administrator may ask to change on an account. Never the role:
 // an office is won by a vote of the members, not handed out from here.
 const EDITABLE = ['full_name', 'phone', 'language', 'village'];
 const KINDS = ['update_user', 'deactivate_user', 'reactivate_user'];
+const ROLE_WORD = {
+  admin: 'the chairperson',
+  treasurer: 'the treasurer',
+  secretary: 'the secretary',
+  member: 'a member',
+  system_admin: 'a system administrator',
+};
 
 async function activeAdministrators() {
   return (await one(`SELECT COUNT(*)::int AS c FROM users WHERE role = 'system_admin' AND is_active = TRUE`)).c;
@@ -342,52 +351,135 @@ const listPermissions = wrap(async (req, res) => {
   res.json({ roles: ROLES, offices: OFFICES, permissions });
 });
 
-// PATCH /api/admin/accounts/:id/role  { system_admin: true | false }
-// The one role the administrator may hand out or take back. Group offices
-// (chairperson, treasurer, secretary) are never set here: the members elect them.
+// PATCH /api/admin/accounts/:id/role
+// The system administrator changes an account's role. A committee office is
+// normally won by a vote, but she may fill a vacant office or remove a holder
+// directly when the group asks; every such change carries a reason and is
+// written to the audit trail. The older { system_admin: true | false } body is
+// still accepted for the simple administrator toggle.
 const setSystemRole = wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const makeAdmin = !!req.body?.system_admin;
   if (!id) return res.status(400).json({ message: 'Choose the account.' });
   if (id === req.user.id) return res.status(400).json({ message: 'You cannot change your own role here.' });
 
-  const target = await one(`SELECT id, full_name, role, is_active FROM users WHERE id = $1`, [id]);
+  const target = await one(`SELECT id, full_name, username, role, is_active FROM users WHERE id = $1`, [id]);
   if (!target) return res.status(404).json({ message: 'That account does not exist.' });
 
-  const verdict = canSetSystemRole({
+  const body = req.body || {};
+
+  if (!Object.prototype.hasOwnProperty.call(body, 'role')) {
+    // Legacy path: only the system-administrator toggle, never an office.
+    const makeAdmin = !!body.system_admin;
+    const verdict = canSetSystemRole({
+      targetRole: target.role,
+      makeAdmin,
+      activeAdministrators: await activeAdministrators(),
+    });
+    if (!verdict.ok) {
+      const messages = {
+        chairperson_conflict: 'A user cannot simultaneously hold the System Administrator and Chairperson roles because these responsibilities must remain separated.',
+        is_office: 'The committee posts are decided by a vote of the members, not from here.',
+        already_admin: 'That account is already an administrator.',
+        not_admin: 'That account is not a system administrator.',
+        last_admin: 'This is the only administrator. Keep at least one.',
+      };
+      return res.status(400).json({ message: messages[verdict.reason] || 'That change cannot be made.' });
+    }
+
+    const role = makeAdmin ? 'system_admin' : 'member';
+    await query(`UPDATE users SET role = $2 WHERE id = $1`, [target.id, role]);
+
+    // An administrator is a member like everyone else, so she must have a member row.
+    if (makeAdmin) {
+      await query(
+        `INSERT INTO members (user_id, membership_number, village)
+         SELECT $1, 'VB-' || LPAD(COALESCE((SELECT MAX(CAST(SUBSTRING(membership_number FROM 4) AS INT)) FROM members), 0) + 1, 4, '0'), NULL
+         WHERE NOT EXISTS (SELECT 1 FROM members WHERE user_id = $1)`,
+        [target.id]
+      );
+    }
+
+    await audit(req.user.id, makeAdmin ? 'GRANT_SYSTEM_ADMIN' : 'REVOKE_SYSTEM_ADMIN', 'users', id, target.full_name);
+    return res.json({
+      message: makeAdmin
+        ? `${target.full_name} is now a system administrator.`
+        : `${target.full_name} is no longer a system administrator.`,
+    });
+  }
+
+  // Wider role change: the new role and a reason are both required.
+  const newRole = String(body.role || '').trim();
+  const reasonKey = String(body.reason || '').trim();
+  const reasonDetail = String(body.reasonDetail || body.reason_detail || '').trim();
+  const reason = reasonKey === 'Other' ? reasonDetail : reasonKey;
+
+  if (!ROLES.includes(newRole)) return res.status(400).json({ message: 'Choose a valid role.' });
+  if (newRole === target.role) return res.status(400).json({ message: 'That account already holds this role.' });
+  if (!reason) return res.status(400).json({ message: 'Give a reason for this role change.' });
+  if (reason.length > 500) return res.status(400).json({ message: 'Keep the reason under 500 characters.' });
+
+  const officeHeldByOther = OFFICES.includes(newRole)
+    ? await one(
+      `SELECT id, full_name FROM users
+        WHERE role = $1 AND is_active = TRUE AND id <> $2 LIMIT 1`,
+      [newRole, target.id]
+    )
+    : null;
+
+  const verdict = canChangeAccountRole({
     targetRole: target.role,
-    makeAdmin,
-    activeAdministrators: await activeAdministrators(),
+    newRole,
+    isActive: !!target.is_active,
+    activeAdministrators: target.role === 'system_admin'
+      ? await activeAdministrators()
+      : undefined,
+    officeHeldByOther: !!officeHeldByOther,
   });
   if (!verdict.ok) {
     const messages = {
-      chairperson_conflict: 'A user cannot simultaneously hold the System Administrator and Chairperson roles because these responsibilities must remain separated.',
-      is_office: 'The committee posts are decided by a vote of the members, not from here.',
-      already_admin: 'That account is already an administrator.',
-      not_admin: 'That account is not a system administrator.',
-      last_admin: 'This is the only administrator. Keep at least one.',
+      invalid_role: 'Choose a valid role.',
+      same_role: 'That account already holds this role.',
+      last_admin: 'This is the only active administrator. Keep at least one.',
+      must_be_member: 'Make this account a member before giving it the system administrator role.',
+      inactive_target: 'Reactivate the account before giving it a committee office.',
+      office_taken: officeHeldByOther
+        ? `${officeHeldByOther.full_name} already holds that office. Remove that person first.`
+        : 'That office is already held.',
     };
     return res.status(400).json({ message: messages[verdict.reason] || 'That change cannot be made.' });
   }
 
-  const role = makeAdmin ? 'system_admin' : 'member';
-  await query(`UPDATE users SET role = $2 WHERE id = $1`, [target.id, role]);
-
-  // An administrator is a member like everyone else, so she must have a member row.
-  if (makeAdmin) {
-    await query(
+  await tx(async (client) => {
+    await client.query(`UPDATE users SET role = $2 WHERE id = $1`, [target.id, newRole]);
+    // Office holders and administrators are members too, so they need a member row.
+    await client.query(
       `INSERT INTO members (user_id, membership_number, village)
        SELECT $1, 'VB-' || LPAD(COALESCE((SELECT MAX(CAST(SUBSTRING(membership_number FROM 4) AS INT)) FROM members), 0) + 1, 4, '0'), NULL
        WHERE NOT EXISTS (SELECT 1 FROM members WHERE user_id = $1)`,
       [target.id]
     );
-  }
+  });
 
-  await audit(req.user.id, makeAdmin ? 'GRANT_SYSTEM_ADMIN' : 'REVOKE_SYSTEM_ADMIN', 'users', id, target.full_name);
+  const action =
+    newRole === 'system_admin' && target.role !== 'system_admin' ? 'GRANT_SYSTEM_ADMIN'
+      : newRole === 'member' && target.role === 'system_admin' ? 'REVOKE_SYSTEM_ADMIN'
+        : newRole === 'member' && OFFICES.includes(target.role) ? 'REMOVE_OFFICE_ROLE'
+          : OFFICES.includes(newRole) ? 'ASSIGN_OFFICE_ROLE'
+            : 'CHANGE_ROLE';
+
+  await audit(
+    req.user.id,
+    action,
+    'users',
+    target.id,
+    `Changed ${target.full_name} (${target.username}) from ${target.role} to ${newRole}. Reason: ${reason}`,
+    { previous: target.role, next: newRole }
+  );
+
   res.json({
-    message: makeAdmin
-      ? `${target.full_name} is now a system administrator.`
-      : `${target.full_name} is no longer a system administrator.`,
+    message: `${target.full_name} is now ${ROLE_WORD[newRole] || newRole}.`,
+    role: newRole,
+    reason,
   });
 });
 

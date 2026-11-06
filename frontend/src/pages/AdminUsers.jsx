@@ -15,6 +15,15 @@ import '../styles.css';
 
 const ROLE_ORDER = ['admin', 'treasurer', 'secretary', 'member', 'system_admin'];
 const OFFICE_ROLES = ['admin', 'treasurer', 'secretary'];
+const ROLE_REASONS = [
+  { value: 'Elected by the members', label: 'admin.roleReasonElected' },
+  { value: 'Resigned', label: 'admin.reasonResigned' },
+  { value: 'Removed by group decision', label: 'admin.reasonRemoved' },
+  { value: 'Misconduct', label: 'admin.roleReasonMisconduct' },
+  { value: 'Long-term inactivity', label: 'admin.reasonInactivity' },
+  { value: 'Role correction', label: 'admin.roleReasonCorrection' },
+  { value: 'Other', label: 'admin.reasonOther' },
+];
 const OVERVIEW_ROLES = [
   { key: 'system_admin', label: 'admin.administrators' },
   { key: 'admin', label: 'admin.chairpersons' },
@@ -33,6 +42,9 @@ const ACCOUNT_ACTION_LABELS = {
   ADMIN_RESET_PASSWORD: 'admin.accountPasswordReset',
   GRANT_SYSTEM_ADMIN: 'admin.accountAdminGranted',
   REVOKE_SYSTEM_ADMIN: 'admin.accountAdminRemoved',
+  ASSIGN_OFFICE_ROLE: 'admin.accountOfficeAssigned',
+  REMOVE_OFFICE_ROLE: 'admin.accountOfficeRemoved',
+  CHANGE_ROLE: 'admin.accountRoleChanged',
 };
 
 /** How one account stands right now: locked by wrong passwords, suspended, or on/off. */
@@ -73,6 +85,9 @@ export default function AdminUsers() {
   const [edit, setEdit] = useState(null);    // the "change details" form
   const [view, setView] = useState(null);    // the details panel
   const [roleFor, setRoleFor] = useState(null); // the "manage role" panel
+  const [newRole, setNewRole] = useState('member');
+  const [roleReason, setRoleReason] = useState('');
+  const [roleReasonOther, setRoleReasonOther] = useState('');
   const [deactivateFor, setDeactivateFor] = useState(null); // direct deactivation modal
   const [deactivateReason, setDeactivateReason] = useState('');
   const [deactivateOther, setDeactivateOther] = useState('');
@@ -230,11 +245,35 @@ export default function AdminUsers() {
     }
   }
 
-  async function applyRole(account, makeAdmin) {
-    setBusy(account.id);
+  function openRoleModal(account) {
+    setRoleFor(account);
+    setNewRole('member');
+    setRoleReason('');
+    setRoleReasonOther('');
+  }
+
+  async function applyRole() {
+    if (!roleFor) return;
+    if (newRole === roleFor.role) {
+      toast.error(t('admin.roleUnchanged'));
+      return;
+    }
+    if (!roleReason) {
+      toast.error(t('admin.selectReason'));
+      return;
+    }
+    if (roleReason === 'Other' && !roleReasonOther.trim()) {
+      toast.error(t('admin.specifyReason'));
+      return;
+    }
+    setBusy(roleFor.id);
     try {
-      const res = await api.patch(`/admin/accounts/${account.id}/role`, { system_admin: makeAdmin });
-      toast.success(res.message);
+      await api.patch(`/admin/accounts/${roleFor.id}/role`, {
+        role: newRole,
+        reason: roleReason,
+        reasonDetail: roleReasonOther,
+      });
+      toast.success(t('admin.roleChanged').replace('{name}', roleFor.full_name).replace('{role}', t(`roles.${newRole}`)));
       setRoleFor(null);
       await refresh();
     } catch (err) {
@@ -254,6 +293,17 @@ export default function AdminUsers() {
   }
 
   if (!accounts) return <Spinner />;
+
+  const roleChoices = roleFor
+    ? roleFor.role === 'system_admin'
+      ? ['member']
+      : OFFICE_ROLES.includes(roleFor.role)
+        ? ['admin', 'treasurer', 'secretary', 'member']
+        : ROLE_ORDER
+    : [];
+  const roleHolder = roleFor && OFFICE_ROLES.includes(newRole)
+    ? accounts.find((a) => a.id !== roleFor.id && a.role === newRole && a.is_active)
+    : null;
 
   return (
     <div className="adminusers">
@@ -414,7 +464,7 @@ export default function AdminUsers() {
                           })}>
                             {t('admin.edit')}
                           </button>
-                          <button type="button" className="btn btn--small" onClick={() => setRoleFor(a)}>
+                          <button type="button" className="btn btn--small" onClick={() => openRoleModal(a)}>
                             {t('admin.manageRole')}
                           </button>
                           <button type="button" className="btn btn--small btn--gold" disabled={busy === a.id} onClick={() => resetPassword(a)}>
@@ -543,30 +593,76 @@ export default function AdminUsers() {
         open={!!roleFor}
         title={t('admin.manageRole')}
         onClose={() => setRoleFor(null)}
-        footer={roleFor && roleFor.role !== 'admin' && !OFFICE_ROLES.includes(roleFor.role) && view !== roleFor && roleFor.id !== user?.id ? (
+        footer={roleFor && roleFor.id !== user?.id ? (
           <button
             type="button"
             className="btn"
-            disabled={busy === roleFor.id}
-            onClick={() => applyRole(roleFor, roleFor.role !== 'system_admin')}
+            disabled={busy === roleFor.id || newRole === roleFor.role || !!roleHolder}
+            onClick={applyRole}
           >
-            {roleFor.role === 'system_admin' ? t('admin.removeAdmin') : t('admin.makeAdmin')}
+            {busy === roleFor.id ? t('common.saving') : t('admin.changeRole')}
           </button>
         ) : null}
       >
         {roleFor && (
-          <div className="adminusers__role">
+          <div className="adminusers__role settings__form">
             <p><strong>{roleFor.full_name}</strong></p>
             <p className="muted">{t('common.role')}: {t(`roles.${roleFor.role}`)}</p>
 
             {roleFor.id === user?.id ? (
               <p className="notice notice--warn">{t('admin.roleSelfLocked')}</p>
-            ) : OFFICE_ROLES.includes(roleFor.role) ? (
-              <p className="notice notice--warn">
-                {roleFor.role === 'admin' ? t('admin.separationBody') : t('admin.officeLocked')}
-              </p>
             ) : (
-              <p className="settings__note">{t('admin.roleNote')}</p>
+              <>
+                <div className="settings__row">
+                  <label className="field-label" htmlFor="account-role">{t('admin.newRole')}</label>
+                  <select id="account-role" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+                    {roleChoices.map((role) => (
+                      <option key={role} value={role}>{t(`roles.${role}`)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {roleHolder && (
+                  <p className="notice notice--warn">
+                    {t('admin.officeTaken').replace('{name}', roleHolder.full_name)}
+                  </p>
+                )}
+                {newRole === 'system_admin' && (
+                  <p className="settings__note">{t('admin.roleAdminNote')}</p>
+                )}
+                {OFFICE_ROLES.includes(newRole) && (
+                  <p className="settings__note">{t('admin.roleOfficeNote')}</p>
+                )}
+
+                <div className="settings__row">
+                  <label className="field-label" htmlFor="account-role-reason">{t('admin.roleReason')}</label>
+                  <select
+                    id="account-role-reason"
+                    value={roleReason}
+                    onChange={(e) => setRoleReason(e.target.value)}
+                    required
+                  >
+                    <option value="">{t('admin.selectReason')}</option>
+                    {ROLE_REASONS.map((reason) => (
+                      <option key={reason.value} value={reason.value}>{t(reason.label)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {roleReason === 'Other' && (
+                  <div className="settings__row">
+                    <label className="field-label" htmlFor="account-role-reason-other">{t('admin.specifyReason')}</label>
+                    <input
+                      id="account-role-reason-other"
+                      value={roleReasonOther}
+                      onChange={(e) => setRoleReasonOther(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
+                <p className="settings__note">{t('admin.roleAuditNote')}</p>
+              </>
             )}
           </div>
         )}

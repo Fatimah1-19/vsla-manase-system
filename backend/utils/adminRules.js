@@ -71,6 +71,39 @@ function canSetSystemRole({ targetRole, makeAdmin, activeAdministrators }) {
   return { ok: true };
 }
 
+const ALL_ROLES = ['admin', 'treasurer', 'secretary', 'member', 'system_admin'];
+
+/**
+ * May the administrator move an account to a different role? This is the wider
+ * role change used by the Accounts screen: it can fill or remove a committee
+ * office as well as the system-administrator role, but it keeps the safeguards.
+ *
+ * - The new role must be one the system knows.
+ * - The role must actually change.
+ * - The last active system administrator may not be moved away.
+ * - The system-administrator role is only given to an ordinary member, so a
+ *   chairperson or another office holder must first be made a member.
+ * - A committee office may only go to an active account whose office is empty,
+ *   so two people never hold the same office.
+ */
+function canChangeAccountRole({
+  targetRole, newRole, isActive, activeAdministrators, officeHeldByOther,
+}) {
+  if (!ALL_ROLES.includes(newRole)) return { ok: false, reason: 'invalid_role' };
+  if (newRole === targetRole) return { ok: false, reason: 'same_role' };
+  if (targetRole === 'system_admin' && Number(activeAdministrators) <= 1) {
+    return { ok: false, reason: 'last_admin' };
+  }
+  if (newRole === 'system_admin' && targetRole !== 'member') {
+    return { ok: false, reason: 'must_be_member' };
+  }
+  if (OFFICE_ROLES.includes(newRole)) {
+    if (!isActive) return { ok: false, reason: 'inactive_target' };
+    if (officeHeldByOther) return { ok: false, reason: 'office_taken' };
+  }
+  return { ok: true };
+}
+
 /**
  * May this code be tried against a reset request? A code stops being usable
  * when it has expired or has been tried too many times.
@@ -83,4 +116,7 @@ function resetAttempt({ attempts, maxTries, expired }) {
   return { ok: true, remaining: Math.max(limit - used, 0) };
 }
 
-module.exports = { canDecideChange, canRemoveAdministrator, canSetSystemRole, canManageAccount, resetAttempt };
+module.exports = {
+  canDecideChange, canRemoveAdministrator, canSetSystemRole, canChangeAccountRole,
+  canManageAccount, resetAttempt,
+};

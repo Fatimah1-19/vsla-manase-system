@@ -5,7 +5,10 @@ const path = require('path');
 const {
   ROLES, PERMISSIONS, MONEY_PERMISSIONS, can, touchesMoney, requirePermission, blockSystemAdmin, OFFICES,
 } = require('../config/permissions.js');
-const { canDecideChange, canRemoveAdministrator, canSetSystemRole, canManageAccount, resetAttempt } = require('../utils/adminRules.js');
+const {
+  canDecideChange, canRemoveAdministrator, canSetSystemRole, canChangeAccountRole,
+  canManageAccount, resetAttempt,
+} = require('../utils/adminRules.js');
 
 // Run one express middleware with a fake user and see what it answers.
 function run(middleware, user) {
@@ -87,6 +90,32 @@ function run(middleware, user) {
   assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: true, activeAdministrators: 1 }).reason, 'already_admin');
   assert.strictEqual(canSetSystemRole({ targetRole: 'member', makeAdmin: false, activeAdministrators: 1 }).reason, 'not_admin');
   assert.strictEqual(canSetSystemRole({ targetRole: 'system_admin', makeAdmin: false, activeAdministrators: 1 }).reason, 'last_admin');
+
+  // ---- the wider role change fills or empties a committee office -------------
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'member', newRole: 'treasurer', isActive: true, officeHeldByOther: false,
+  }).ok, true, 'a member may be given an empty office');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'secretary', newRole: 'member', isActive: true, officeHeldByOther: false,
+  }).ok, true, 'an office holder may be removed');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'member', newRole: 'treasurer', isActive: true, officeHeldByOther: true,
+  }).reason, 'office_taken', 'two people may not hold the same office');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'member', newRole: 'secretary', isActive: false, officeHeldByOther: false,
+  }).reason, 'inactive_target', 'an inactive account cannot take an office');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'admin', newRole: 'system_admin', isActive: true, activeAdministrators: 2,
+  }).reason, 'must_be_member', 'an office holder must become a member before the system role');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'system_admin', newRole: 'member', isActive: true, activeAdministrators: 1,
+  }).reason, 'last_admin', 'the last active administrator may not be removed');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'system_admin', newRole: 'member', isActive: true, activeAdministrators: 2,
+  }).ok, true, 'one of several administrators may step down');
+  assert.strictEqual(canChangeAccountRole({
+    targetRole: 'member', newRole: 'member', isActive: true, officeHeldByOther: false,
+  }).reason, 'same_role');
 
   // ---- VSLA settings go one way: chairperson request, administrator applies -
   const settings = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'settingsController.js'), 'utf8');
@@ -171,6 +200,8 @@ function run(middleware, user) {
     'the reverse settings-approval card must be gone');
   // No card invents a figure: every value reads from the dashboard payload.
   assert.ok(chairDash.includes('data.members?.total'), 'total members must read the real count');
+  assert.ok(chairDash.includes('data.loans?.verified'),
+    'active loans must count loans that are live, not merely approved');
 
   // ---- the highlighted pending action and the quick actions ---------------
   for (const qa of ['chair.qaReviewRequests', 'chair.qaViewMembers', 'chair.qaViewLoans',

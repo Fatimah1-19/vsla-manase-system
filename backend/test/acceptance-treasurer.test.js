@@ -99,6 +99,8 @@ async function check(n, title, fn) {
     assert.ok(idx.every((i) => i > -1), 'her board must carry all seven of her figures');
     assert.ok(idx.every((i, j) => j === 0 || i > idx[j - 1]),
       'the figures must stand in the treasurer\'s own order');
+    assert.ok(treasurerBoard.includes('data.loans?.verified'),
+      'the active loans card must count loans that are live, not merely approved');
     assert.ok(treasurerBoard.includes('analytics.totalRepayments') && treasurerBoard.includes('m.repaid'),
       'the total repayments card must draw a real figure');
     assert.ok(/cycle && \(/.test(treasurerBoard) && dashCtrl.includes('base.cycle'),
@@ -115,7 +117,7 @@ async function check(n, title, fn) {
       && treasurerBoard.includes('treas.qaFinancialReports'),
       'savings, loans, repayments, fines, welfare, active loans and reports must be one tap away');
     assert.ok(treasurerBoard.includes('/app/savings') && treasurerBoard.includes('/app/loans')
-      && treasurerBoard.includes('/app/loans?filter=approved')
+      && treasurerBoard.includes('/app/loans?filter=verified')
       && treasurerBoard.includes('/app/fines') && treasurerBoard.includes('/app/contributions')
       && treasurerBoard.includes('/app/analytics'),
       'every shortcut must point at a page she may open');

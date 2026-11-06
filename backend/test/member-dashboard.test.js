@@ -27,6 +27,7 @@ const activityJsx = front('pages/Activity.jsx');
 const navItems = front('components/navItems.js');
 const savingsJsx = front('pages/Savings.jsx');
 const memberDash = front('pages/dashboards/MemberDashboard.jsx');
+const quickActionsJsx = front('components/QuickActions.jsx');
 
 /** The text between two markers, so a rule can be checked in one branch only. */
 function between(source, start, end) {
@@ -144,6 +145,15 @@ check(12, 'the member quick actions reach all seven personal pages', () => {
   }
   const links = actions.match(/\{ to: '\/app\/[^']+'/g) || [];
   assert.strictEqual(links.length, wanted.length, 'exactly the seven personal destinations are offered');
+});
+
+check(13, 'the member quick actions each carry a different colour', () => {
+  const actions = between(memberDash, 'const quickActions = [', '];');
+  const tones = [...actions.matchAll(/tone: '([^']+)'/g)].map((m) => m[1]);
+  assert.strictEqual(tones.length, 7, 'all seven shortcuts must name a colour');
+  assert.strictEqual(new Set(tones).size, tones.length, 'no two shortcuts may share the same colour');
+  assert.ok(quickActionsJsx.includes('quick-actions__btn--${a.tone}'),
+    'the shared quick actions component must apply the named colour');
 });
 
 console.log(`\n  ${done} checks passed.\n`);

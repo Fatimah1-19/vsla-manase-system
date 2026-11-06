@@ -1,3 +1,5 @@
+import { localizeApiMessage } from '../i18n/apiMessages.js';
+
 // One place that talks to the backend.
 // In development the Vite proxy sends /api to the local server. In production the
 // site always calls its own origin, and vercel.json forwards /api to the API, so
@@ -34,7 +36,7 @@ async function request(method, path, body, { auth = true } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError('Cannot reach the server. Check that the backend is running.', 0);
+    throw new ApiError(localizeApiMessage('Cannot reach the server. Check that the backend is running.', 0), 0);
   }
 
   // While someone is still working the server hands back a fresh token, so a
@@ -50,7 +52,7 @@ async function request(method, path, body, { auth = true } = {}) {
     if (res.status === 401 && auth && token && onSessionEnd) {
       onSessionEnd(data.expired ? 'expired' : 'invalid');
     }
-    throw new ApiError(data.message || `Request failed (${res.status})`, res.status, data);
+    throw new ApiError(localizeApiMessage(data.message || `Request failed (${res.status})`, res.status), res.status, data);
   }
   return data;
 }
@@ -74,7 +76,7 @@ export function logoutBeacon() {
 export async function fetchFile(path) {
   const token = getToken();
   const res = await fetch(`${BASE}/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  if (!res.ok) throw new ApiError('Could not open that file.', res.status);
+  if (!res.ok) throw new ApiError(localizeApiMessage('Could not open that file.', res.status), res.status);
   return URL.createObjectURL(await res.blob());
 }
 

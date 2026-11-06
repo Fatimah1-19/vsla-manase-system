@@ -66,6 +66,7 @@ const base = {
     newPassword: 'New password', confirmPassword: 'Type the new password again',
     submit: 'Change my password', resend: 'Send another code',
     backToLogin: 'Back to log in', mismatch: 'The two passwords are not the same.',
+    passShort: 'The new password needs at least 6 characters.',
   },
 
   idle: {
@@ -344,6 +345,7 @@ const base = {
     joinAnsweredAll: 'All questions answered',
     joinSubmit: 'Send my request',
     joinDone: 'Your request has been sent. The committee and members will review it at the next meeting.',
+    notEligible: 'Not eligible to apply',
   },
 
   errors: {
@@ -353,6 +355,12 @@ const base = {
     notAllowed: 'Your role cannot open that page.',
     notAllowedBody: 'The menu only shows the pages your role may use. If you think you should have access, speak to the chairperson.',
     notFound: 'That page does not exist.',
+    notFoundRecord: 'That item does not exist.',
+    request: 'That request could not be completed. Check the details and try again.',
+    forbidden: 'You are not allowed to do that.',
+    alreadyExists: 'That record already exists.',
+    locked: 'Too many attempts. Please wait and try again.',
+    server: 'Something went wrong on the server. Please try again.',
   },
 };
 
